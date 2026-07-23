@@ -1,0 +1,19 @@
+[Desktop Entry]
+Type=Application
+Name=Helium
+Comment=Web Browser
+Exec=/home/xiang/.local/opt/helium/helium-wrapper --render-node-override=/dev/dri/renderD129 %U
+Icon=/home/xiang/.local/opt/helium/product_logo_256.png
+Terminal=false
+StartupNotify=true
+Categories=Network;WebBrowser;
+MimeType=text/html;application/xhtml+xml;x-scheme-handler/http;x-scheme-handler/https;
+Actions=new-window;new-private-window;
+
+[Desktop Action new-window]
+Name=New Window
+Exec=/home/xiang/.local/opt/helium/helium-wrapper --render-node-override=/dev/dri/renderD129 --new-window
+
+[Desktop Action new-private-window]
+Name=New Private Window
+Exec=/home/xiang/.local/opt/helium/helium-wrapper --render-node-override=/dev/dri/renderD129 --incognito

@@ -1,0 +1,49 @@
+#!/usr/bin/env bash
+set -u
+
+title="音量"
+body=""
+timeout=500
+hint=()
+status=0
+
+case "${1:-}" in
+	up)
+		amixer set Master 2%+ >/dev/null 2>&1 || status=1
+		;;
+	down)
+		amixer set Master 2%- >/dev/null 2>&1 || status=1
+		;;
+	mute)
+		amixer set Master toggle >/dev/null 2>&1 || status=1
+		;;
+	*)
+		echo "usage: osd-volume {up|down|mute}" >&2
+		exit 2
+		;;
+esac
+
+if [ "$status" -ne 0 ]; then
+	body="amixer 找不到 Master"
+	timeout=1800
+else
+	read -r volume state < <(
+		amixer get Master | awk -F'[][]' '/%/ { print $2, $4; exit }'
+	)
+	value="${volume%\%}"
+
+	if [ -z "$value" ] || [ "$value" = "$volume" ]; then
+		body="无法读取音量"
+		timeout=1800
+		status=1
+	elif [ "${state:-}" = "off" ]; then
+		body="静音"
+		hint=(-h int:value:0)
+	else
+		body="$volume"
+		hint=(-h "int:value:$value")
+	fi
+fi
+
+notify-send -e -a osd -t "$timeout" "${hint[@]}" "$title" "$body" >/dev/null 2>&1 || true
+exit "$status"

@@ -6,7 +6,5 @@ sudo xbps-install -S \
     swaybg swayidle swaylock wlsunset wl-clipboard brightnessctl \
     fcitx5 fcitx5-rime \
     alsa-utils chrony keyd \
-    xdg-desktop-portal-termfilechooser lf \
-    bash-completion curl fd fzf git htop fastfetch vis xz \
-    font-inconsolata-otf wqy-microhei \
-    at-spi2-atk at-spi2-core atk libXcomposite libXdamage libcups nss
+    bash-completion git fastfetch \
+    font-inconsolata-otf wqy-microhei

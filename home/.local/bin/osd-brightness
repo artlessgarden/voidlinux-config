@@ -1,0 +1,42 @@
+#!/usr/bin/env bash
+set -u
+
+title="亮度"
+body=""
+timeout=500
+hint=()
+status=0
+
+case "${1:-}" in
+	up)
+		brightnessctl set 2%+ >/dev/null 2>&1 || status=1
+		;;
+	down)
+		brightnessctl set 2%- >/dev/null 2>&1 || status=1
+		;;
+	*)
+		echo "usage: osd-brightness {up|down}" >&2
+		exit 2
+		;;
+esac
+
+if [ "$status" -ne 0 ]; then
+	body="brightnessctl 调节失败"
+	timeout=1800
+else
+	percent="$(
+		brightnessctl -m | awk -F, '{ gsub(/%/, "", $4); print $4; exit }'
+	)"
+
+	if [ -z "$percent" ]; then
+		body="无法读取亮度"
+		timeout=1800
+		status=1
+	else
+		body="$percent%"
+		hint=(-h "int:value:$percent")
+	fi
+fi
+
+notify-send -e -a osd -t "$timeout" "${hint[@]}" "$title" "$body" >/dev/null 2>&1 || true
+exit "$status"
