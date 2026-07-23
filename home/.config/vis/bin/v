@@ -1,0 +1,15 @@
+#!/bin/sh
+
+real_vis=/usr/bin/vis
+
+if [ "$#" -eq 1 ] && [ -d "$1" ]; then
+	"$real_vis"
+	status=$?
+else
+	"$real_vis" "$@"
+	status=$?
+fi
+
+printf '\033[0m'
+stty sane 2>/dev/null
+exit "$status"

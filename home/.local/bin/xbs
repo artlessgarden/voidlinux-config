@@ -1,0 +1,15 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+xbps-query -Rs '' |
+	awk '{printf "%-4s %s\t%s\n", "repo", $2, $2}' |
+	fzf -q "${*:-}" --multi \
+		--delimiter=$'\t' \
+		--with-nth=1 \
+		--preview-window='right,60%,wrap' \
+		--preview 'pkgver={2}; pkg=$(xbps-uhelper getpkgname "$pkgver"); xbps-query -RS "$pkg"; printf "\nFiles:\n"; xbps-query -Rf "$pkg" 2>/dev/null' |
+	awk -F '\t' '{print $2}' |
+	while IFS= read -r pkgver; do
+		xbps-uhelper getpkgname "$pkgver"
+	done |
+	xargs -r -o sudo xbps-install

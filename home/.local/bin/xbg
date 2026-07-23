@@ -1,0 +1,8 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+echo "更新 Void Linux..."
+sudo xbps-install -Syu
+
+echo "更新 Helium..."
+sh "$HOME/voidlinux-config/helium.sh"

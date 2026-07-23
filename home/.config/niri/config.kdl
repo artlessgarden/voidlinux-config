@@ -1,0 +1,130 @@
+// 本文件保存在 voidlinux-config 仓库，通过符号链接作为 Niri 的实际配置。
+
+input {
+    keyboard { repeat-delay 200; repeat-rate 30; }
+    touchpad { tap; dwt; dwtp; natural-scroll; }
+    focus-follows-mouse max-scroll-amount="0%"
+    workspace-auto-back-and-forth
+    mouse { accel-speed 0.2; }
+}
+
+// 内屏连接 AMD GPU，但 NVIDIA 更早注册为 renderD128。
+// 明确使用 amdgpu 对应的 renderD129，否则从 TTY 启动可能失败。
+// 更新内核后可用下面的命令重新确认编号：
+// readlink -f /sys/class/drm/renderD*/device/driver
+debug {
+    render-drm-device "/dev/dri/renderD129"
+}
+
+layout {
+    preset-column-widths { proportion 0.382; proportion 0.618; proportion 1.0;}
+    default-column-width { proportion 0.618; }
+    background-color "transparent"
+    always-center-single-column
+    gaps 0
+    focus-ring {        off;}
+    shadow {
+        on
+        softness 30
+        spread 5
+        offset x=0 y=5
+        draw-behind-window true
+        color "#000000ff"
+        inactive-color "#00000054"
+    }
+}
+prefer-no-csd
+hotkey-overlay { skip-at-startup; }
+window-rule { open-floating false; }
+
+// xdg-desktop-portal-termfilechooser 使用这个标题启动 Alacritty。
+window-rule {
+    match app-id="^Alacritty$" title="^termfilechooser$"
+    open-floating true
+    open-focused true
+}
+
+output "eDP-1" {
+       scale 1.5
+       mode "2560x1600@60"
+}
+
+// Put swaybg inside the overview backdrop.
+layer-rule {
+    match namespace="^wallpaper$"
+
+    place-within-backdrop true
+}
+
+gestures { hot-corners { off; };}
+animations { off ;}
+
+// Niri 由 `dbus-run-session niri --session` 启动。
+// --session 会自行把 WAYLAND_DISPLAY 导入会话 D-Bus，这里不再重复调用
+// dbus-update-activation-environment。
+spawn-at-startup "sh" "-c" "swaybg -i .config/niri/bg4.jpg"
+spawn-at-startup "fcitx5"
+spawn-at-startup "sh" "-c" "swayidle -w timeout 180 'swaylock -f -i /home/xiang/.config/niri/bg3.jpg' timeout 240 'niri msg action power-off-monitors'"
+spawn-at-startup "alacritty"
+spawn-at-startup "sh" "-c" "wlsunset -l 20 -L 100"
+
+binds {
+Mod+space repeat=false { spawn-sh "wl-kbptr -o modes=floating,click -o mode_floating.source=detect"; }
+Mod+return repeat=false { spawn "fuzzel"; }
+Mod+tab { spawn "~/.config/niri/toggle-gtk.sh"; }
+Mod+Escape repeat=false { power-off-monitors; }
+
+Mod+a repeat=false { fullscreen-window; }
+Mod+s repeat=false { spawn "alacritty"; }
+Mod+d repeat=false { spawn-sh "alacritty -e v '+new-entry'"; }
+Mod+f repeat=false { spawn "firefox"; }
+
+Mod+z repeat=false { spawn "Telegram"; }
+Mod+x repeat=false { spawn "google-chrome-stable"; }
+
+// Helium 也会错选 NVIDIA renderD128；指定 AMD 后首次启动和新窗口都可秒开。
+Mod+c repeat=false { spawn "/home/xiang/.local/opt/helium/helium-wrapper" "--render-node-override=/dev/dri/renderD129" "--new-window"; }
+Mod+v repeat=false { toggle-overview; }
+
+Mod+p repeat=false { spawn-sh "grim - | wl-copy --type image/png && wl-paste --type image/png | swappy -f -"; }
+Mod+q repeat=false { spawn-sh "grim -g \"$(slurp)\" - | wl-copy --type image/png && wl-paste --type image/png | swappy -f -"; }
+Mod+w repeat=false { close-window; }
+Mod+e { toggle-window-rule-opacity; }
+Mod+r repeat=false { switch-preset-column-width; }
+
+//Mod+Grave allow-inhibiting=false repeat=false { spawn "/home/xiang/.local/bin/focus-timer-control" "resume"; }
+//Mod+Alt+Grave allow-inhibiting=false repeat=false { spawn "/home/xiang/.local/bin/focus-timer-control" "pause"; }
+//Mod+1 allow-inhibiting=false repeat=false { spawn "/home/xiang/.local/bin/focus-timer-control" "music-on"; }
+//Mod+2 allow-inhibiting=false repeat=false { spawn "/home/xiang/.local/bin/focus-timer-control" "music-off"; }
+
+Mod+j  cooldown-ms=70   { focus-column-left; }
+Mod+L  cooldown-ms=70   { focus-column-right; }
+Mod+i  cooldown-ms=70   { focus-window-or-workspace-up; }
+Mod+k  cooldown-ms=70  { focus-window-or-workspace-down; }
+Mod+Alt+j cooldown-ms=70    { move-column-left; }
+Mod+Alt+L cooldown-ms=70    { move-column-right; }
+Mod+Alt+k cooldown-ms=70 { move-window-down-or-to-workspace-down; }
+Mod+Alt+i cooldown-ms=70 { move-window-up-or-to-workspace-up; }
+
+Mod+Ctrl+k cooldown-ms=70 { move-column-to-workspace-down; }
+Mod+Ctrl+i cooldown-ms=70 { move-column-to-workspace-up; }
+
+Mod+u cooldown-ms=70 { consume-or-expel-window-left; }
+Mod+o cooldown-ms=70 { consume-or-expel-window-right; }
+Mod+m {focus-monitor-next;}
+Mod+alt+m {move-column-to-monitor-next;}
+
+XF86MonBrightnessDown allow-when-locked=true { spawn "osd-brightness" "down"; }
+XF86MonBrightnessUp allow-when-locked=true { spawn "osd-brightness" "up"; }
+XF86AudioLowerVolume allow-when-locked=true { spawn "osd-volume" "down"; }
+XF86AudioRaiseVolume allow-when-locked=true { spawn "osd-volume" "up"; }
+XF86AudioMute allow-when-locked=true { spawn "osd-volume" "mute"; }
+
+Mod+WheelScrollDown cooldown-ms=70 { focus-workspace-down; }
+Mod+WheelScrollUp   cooldown-ms=70 { focus-workspace-up; }
+Mod+MouseRight  { focus-column-right; }
+Mod+MouseLeft  { focus-column-left; }
+Mod+MouseForward cooldown-ms=70 { consume-or-expel-window-left; }
+Mod+MouseBack cooldown-ms=70 { consume-or-expel-window-right; }
+
+}

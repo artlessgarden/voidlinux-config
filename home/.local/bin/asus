@@ -1,0 +1,76 @@
+#!/bin/sh
+
+set -eu
+
+profile=/sys/firmware/acpi/platform_profile
+battery=/sys/class/power_supply/BAT0/charge_control_end_threshold
+hwmon=/sys/devices/platform/asus-nb-wmi/hwmon
+
+usage() {
+    cat <<'EOF'
+Usage:
+  asus status
+  asus profile quiet|balanced|performance
+  asus charge 20-100
+  asus fans
+EOF
+}
+
+write_value() {
+    value=$1
+    path=$2
+    printf '%s\n' "$value" | sudo tee "$path" >/dev/null
+}
+
+case ${1:-status} in
+    status)
+        printf 'profile: %s\n' "$(cat "$profile")"
+        printf 'charge limit: %s%%\n' "$(cat "$battery")"
+        for device in /sys/bus/pci/devices/*; do
+            [ -r "$device/vendor" ] || continue
+            [ "$(cat "$device/vendor")" = 0x10de ] || continue
+            printf 'dGPU: %s\n' "$(cat "$device/power/runtime_status")"
+            break
+        done
+        ;;
+    profile)
+        case ${2:-} in
+            quiet|balanced|performance) write_value "$2" "$profile" ;;
+            *) printf 'profile must be quiet, balanced, or performance\n' >&2; exit 2 ;;
+        esac
+        printf 'profile: %s\n' "$(cat "$profile")"
+        ;;
+    charge)
+        case ${2:-} in
+            ''|*[!0-9]*) printf 'charge must be an integer from 20 to 100\n' >&2; exit 2 ;;
+        esac
+        if [ "$2" -lt 20 ] || [ "$2" -gt 100 ]; then
+            printf 'charge must be an integer from 20 to 100\n' >&2
+            exit 2
+        fi
+        write_value "$2" "$battery"
+        printf 'charge limit: %s%%\n' "$(cat "$battery")"
+        ;;
+    fans)
+        found=0
+        for input in "$hwmon"/hwmon*/fan*_input; do
+            [ -r "$input" ] || continue
+            found=1
+            label=${input%_input}_label
+            if [ -r "$label" ]; then
+                name=$(cat "$label")
+            else
+                name=${input##*/}
+            fi
+            printf '%s: %s RPM\n' "$name" "$(cat "$input")"
+        done
+        [ "$found" -eq 1 ] || printf 'no fan sensors found\n'
+        ;;
+    help|-h|--help)
+        usage
+        ;;
+    *)
+        usage >&2
+        exit 2
+        ;;
+esac

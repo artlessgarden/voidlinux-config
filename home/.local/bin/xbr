@@ -1,0 +1,18 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+while IFS= read -r pkgver; do
+	pkg=$(xbps-uhelper getpkgname "$pkgver")
+	installed=$(xbps-query -p install-date "$pkg")
+	epoch=$(date -d "$installed" +%s)
+	printf '%s\t%s  %s\t%s\n' "$epoch" "$installed" "$pkg" "$pkg"
+done < <(xbps-query -m) |
+	sort -n |
+	fzf -q "${*:-}" --multi \
+		--no-sort \
+		--delimiter=$'\t' \
+		--with-nth=2 \
+		--preview-window='right,60%,wrap' \
+		--preview 'xbps-query {3}' |
+	awk -F '\t' '{print $3}' |
+	xargs -r -o sudo xbps-remove -R
