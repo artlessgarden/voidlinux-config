@@ -7,7 +7,7 @@ Icon=/home/xiang/.local/opt/helium/product_logo_256.png
 Terminal=false
 StartupNotify=true
 Categories=Network;WebBrowser;
-MimeType=text/html;application/xhtml+xml;x-scheme-handler/http;x-scheme-handler/https;
+MimeType=text/html;application/xhtml+xml;x-scheme-handler/http;x-scheme-handler/https;x-scheme-handler/about;x-scheme-handler/unknown;
 Actions=new-window;new-private-window;
 
 [Desktop Action new-window]
