@@ -2,22 +2,14 @@
 
 sudo sed -i \
     -e 's|^GRUB_DEFAULT=.*|GRUB_DEFAULT=0|' \
-    -e 's|^GRUB_TIMEOUT=.*|GRUB_TIMEOUT=2|' \
+    -e 's|^GRUB_TIMEOUT=.*|GRUB_TIMEOUT=0|' \
     -e 's|^GRUB_CMDLINE_LINUX_DEFAULT=.*|GRUB_CMDLINE_LINUX_DEFAULT="loglevel=4 gpiolib_acpi.run_edge_events_on_boot=0"|' \
     /etc/default/grub
 
-if sudo grep -q '^GRUB_TIMEOUT_STYLE=' /etc/default/grub; then
-    sudo sed -i 's|^GRUB_TIMEOUT_STYLE=.*|GRUB_TIMEOUT_STYLE=hidden|' /etc/default/grub
-else
-    echo 'GRUB_TIMEOUT_STYLE=hidden' | sudo tee -a /etc/default/grub >/dev/null
-fi
-
-sudo install -o root -g root -m 755 \
-    "$HOME/voidlinux-config/system/etc/grub.d/09_windows" \
-    /etc/grub.d/09_windows
+sudo rm -f /etc/grub.d/09_windows
 
 sudo update-grub
 
-# UEFI 默认进入隐藏的 Void GRUB；GRUB 第一项 Windows，第二项 Void。
+# 默认直接进入 Windows；按 Esc 在 ASUS 菜单中选择 void_grub 后立即进 Void。
 # 旧 Arch 启动项保留，但不再加入默认启动顺序。
-sudo efibootmgr -o 0001,0000
+sudo efibootmgr -o 0000,0001

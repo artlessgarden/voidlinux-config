@@ -105,8 +105,8 @@ sh hardware.sh
 - `setup.sh` 首先安装独立的 sudoers 规则，后续命令不再询问密码。
 - `packages.sh`：只安装启动 Niri 所需的基础软件。
 - `services.sh`：启用五个服务，只保留 tty1、tty2，并加入 `_seatd` 组。
-- `hardware.sh`：加入本机开机参数，生成 Windows、Void 两系统 GRUB，
-  并设置 UEFI 启动顺序。
+- `hardware.sh`：加入本机开机参数，让 Void GRUB 直接启动 Void，并设置
+  UEFI 启动顺序。
 
 ## 4. 重启并启动 Niri
 
@@ -114,16 +114,9 @@ sh hardware.sh
 sudo reboot
 ```
 
-开机后 GRUB 隐藏两秒：
-
-```text
-1. Windows Boot Manager（默认）
-2. Void GNU/Linux
-3. Advanced options for Void GNU/Linux
-```
-
-什么都不按会直接进入 Windows。需要进入 Void 时，在 ASUS Logo 消失后按
-`Esc` 显示 GRUB，选择第二项，然后登录 tty1：
+电脑默认直接进入 Windows。需要进入 Void 时，开机按 `Esc`，在 ASUS
+启动菜单中选择 `void_grub`；Void GRUB 不显示菜单，立即启动 Void，然后
+登录 tty1：
 
 ```sh
 ni
