@@ -114,7 +114,7 @@ sh hardware.sh
 sudo reboot
 ```
 
-开机后 GRUB 显示两秒：
+开机后 GRUB 隐藏两秒：
 
 ```text
 1. Windows Boot Manager（默认）
@@ -122,7 +122,8 @@ sudo reboot
 3. Advanced options for Void GNU/Linux
 ```
 
-什么都不按会进入 Windows；选择第二项进入 Void，然后登录 tty1：
+什么都不按会直接进入 Windows。需要进入 Void 时，在 ASUS Logo 消失后按
+`Esc` 显示 GRUB，选择第二项，然后登录 tty1：
 
 ```sh
 ni
