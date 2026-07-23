@@ -6,3 +6,6 @@ sudo sed -i \
 
 sudo update-grub
 
+# Windows 默认启动；按 Esc 在 UEFI 菜单中选择 void_grub。
+# 0000: Windows，0001: Void，0002: 旧 Arch。
+sudo efibootmgr -o 0000,0001,0002

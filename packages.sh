@@ -6,5 +6,5 @@ sudo xbps-install -S \
     swaybg swayidle swaylock wlsunset wl-clipboard brightnessctl \
     fcitx5 fcitx5-rime \
     alsa-utils chrony keyd \
-    bash-completion git fastfetch \
+    bash-completion efibootmgr git fastfetch \
     font-inconsolata-otf wqy-microhei
