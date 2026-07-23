@@ -1,7 +1,8 @@
 #!/bin/sh
 
 sudo xbps-install -S \
-    mako libnotify imv mpv zathura zathura-pdf-poppler \
+    mako libnotify \
+    imv mpv zathura zathura-pdf-poppler \
     fuzzel grim slurp swappy wl-kbptr \
     xdg-desktop-portal-termfilechooser xdg-utils lf \
     curl fd fzf htop vis xz \

@@ -94,6 +94,7 @@ sh setup.sh
 它依次运行：
 
 ```sh
+# 安装免密 sudo 规则（这里输入最后一次密码）
 sh links.sh
 sh packages.sh
 sh services.sh
@@ -101,6 +102,7 @@ sh hardware.sh
 ```
 
 - `links.sh`：将仓库配置软链接到 Home 和 `/etc/keyd`。
+- `setup.sh` 首先安装独立的 sudoers 规则，后续命令不再询问密码。
 - `packages.sh`：只安装启动 Niri 所需的基础软件。
 - `services.sh`：启用五个服务，只保留 tty1、tty2，并加入 `_seatd` 组。
 - `hardware.sh`：加入本机开机参数并更新 GRUB。

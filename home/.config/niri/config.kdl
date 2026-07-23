@@ -72,7 +72,6 @@ spawn-at-startup "sh" "-c" "wlsunset -l 20 -L 100"
 binds {
 Mod+space repeat=false { spawn-sh "wl-kbptr -o modes=floating,click -o mode_floating.source=detect"; }
 Mod+return repeat=false { spawn "fuzzel"; }
-Mod+tab { spawn "/home/xiang/.config/niri/toggle-gtk.sh"; }
 Mod+Escape repeat=false { power-off-monitors; }
 
 Mod+a repeat=false { fullscreen-window; }
