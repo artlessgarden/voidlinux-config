@@ -43,3 +43,14 @@ ln -sf "$repo/home/.local/share/fcitx5/rime/"* "$HOME/.local/share/fcitx5/rime/"
 
 sudo mkdir -p /etc/keyd
 sudo ln -sf "$repo/system/etc/keyd/"*.conf /etc/keyd/
+
+# 浏览器策略必须由 root 管理，不能链接到用户可写的仓库。
+sudo install -d -o root -g root -m 755 \
+    /etc/chromium/policies/managed \
+    /etc/chromium/policies/recommended
+sudo install -o root -g root -m 644 \
+    "$repo/system/etc/chromium/policies/managed/extensions.json" \
+    /etc/chromium/policies/managed/extensions.json
+sudo install -o root -g root -m 644 \
+    "$repo/system/etc/chromium/policies/recommended/helium.json" \
+    /etc/chromium/policies/recommended/helium.json

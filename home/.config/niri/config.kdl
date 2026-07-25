@@ -62,21 +62,21 @@ animations { off ;}
 // Niri 由 `dbus-run-session niri --session` 启动。
 // --session 会自行把 WAYLAND_DISPLAY 导入会话 D-Bus，这里不再重复调用
 // dbus-update-activation-environment。
-spawn-at-startup "sh" "-c" "swaybg -i .config/niri/bg4.jpg"
+spawn-at-startup "swaybg" "-i" "/home/xiang/.config/niri/bg4.jpg"
 spawn-at-startup "fcitx5"
 spawn-at-startup "mako"
-spawn-at-startup "sh" "-c" "swayidle -w timeout 180 'swaylock -f -i /home/xiang/.config/niri/bg3.jpg' timeout 240 'niri msg action power-off-monitors'"
+spawn-at-startup "swayidle" "-w" "timeout" "180" "swaylock -f -i /home/xiang/.config/niri/bg3.jpg" "timeout" "240" "niri msg action power-off-monitors"
 spawn-at-startup "alacritty"
-spawn-at-startup "sh" "-c" "wlsunset -l 20 -L 100"
+spawn-at-startup "wlsunset" "-l" "20" "-L" "100"
 
 binds {
-Mod+space repeat=false { spawn-sh "wl-kbptr -o modes=floating,click -o mode_floating.source=detect"; }
+Mod+space repeat=false { spawn "wl-kbptr" "-o" "modes=floating,click" "-o" "mode_floating.source=detect"; }
 Mod+return repeat=false { spawn "fuzzel"; }
 Mod+Escape repeat=false { power-off-monitors; }
 
 Mod+a repeat=false { fullscreen-window; }
 Mod+s repeat=false { spawn "alacritty"; }
-Mod+d repeat=false { spawn-sh "alacritty -e v '+new-entry'"; }
+Mod+d repeat=false { spawn "alacritty" "-e" "v" "+new-entry"; }
 
 // Helium 也会错选 NVIDIA renderD128；指定 AMD 后首次启动和新窗口都可秒开。
 Mod+c repeat=false { spawn "/home/xiang/.local/opt/helium/helium-wrapper" "--render-node-override=/dev/dri/renderD129" "--new-window"; }

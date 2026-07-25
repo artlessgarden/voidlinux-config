@@ -1,0 +1,9 @@
+{
+  "RestoreOnStartup": 1,
+  "BookmarkBarEnabled": false,
+  "ShowHomeButton": false,
+  "PromptForDownloadLocation": false,
+  "TranslateEnabled": true,
+  "SpellcheckEnabled": true,
+  "DefaultBrowserSettingEnabled": false
+}

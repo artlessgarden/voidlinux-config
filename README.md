@@ -101,10 +101,14 @@ sh services.sh
 sh hardware.sh
 ```
 
-- `links.sh`：将仓库配置软链接到 Home 和 `/etc/keyd`。
+- `links.sh`：将仓库配置软链接到 Home 和 `/etc/keyd`，并安装 Helium
+  默认设置及 Vimium、Violentmonkey、TWP 自动安装策略。
 - `setup.sh` 首先安装独立的 sudoers 规则，后续命令不再询问密码。
 - `packages.sh`：只安装启动 Niri 所需的基础软件。
-- `services.sh`：启用五个服务，只保留 tty1、tty2，并加入 `_seatd` 组。
+- `services.sh`：启用五个服务，只保留 tty1、tty2，加入 `_seatd` 组；本机
+  没有 syslog 接收器，因此用可恢复的 `log/down` 关闭各服务空转的
+  `vlogger`，服务本体不受影响。硬件和驱动问题使用 `sudo dmesg -w`
+  查看。
 - `hardware.sh`：加入本机开机参数，让 Void GRUB 直接启动 Void，并设置
   UEFI 启动顺序。
 
@@ -137,3 +141,4 @@ sh helium.sh
 
 `ni` 使用 `dbus-run-session niri --session`。Niri 和 Helium 都指定 AMD
 `renderD129`，避免默认探测 NVIDIA `renderD128` 导致启动失败或延迟。
+Niri 的自启项直接执行程序，不添加常驻的 `sh -c` 外壳。
