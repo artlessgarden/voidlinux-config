@@ -1,5 +1,12 @@
 #!/bin/sh
 
+battery=/sys/class/power_supply/BAT0/charge_control_end_threshold
+
+# 日常插电保护电池；需要长时间外出时可临时运行 `asus charge 100`。
+if [ -e "$battery" ]; then
+    printf '80\n' | sudo tee "$battery" >/dev/null
+fi
+
 sudo sed -i \
     -e 's|^GRUB_DEFAULT=.*|GRUB_DEFAULT=0|' \
     -e 's|^GRUB_TIMEOUT=.*|GRUB_TIMEOUT=0|' \

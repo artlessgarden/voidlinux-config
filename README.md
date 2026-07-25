@@ -110,7 +110,7 @@ sh hardware.sh
   `vlogger`，服务本体不受影响。硬件和驱动问题使用 `sudo dmesg -w`
   查看。
 - `hardware.sh`：加入本机开机参数，让 Void GRUB 直接启动 Void，并设置
-  UEFI 启动顺序。
+  UEFI 启动顺序；将 ASUS 电池充电上限设为 80%。
 
 ## 4. 重启并启动 Niri
 
