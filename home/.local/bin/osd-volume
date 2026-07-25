@@ -5,7 +5,11 @@ title="音量"
 body=""
 timeout=500
 hint=()
+replace=()
 status=0
+runtime_dir="${XDG_RUNTIME_DIR:-/tmp}"
+[ -d "$runtime_dir" ] || runtime_dir=/tmp
+id_file="$runtime_dir/osd-volume-$UID.id"
 
 case "${1:-}" in
 	up)
@@ -45,5 +49,15 @@ else
 	fi
 fi
 
-notify-send -e -a osd -t "$timeout" "${hint[@]}" "$title" "$body" >/dev/null 2>&1 || true
+if read -r old_id <"$id_file" 2>/dev/null && [[ "$old_id" =~ ^[0-9]+$ ]]; then
+	replace=(-r "$old_id")
+fi
+
+new_id="$(
+	notify-send -p -e -a osd -t "$timeout" \
+		"${replace[@]}" "${hint[@]}" "$title" "$body" 2>/dev/null
+)" || true
+if [[ "$new_id" =~ ^[0-9]+$ ]]; then
+	printf '%s\n' "$new_id" >"$id_file"
+fi
 exit "$status"

@@ -5,14 +5,18 @@ title="亮度"
 body=""
 timeout=500
 hint=()
+replace=()
 status=0
+runtime_dir="${XDG_RUNTIME_DIR:-/tmp}"
+[ -d "$runtime_dir" ] || runtime_dir=/tmp
+id_file="$runtime_dir/osd-brightness-$UID.id"
 
 case "${1:-}" in
 	up)
-		brightnessctl set 2%+ >/dev/null 2>&1 || status=1
+		brightnessctl set 2%+ >/dev/null 2>&1 || true
 		;;
 	down)
-		brightnessctl set 2%- >/dev/null 2>&1 || status=1
+		brightnessctl set 2%- >/dev/null 2>&1 || true
 		;;
 	*)
 		echo "usage: osd-brightness {up|down}" >&2
@@ -20,23 +24,29 @@ case "${1:-}" in
 		;;
 esac
 
-if [ "$status" -ne 0 ]; then
-	body="brightnessctl 调节失败"
-	timeout=1800
-else
-	percent="$(
-		brightnessctl -m | awk -F, '{ gsub(/%/, "", $4); print $4; exit }'
-	)"
+percent="$(
+	brightnessctl -m 2>/dev/null |
+		awk -F, '$2 == "backlight" { gsub(/%/, "", $4); print $4; exit }'
+)"
 
-	if [ -z "$percent" ]; then
-		body="无法读取亮度"
-		timeout=1800
-		status=1
-	else
-		body="$percent%"
-		hint=(-h "int:value:$percent")
-	fi
+if [ -z "$percent" ]; then
+	body="无法读取亮度"
+	timeout=1800
+	status=1
+else
+	body="$percent%"
+	hint=(-h "int:value:$percent")
 fi
 
-notify-send -e -a osd -t "$timeout" "${hint[@]}" "$title" "$body" >/dev/null 2>&1 || true
+if read -r old_id <"$id_file" 2>/dev/null && [[ "$old_id" =~ ^[0-9]+$ ]]; then
+	replace=(-r "$old_id")
+fi
+
+new_id="$(
+	notify-send -p -e -a osd -t "$timeout" \
+		"${replace[@]}" "${hint[@]}" "$title" "$body" 2>/dev/null
+)" || true
+if [[ "$new_id" =~ ^[0-9]+$ ]]; then
+	printf '%s\n' "$new_id" >"$id_file"
+fi
 exit "$status"

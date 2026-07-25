@@ -32,10 +32,6 @@ width=240
 height=80
 icons=0
 font=monospace 16
-group-by=app-name
-
-[app-name=osd grouped]
-format=<b>%s</b>\n%b
 
 [category=mpd]
 default-timeout=2000
