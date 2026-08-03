@@ -1,0 +1,15 @@
+#!/bin/sh
+
+# ASUS laptop defaults. These sysfs values are runtime-only and must be
+# restored on every boot.
+battery=/sys/class/power_supply/BAT0/charge_control_end_threshold
+profile=/sys/firmware/acpi/platform_profile
+
+if [ -w "$battery" ]; then
+    printf '80\n' > "$battery"
+fi
+
+if [ -w "$profile" ]; then
+    printf 'quiet\n' > "$profile"
+fi
+

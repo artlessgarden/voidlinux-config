@@ -1,10 +1,10 @@
 #!/bin/sh
-
+# 下载/更新 Helium 到 ~/.local/opt/helium（策略文件在 70-link-apps.sh）
 set -e
 
 if ! command -v xz >/dev/null; then
-    echo "缺少 xz，请先运行：sudo xbps-install -S xz"
-    exit 1
+	echo "缺少 xz，请先运行：sh 60-pkg-apps.sh"
+	exit 1
 fi
 
 api="https://api.github.com/repos/imputnet/helium-linux/releases/latest"
@@ -13,9 +13,9 @@ trap 'rm -rf "$tmp"' EXIT
 
 echo "检查 Helium 最新版本..."
 url="$(
-    curl -fsSL "$api" |
-        sed -n 's/.*"browser_download_url": "\(.*x86_64_linux\.tar\.xz\)".*/\1/p' |
-        head -n 1
+	curl -fsSL "$api" |
+		sed -n 's/.*"browser_download_url": "\(.*x86_64_linux\.tar\.xz\)".*/\1/p' |
+		head -n 1
 )"
 
 test -n "$url"
@@ -25,12 +25,12 @@ latest="${archive#helium-}"
 latest="${latest%-x86_64_linux.tar.xz}"
 
 if [ -x "$HOME/.local/opt/helium/helium" ]; then
-    installed="$("$HOME/.local/opt/helium/helium" --version | awk '{print $2}')"
-    if [ "$installed" = "$latest" ]; then
-        echo "已经是最新版：$installed"
-        exit
-    fi
-    echo "更新：$installed -> $latest"
+	installed="$("$HOME/.local/opt/helium/helium" --version | awk '{print $2}')"
+	if [ "$installed" = "$latest" ]; then
+		echo "已经是最新版：$installed"
+		exit
+	fi
+	echo "更新：$installed -> $latest"
 fi
 
 echo "下载：$archive"
@@ -39,8 +39,8 @@ curl -fL "$url" -o "$tmp/helium.tar.xz"
 echo "解压并检查..."
 mkdir "$tmp/new"
 tar -xJf "$tmp/helium.tar.xz" \
-    --strip-components=1 \
-    -C "$tmp/new"
+	--strip-components=1 \
+	-C "$tmp/new"
 
 test -x "$tmp/new/helium"
 

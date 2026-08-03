@@ -64,3 +64,6 @@ shopt -s cmdhist histappend lithist
 PROMPT_COMMAND='history -a'
 
 fastfetch
+
+# opencode
+export PATH="$HOME/.opencode/bin:$PATH"

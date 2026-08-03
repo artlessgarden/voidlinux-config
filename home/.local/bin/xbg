@@ -1,8 +1,7 @@
 #!/usr/bin/env bash
+# 更新系统 + Helium 浏览器
 set -euo pipefail
-
-echo "更新 Void Linux..."
 sudo xbps-install -Syu
-
-echo "更新 Helium..."
-sh "$HOME/voidlinux-config/helium.sh"
+self=$(readlink -f "$0")
+repo=$(CDPATH= cd -- "$(dirname -- "$self")/../../.." && pwd)
+sh "$repo/90-helium.sh"

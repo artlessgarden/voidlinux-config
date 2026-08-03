@@ -2,7 +2,20 @@
 
 input {
     keyboard { repeat-delay 200; repeat-rate 30; }
-    touchpad { tap; dwt; dwtp; natural-scroll; }
+    touchpad {
+        tap
+        dwt
+        dwtp
+        natural-scroll
+        scroll-method "two-finger"
+        scroll-factor 0.85
+        accel-profile "adaptive"
+        accel-speed 0.2
+        tap-button-map "left-right-middle"
+        click-method "clickfinger"
+        drag true
+        drag-lock
+    }
     focus-follows-mouse max-scroll-amount="0%"
     workspace-auto-back-and-forth
     mouse { accel-speed 0.2; }
@@ -14,6 +27,11 @@ input {
 // readlink -f /sys/class/drm/renderD*/device/driver
 debug {
     render-drm-device "/dev/dri/renderD129"
+}
+
+cursor {
+    xcursor-theme "Adwaita"
+    xcursor-size 24
 }
 
 layout {
@@ -62,24 +80,25 @@ animations { off ;}
 // Niri 由 `dbus-run-session niri --session` 启动。
 // --session 会自行把 WAYLAND_DISPLAY 导入会话 D-Bus，这里不再重复调用
 // dbus-update-activation-environment。
-spawn-at-startup "swaybg" "-i" "/home/xiang/.config/niri/bg4.jpg"
+// 壁纸/锁屏用 spawn-sh，便于 $HOME；勿写成 spawn-at-startup "spawn-sh" …（会当成二进制名）。
+spawn-sh-at-startup "swaybg -i $HOME/.config/niri/bg4.jpg"
 spawn-at-startup "fcitx5"
-spawn-at-startup "mako"
-spawn-at-startup "swayidle" "-w" "timeout" "180" "swaylock -f -i /home/xiang/.config/niri/bg3.jpg" "timeout" "240" "niri msg action power-off-monitors"
+spawn-at-startup "swayidle" "-w" \
+    "timeout" "180" "swaylock -f -i $HOME/.config/niri/bg3.jpg" \
+    "timeout" "240" "niri msg action power-off-monitors"
 spawn-at-startup "alacritty"
 spawn-at-startup "wlsunset" "-l" "20" "-L" "100"
 
 binds {
 Mod+space repeat=false { spawn "wl-kbptr" "-o" "modes=floating,click" "-o" "mode_floating.source=detect"; }
-Mod+return repeat=false { spawn "fuzzel"; }
 Mod+Escape repeat=false { power-off-monitors; }
 
 Mod+a repeat=false { fullscreen-window; }
 Mod+s repeat=false { spawn "alacritty"; }
-Mod+d repeat=false { spawn "alacritty" "-e" "v" "+new-entry"; }
+Mod+d repeat=false { spawn "alacritty" "-e" "vis" "+new-entry"; }
 
-// Helium 也会错选 NVIDIA renderD128；指定 AMD 后首次启动和新窗口都可秒开。
-Mod+c repeat=false { spawn "/home/xiang/.local/opt/helium/helium-wrapper" "--render-node-override=/dev/dri/renderD129" "--new-window"; }
+// Helium：~/.local/bin/helium（带 AMD render override）
+Mod+c repeat=false { spawn "helium" "--new-window"; }
 Mod+v repeat=false { toggle-overview; }
 
 Mod+p repeat=false { spawn-sh "grim - | wl-copy --type image/png && wl-paste --type image/png | swappy -f -"; }
@@ -87,11 +106,6 @@ Mod+q repeat=false { spawn-sh "grim -g \"$(slurp)\" - | wl-copy --type image/png
 Mod+w repeat=false { close-window; }
 Mod+e { toggle-window-rule-opacity; }
 Mod+r repeat=false { switch-preset-column-width; }
-
-//Mod+Grave allow-inhibiting=false repeat=false { spawn "/home/xiang/.local/bin/focus-timer-control" "resume"; }
-//Mod+Alt+Grave allow-inhibiting=false repeat=false { spawn "/home/xiang/.local/bin/focus-timer-control" "pause"; }
-//Mod+1 allow-inhibiting=false repeat=false { spawn "/home/xiang/.local/bin/focus-timer-control" "music-on"; }
-//Mod+2 allow-inhibiting=false repeat=false { spawn "/home/xiang/.local/bin/focus-timer-control" "music-off"; }
 
 Mod+j  cooldown-ms=70   { focus-column-left; }
 Mod+L  cooldown-ms=70   { focus-column-right; }
@@ -110,11 +124,11 @@ Mod+o cooldown-ms=70 { consume-or-expel-window-right; }
 Mod+m {focus-monitor-next;}
 Mod+alt+m {move-column-to-monitor-next;}
 
-XF86MonBrightnessDown allow-when-locked=true { spawn "osd-brightness" "down"; }
-XF86MonBrightnessUp allow-when-locked=true { spawn "osd-brightness" "up"; }
-XF86AudioLowerVolume allow-when-locked=true { spawn "osd-volume" "down"; }
-XF86AudioRaiseVolume allow-when-locked=true { spawn "osd-volume" "up"; }
-XF86AudioMute allow-when-locked=true { spawn "osd-volume" "mute"; }
+XF86MonBrightnessDown allow-when-locked=true { spawn "brightnessctl" "set" "5%-"; }
+XF86MonBrightnessUp allow-when-locked=true { spawn "brightnessctl" "set" "5%+"; }
+XF86AudioLowerVolume allow-when-locked=true { spawn "amixer" "set" "Master" "2%-"; }
+XF86AudioRaiseVolume allow-when-locked=true { spawn "amixer" "set" "Master" "2%+"; }
+XF86AudioMute allow-when-locked=true { spawn "amixer" "set" "Master" "toggle"; }
 
 Mod+WheelScrollDown cooldown-ms=70 { focus-workspace-down; }
 Mod+WheelScrollUp   cooldown-ms=70 { focus-workspace-up; }

@@ -1,144 +1,38 @@
-# ASUS TX Air FA401KM 安装 Void Linux
+# ASUS TX Air FA401KM — Void Linux
 
-使用 Void Linux `x86_64 glibc base` 镜像安装最小 Niri 系统。
+开箱步骤见 [`flow.txt`](flow.txt)。配置风格对齐 msi-void 的编号脚本。
 
-## 1. U 盘安装
-
-启动 Base 镜像后登录：
+## void-installer 备忘
 
 ```text
-login: root
-password: voidlinux
-```
-
-运行：
-
-```sh
-void-installer
-```
-
-安装器设置：
-
-```text
+login: root / voidlinux
 Keyboard: us
-
-Network:
-  选择无线网卡 wlp99s0
-  输入 SSID
-  Encryption: wpa
-  输入 Wi-Fi 密码
-
-Source: Network
-Mirror: 选择可用且较近的镜像
+Network: wlp99s0 + WPA
 Hostname: xiangVoid
 Locale: en_US.UTF-8
 Timezone: Asia -> Bangkok
-RootPassword: 设置 root 密码
-
-UserAccount:
-  Login name: xiang
-  Display name: xiang
-  Groups: 保留默认
-
-BootLoader:
-  Disk: /dev/nvme0n1
-  Use a graphical terminal?: Yes
+User: xiang（保留默认组）
+BootLoader: /dev/nvme0n1，graphical terminal Yes
 ```
 
-分区使用现有 GPT：
+现有 GPT（勿格式化 EFI）：
 
 ```text
-/dev/nvme0n1p1  1G    已有 EFI System
-/dev/nvme0n1p4  128G  Void 根分区
+/dev/nvme0n1p1  1G    EFI  → /boot/efi  Create new filesystem: No
+/dev/nvme0n1p4  128G  Void → /           ext4，Create new filesystem: Yes
 ```
 
-`Filesystems`：
+无 swap、无单独 `/home`。Settings 里确认只有根分区是 `NEW FILESYSTEM` 再 Install。
 
-```text
-/dev/nvme0n1p4
-  Filesystem: ext4
-  Mount point: /
-  Create new filesystem: Yes
-
-/dev/nvme0n1p1
-  Filesystem: vfat
-  Mount point: /boot/efi
-  Create new filesystem: No
-```
-
-EFI 分区的 `Create new filesystem` 一定选 `No`，否则会删除已有系统的
-引导文件。不创建 swap，不单独划分 `/home`。
-
-通过 `Settings` 确认只有根分区显示 `NEW FILESYSTEM`，然后选择
-`Install` 并重启。
-
-## 2. 更新并下载配置
-
-登录普通用户后：
+## 装完后
 
 ```sh
 sudo xbps-install -Syu
 sudo xbps-install -S git
 git clone https://github.com/artlessgarden/voidlinux-config.git ~/voidlinux-config
 cd ~/voidlinux-config
+# 按 flow.txt 依次执行
 ```
 
-## 3. 配置系统
-
-运行基础配置：
-
-```sh
-sh setup.sh
-```
-
-它依次运行：
-
-```sh
-# 安装免密 sudo 规则（这里输入最后一次密码）
-sh links.sh
-sh packages.sh
-sh services.sh
-sh hardware.sh
-```
-
-- `links.sh`：将仓库配置软链接到 Home 和 `/etc/keyd`，并安装 Helium
-  默认设置及 Vimium、Violentmonkey、TWP 自动安装策略。
-- `setup.sh` 首先安装独立的 sudoers 规则，后续命令不再询问密码。
-- `packages.sh`：只安装启动 Niri 所需的基础软件。
-- `services.sh`：启用五个服务，只保留 tty1、tty2，加入 `_seatd` 组；本机
-  没有 syslog 接收器，因此用可恢复的 `log/down` 关闭各服务空转的
-  `vlogger`，服务本体不受影响。硬件和驱动问题使用 `sudo dmesg -w`
-  查看。
-- `hardware.sh`：加入本机开机参数，让 Void GRUB 直接启动 Void，并设置
-  UEFI 启动顺序；将 ASUS 电池充电上限设为 80%。
-
-## 4. 重启并启动 Niri
-
-```sh
-sudo reboot
-```
-
-电脑默认直接进入 Windows。需要进入 Void 时，开机按 `Esc`，在 ASUS
-启动菜单中选择 `void_grub`；Void GRUB 不显示菜单，立即启动 Void，然后
-登录 tty1：
-
-```sh
-ni
-```
-
-进入 Niri 后安装日常应用：
-
-```sh
-cd ~/voidlinux-config
-sh apps.sh
-sh helium.sh
-```
-
-- `apps.sh`：安装通知、启动器、截图、文件、媒体、PDF 和命令行工具。
-- `helium.sh`：下载最新正式版 Helium，验证成功后删除旧版并替换。
-
-退出并重新进入 Niri 后，Mako 等新安装的自启程序开始运行。
-
-`ni` 使用 `dbus-run-session niri --session`。Niri 和 Helium 都指定 AMD
-`renderD129`，避免默认探测 NVIDIA `renderD128` 导致启动失败或延迟。
-Niri 的自启项直接执行程序，不添加常驻的 `sh -c` 外壳。
+本机 Niri / Helium 固定 AMD `renderD129`（见 `home/.config/niri/config.kdl`）。
+默认进 Windows；Esc 选 `void_grub` 进 Void，tty1 执行 `ni`。

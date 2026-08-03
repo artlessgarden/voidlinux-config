@@ -1,0 +1,5 @@
+#!/bin/sh
+# Helium 启动入口（供 .desktop / niri 使用，路径不写死用户名）
+exec "$HOME/.local/opt/helium/helium-wrapper" \
+	--render-node-override=/dev/dri/renderD129 \
+	"$@"

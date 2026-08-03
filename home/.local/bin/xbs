@@ -1,15 +1,25 @@
 #!/usr/bin/env bash
+# 按关键词搜仓库并安装。用法: xbs fzf
 set -euo pipefail
 
-xbps-query -Rs '' |
-	awk '{printf "%-4s %s\t%s\n", "repo", $2, $2}' |
+[ "$#" -ge 1 ] || {
+	echo "用法: xbs <关键词>" >&2
+	exit 1
+}
+
+xbps-query -Rs "$*" |
+	awk '{
+		ver = $2
+		name = ver
+		sub(/-[0-9].*/, "", name)
+		print name "\t" name
+	}' |
+	sort -u |
 	fzf -q "${*:-}" --multi \
 		--delimiter=$'\t' \
 		--with-nth=1 \
+		--header='仓库搜索；Tab 多选后安装' \
 		--preview-window='right,60%,wrap' \
-		--preview 'pkgver={2}; pkg=$(xbps-uhelper getpkgname "$pkgver"); xbps-query -RS "$pkg"; printf "\nFiles:\n"; xbps-query -Rf "$pkg" 2>/dev/null' |
+		--preview 'xbps-query -R {2}' |
 	awk -F '\t' '{print $2}' |
-	while IFS= read -r pkgver; do
-		xbps-uhelper getpkgname "$pkgver"
-	done |
-	xargs -r -o sudo xbps-install
+	xargs -r -o sudo xbps-install -S
