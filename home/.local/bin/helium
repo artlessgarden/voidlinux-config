@@ -1,4 +1,2 @@
 #!/bin/sh
-exec "$HOME/.local/opt/helium/helium-wrapper" \
-	--render-node-override=/dev/dri/renderD129 \
-	"$@"
+exec "$HOME/.local/opt/helium/helium-wrapper" "$@"

@@ -7,6 +7,8 @@ sudo install -o root -g root -m 440 etc/sudoers.d/xiang-nopasswd /etc/sudoers.d/
 sudo sh 10-set-hosts.sh
 # 若 void-installer / 装机时已设 Fastly+nonfree，可跳过 15（会写入磁盘并保留）
 sh 15-xbps-repos.sh
+sh 16-ignore-unused.sh
+# 忽略本机用不上的固件/FS 工具 + blacklist nouveau
 sh 20-pkg-base.sh
 sh 30-keyd.sh
 sh 40-sv-base.sh
