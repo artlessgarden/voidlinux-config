@@ -50,4 +50,11 @@ mkdir -p "$HOME/.local/opt"
 rm -rf "$opt"
 mv "$tmp/new" "$opt"
 
+# 开箱 UI/主题（与 etc/helium/initial_preferences 同步）
+seed="$HOME/voidlinux-config/etc/helium/initial_preferences"
+if [ -f "$seed" ]; then
+	cp -f "$seed" "$opt/initial_preferences"
+	cp -f "$seed" "$opt/master_preferences"
+fi
+
 echo "Helium 更新完成。"
