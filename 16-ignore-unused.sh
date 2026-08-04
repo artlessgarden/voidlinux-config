@@ -15,6 +15,7 @@ sudo xbps-remove -Ry \
 	linux-firmware-intel \
 	linux-firmware-nvidia \
 	linux-firmware-broadcom \
+	alsa-firmware \
 	wifi-firmware \
 	ipw2100-firmware \
 	ipw2200-firmware \
@@ -29,6 +30,7 @@ cat /etc/xbps.d/20-ignore.conf
 echo '==== still installed? (should be empty) ===='
 for p in \
 	linux-firmware-intel linux-firmware-nvidia linux-firmware-broadcom \
+	alsa-firmware \
 	wifi-firmware ipw2100-firmware ipw2200-firmware zd1211-firmware \
 	btrfs-progs xfsprogs f2fs-tools
 do
