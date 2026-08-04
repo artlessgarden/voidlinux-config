@@ -1,5 +1,5 @@
 #!/bin/sh
-# 下载/更新 Helium 到 ~/.local/opt/helium（策略文件在 70-link-apps.sh）
+# 下载/更新 Helium 到 ~/.local/opt/helium
 set -e
 
 if ! command -v xz >/dev/null; then
@@ -7,6 +7,7 @@ if ! command -v xz >/dev/null; then
 	exit 1
 fi
 
+opt=$HOME/.local/opt/helium
 api="https://api.github.com/repos/imputnet/helium-linux/releases/latest"
 tmp="$(mktemp -d)"
 trap 'rm -rf "$tmp"' EXIT
@@ -24,8 +25,8 @@ archive="${url##*/}"
 latest="${archive#helium-}"
 latest="${latest%-x86_64_linux.tar.xz}"
 
-if [ -x "$HOME/.local/opt/helium/helium" ]; then
-	installed="$("$HOME/.local/opt/helium/helium" --version | awk '{print $2}')"
+if [ -x "$opt/helium" ]; then
+	installed="$("$opt/helium" --version | awk '{print $2}')"
 	if [ "$installed" = "$latest" ]; then
 		echo "已经是最新版：$installed"
 		exit
@@ -46,7 +47,7 @@ test -x "$tmp/new/helium"
 
 echo "替换旧版本..."
 mkdir -p "$HOME/.local/opt"
-rm -rf "$HOME/.local/opt/helium"
-mv "$tmp/new" "$HOME/.local/opt/helium"
+rm -rf "$opt"
+mv "$tmp/new" "$opt"
 
 echo "Helium 更新完成。"

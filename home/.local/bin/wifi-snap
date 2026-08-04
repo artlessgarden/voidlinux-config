@@ -1,0 +1,29 @@
+#!/bin/sh
+# Snapshot Wi-Fi / kernel crumbs for idle-drop debugging.
+# Usage: wifi-snap [tag]
+tag=${1:-manual}
+iface=${WIFI_IFACE:-wlp99s0}
+dir=${XDG_STATE_HOME:-$HOME/.local/state}/wifi-watch
+mkdir -p "$dir"
+log=$dir/$(date +%Y-%m).log
+
+{
+	printf '===== %s  %s =====\n' "$(date -Iseconds)" "$tag"
+	printf 'wpa_cli:\n'
+	wpa_cli -i "$iface" status 2>&1 || true
+	printf '\nip:\n'
+	ip -br link show "$iface" 2>&1 || true
+	ip -br addr show "$iface" 2>&1 || true
+	printf '\niw link / power_save:\n'
+	iw dev "$iface" link 2>&1 || true
+	iw dev "$iface" get power_save 2>&1 || true
+	printf '\nrfkill:\n'
+	rfkill list wifi 2>&1 || true
+	printf '\ndmesg (wifi-related, last 40):\n'
+	dmesg -T 2>/dev/null | grep -iE 'iwlwifi|wlp99|wlan|firmware|802\.11' | tail -40 \
+		|| sudo dmesg -T 2>/dev/null | grep -iE 'iwlwifi|wlp99|wlan|firmware|802\.11' | tail -40 \
+		|| true
+	printf '\n'
+} >>"$log" 2>&1
+
+printf 'wifi-snap: wrote %s (%s)\n' "$log" "$tag" >&2

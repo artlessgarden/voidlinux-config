@@ -1,0 +1,48 @@
+#!/bin/sh
+# 网挂了、没法聊天时：把证据打到磁盘，重启联网后再把目录/压缩包发出来。
+# 用法: wifi-bugsave
+set -eu
+tag=${1:-broken}
+stamp=$(date +%Y%m%d-%H%M%S)
+out=$HOME/wifi-bug-$stamp
+mkdir -p "$out"
+
+wifi-snap "$tag" || true
+
+watch=${XDG_STATE_HOME:-$HOME/.local/state}/wifi-watch
+if [ -d "$watch" ]; then
+	cp -a "$watch/." "$out/wifi-watch/" 2>/dev/null || true
+fi
+
+{
+	printf '===== host =====\n'
+	date -Iseconds
+	uname -a
+	uptime
+	printf '\n===== wpa =====\n'
+	wpa_cli -i wlp99s0 status 2>&1 || true
+	wpa_cli -i wlp99s0 list_networks 2>&1 || true
+	printf '\n===== link =====\n'
+	ip -br link 2>&1 || true
+	ip -br addr 2>&1 || true
+	iw dev wlp99s0 link 2>&1 || true
+	iw dev wlp99s0 get power_save 2>&1 || true
+	rfkill list 2>&1 || true
+	printf '\n===== procs =====\n'
+	ps aux 2>/dev/null | grep -E 'wpa|dhcpcd|iwd|NetworkManager' | grep -v grep || true
+	printf '\n===== sv =====\n'
+	sv status wpa_supplicant dhcpcd 2>&1 || sudo sv status wpa_supplicant dhcpcd 2>&1 || true
+} >"$out/summary.txt" 2>&1
+
+sudo sh -c "
+	dmesg -T >'$out/dmesg.txt' 2>&1 || true
+	tail -n 500 /var/log/socklog/daemon/current >'$out/socklog-daemon.txt' 2>/dev/null || true
+	tail -n 500 /var/log/socklog/kernel/current >'$out/socklog-kernel.txt' 2>/dev/null || true
+	tail -n 200 /var/log/socklog/everything/current >'$out/socklog-everything.txt' 2>/dev/null || true
+	cp -a /etc/modprobe.d/iwlwifi.conf '$out/' 2>/dev/null || true
+	cp -a /etc/zzz.d/resume/10-wifi '$out/' 2>/dev/null || true
+" 2>/dev/null || true
+
+tar -C "$HOME" -czf "$out.tar.gz" "$(basename "$out")" 2>/dev/null || true
+
+printf '\n已保存（重启后联网再发这个路径即可）:\n  %s\n  %s\n' "$out" "$out.tar.gz"

@@ -75,17 +75,18 @@ layer-rule {
 }
 
 gestures { hot-corners { off; };}
-animations { off ;}
+//animations { off ;}
 
 // Niri 由 `dbus-run-session niri --session` 启动。
 // --session 会自行把 WAYLAND_DISPLAY 导入会话 D-Bus，这里不再重复调用
 // dbus-update-activation-environment。
-// 壁纸/锁屏用 spawn-sh，便于 $HOME；勿写成 spawn-at-startup "spawn-sh" …（会当成二进制名）。
-spawn-sh-at-startup "swaybg -i $HOME/.config/niri/bg4.jpg"
+// niri spawn 不展开参数里的 $HOME/~，壁纸路径写绝对。
+spawn-at-startup "swaybg" "-i" "/home/xiang/.config/niri/bg4.jpg"
 spawn-at-startup "fcitx5"
 spawn-at-startup "swayidle" "-w" \
-    "timeout" "180" "swaylock -f -i $HOME/.config/niri/bg3.jpg" \
-    "timeout" "240" "niri msg action power-off-monitors"
+    "timeout" "180" "wifi-idle-lock" \
+    "timeout" "240" "wifi-monitors-off" \
+    "after-resume" "wifi-snap after-resume"
 spawn-at-startup "alacritty"
 spawn-at-startup "wlsunset" "-l" "20" "-L" "100"
 
@@ -97,7 +98,6 @@ Mod+a repeat=false { fullscreen-window; }
 Mod+s repeat=false { spawn "alacritty"; }
 Mod+d repeat=false { spawn "alacritty" "-e" "vis" "+new-entry"; }
 
-// Helium：~/.local/bin/helium（带 AMD render override）
 Mod+c repeat=false { spawn "helium" "--new-window"; }
 Mod+v repeat=false { toggle-overview; }
 
@@ -124,8 +124,8 @@ Mod+o cooldown-ms=70 { consume-or-expel-window-right; }
 Mod+m {focus-monitor-next;}
 Mod+alt+m {move-column-to-monitor-next;}
 
-XF86MonBrightnessDown allow-when-locked=true { spawn "brightnessctl" "set" "5%-"; }
-XF86MonBrightnessUp allow-when-locked=true { spawn "brightnessctl" "set" "5%+"; }
+XF86MonBrightnessDown allow-when-locked=true { spawn "brightnessctl" "set" "2%-"; }
+XF86MonBrightnessUp allow-when-locked=true { spawn "brightnessctl" "set" "2%+"; }
 XF86AudioLowerVolume allow-when-locked=true { spawn "amixer" "set" "Master" "2%-"; }
 XF86AudioRaiseVolume allow-when-locked=true { spawn "amixer" "set" "Master" "2%+"; }
 XF86AudioMute allow-when-locked=true { spawn "amixer" "set" "Master" "toggle"; }
