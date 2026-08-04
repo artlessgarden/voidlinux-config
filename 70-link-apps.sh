@@ -39,14 +39,14 @@ ln -sfn "$h/.local/share/applications/vis.desktop" \
 ln -sf "$h/.local/share/fcitx5/rime/"* "$HOME/.local/share/fcitx5/rime/"
 
 # 浏览器策略必须由 root 管理，不能链接到用户可写的仓库。
-# 全部放 recommended：默认开箱，用户可在设置里改掉。
+# recommended：可改的默认；managed：扩展强制安装/钉栏。
 sudo install -d -o root -g root -m 755 \
 	/etc/chromium/policies/managed \
 	/etc/chromium/policies/recommended
-sudo rm -f /etc/chromium/policies/managed/extensions.json
+sudo rm -f /etc/chromium/policies/recommended/extensions.json
 sudo install -o root -g root -m 644 \
-	"$dir/etc/chromium/policies/recommended/extensions.json" \
-	/etc/chromium/policies/recommended/extensions.json
+	"$dir/etc/chromium/policies/managed/extensions.json" \
+	/etc/chromium/policies/managed/extensions.json
 sudo install -o root -g root -m 644 \
 	"$dir/etc/chromium/policies/recommended/helium.json" \
 	/etc/chromium/policies/recommended/helium.json
