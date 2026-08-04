@@ -75,7 +75,7 @@ layer-rule {
 }
 
 gestures { hot-corners { off; };}
-//animations { off ;}
+animations { off ;}
 
 // Niri 由 `dbus-run-session niri --session` 启动。
 // --session 会自行把 WAYLAND_DISPLAY 导入会话 D-Bus，这里不再重复调用
