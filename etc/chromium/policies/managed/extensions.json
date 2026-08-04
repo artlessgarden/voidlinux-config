@@ -17,7 +17,7 @@
     "gkkkcomfmldkigajkmljnbpiajbpbgdg": {
       "installation_mode": "normal_installed",
       "update_url": "https://clients2.google.com/service/update2/crx?prodversion=9999.0.0.0",
-      "toolbar_pin": "default_unpinned"
+      "toolbar_pin": "force_pinned"
     }
   }
 }
