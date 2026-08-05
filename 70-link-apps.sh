@@ -12,7 +12,7 @@ mkdir -p \
 	"$HOME/.local/share/fcitx5/rime"
 
 ln -sfn "$h/.npmrc" "$HOME/.npmrc"
-ln -sfnT "$h/.config/alacritty" "$HOME/.config/alacritty"
+ln -sfnT "$h/.config/foot" "$HOME/.config/foot"
 ln -sfnT "$h/.config/fd" "$HOME/.config/fd"
 ln -sfnT "$h/.config/lf" "$HOME/.config/lf"
 ln -sfnT "$h/.config/vis" "$HOME/.config/vis"

@@ -48,11 +48,33 @@ map <enter> open
 map a :push %touch<space>
 map A :push %mkdir<space>
 
+# 回收站（Freedesktop / gio → ~/.local/share/Trash）
+# D 丢进回收站；gT 打开；U 恢复当前项；gE 清空（需确认）
+# 永久删仍用 :delete
 cmd trash ${{
 	set -f
 	gio trash -- $fx
 }}
 map D trash
+
+map gT cd ~/.local/share/Trash/files
+
+cmd trash-restore ${{
+	set -f
+	for path in $fx; do
+		base=${path##*/}
+		gio trash --restore "trash:///$base" || printf '无法恢复: %s\n' "$base"
+	done
+}}
+map U trash-restore
+
+cmd trash-empty ${{
+	printf '清空回收站？[y/N] '
+	read ans
+	[ "$ans" = y ] || [ "$ans" = Y ] || exit 0
+	gio trash --empty
+}}
+map gE trash-empty
 
 # 门户选目录用（写 XDG 路径；quit 在 map 里链式调用）
 cmd portal-accept ${{

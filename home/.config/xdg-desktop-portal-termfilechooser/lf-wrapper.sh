@@ -14,7 +14,7 @@ debug=$6
 
 [ "$debug" = 1 ] && set -x
 
-termcmd=${TERMCMD:-alacritty --title termfilechooser -e}
+termcmd=${TERMCMD:-foot -T termfilechooser}
 
 if [ "$directory" = 1 ]; then
 	export LF_XDG_OUT=$out

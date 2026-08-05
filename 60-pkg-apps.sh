@@ -4,6 +4,6 @@
 sudo xbps-install -S \
 	imv mpv zathura-pdf-poppler \
 	grim slurp satty wl-kbptr niri-float-sticky \
-	xdg-desktop-portal-termfilechooser xdg-utils lf bat chafa ripgrep \
+	xdg-desktop-portal-termfilechooser xdg-utils lf bat ripgrep \
 	curl fd fzf htop vis xz \
 	nss nspr

@@ -5,7 +5,7 @@ set -eu
 info=$(
 	niri msg -j windows 2>/dev/null |
 		tr '{' '\n' |
-		grep '"title":"sticky","app_id":"Alacritty"' |
+		grep '"title":"sticky","app_id":"foot"' |
 		head -n 1
 ) || true
 
@@ -23,4 +23,4 @@ fi
 
 mkdir -p "$HOME/notes"
 touch "$HOME/notes/sticky"
-exec alacritty -o window.dynamic_title=false -T sticky -e vis "$HOME/notes/sticky"
+exec foot -T sticky vis "$HOME/notes/sticky"

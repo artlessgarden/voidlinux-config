@@ -52,7 +52,7 @@ window-rule { open-floating false; }
 
 // xdg-desktop-portal-termfilechooser：浮动选文件窗口（title=termfilechooser）
 window-rule {
-    match app-id="^Alacritty$" title="^termfilechooser$"
+    match app-id="^foot$" title="^termfilechooser$"
     open-floating true
     open-focused true
     default-column-width { fixed 960; }
@@ -61,7 +61,7 @@ window-rule {
 
 // Mod+n 便签：右上角浮动，niri-float-sticky 跨 workspace
 window-rule {
-    match app-id="^Alacritty$" title="^sticky$"
+    match app-id="^foot$" title="^sticky$"
     open-floating true
     open-focused true
     default-column-width { fixed 480; }
@@ -94,7 +94,7 @@ spawn-at-startup "swayidle" "-w" \
     "timeout" "180" "wifi-idle-lock" \
     "timeout" "240" "wifi-monitors-off" \
     "after-resume" "wifi-snap after-resume"
-spawn-at-startup "alacritty"
+spawn-at-startup "foot"
 spawn-at-startup "wlsunset" "-l" "20" "-L" "100"
 // 只把 title=sticky 的浮动窗钉在所有 workspace（配合 Mod+n 便签）
 spawn-at-startup "niri-float-sticky" "-title" "^sticky$"
@@ -102,8 +102,8 @@ spawn-at-startup "niri-float-sticky" "-title" "^sticky$"
 binds {
 Mod+w repeat=false { spawn "wl-kbptr" "-o" "modes=floating,click" "-o" "mode_floating.source=detect"; }
 Mod+escape repeat=false { power-off-monitors; }
-Mod+a repeat=false { spawn "alacritty"; }
-Mod+x repeat=false { spawn "alacritty" "-e" "vis" "+new-entry"; }
+Mod+a repeat=false { spawn "foot"; }
+Mod+x repeat=false { spawn "foot" "vis" "+new-entry"; }
 Mod+c repeat=false { spawn "helium" "--new-window"; }
 Mod+v repeat=false { toggle-overview; }
 Mod+p repeat=false { spawn-sh "grim -g \"$(slurp)\" - | satty -f - --copy-command wl-copy --early-exit copy"; }

@@ -3,7 +3,7 @@
 sudo xbps-install -Syu
 sudo xbps-install -S \
 	mesa-dri mesa-vaapi \
-	niri alacritty dbus seatd \
+	niri foot dbus seatd \
 	swaybg swayidle swaylock wlsunset wl-clipboard brightnessctl \
 	fcitx5 fcitx5-rime \
 	alsa-utils keyd \

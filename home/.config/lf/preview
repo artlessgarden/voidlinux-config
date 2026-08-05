@@ -1,5 +1,5 @@
 #!/bin/sh
-# lf 预览（无目录预览；Alacritty 下图片用 chafa symbols）
+# lf 预览
 # $1 path  $2 w  $3 h
 path=$1
 w=${2:-80}
@@ -31,11 +31,9 @@ application/x-sh|application/x-shellscript|inode/x-empty)
 		|| sed -n "1,${h}p" -- "$path"
 	;;
 image/*)
-	chafa -f symbols -s "${w}x${h}" --animate off --polite on -- "$path" 2>/dev/null \
-		|| file -Lb -- "$path"
+	file -Lb -- "$path"
 	;;
 video/*|audio/*)
-	# 有 mediainfo 更详；否则 file
 	mediainfo -- "$path" 2>/dev/null || file -Lb -- "$path"
 	;;
 application/pdf)
