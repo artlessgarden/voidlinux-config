@@ -32,6 +32,12 @@ shopt -s checkwinsize
 export EDITOR=vis
 export VISUAL=vis
 
+# lf：退出后 shell 留在上次浏览的目录（桌面入口仍直接调 /usr/bin/lf）
+lfcd() {
+	cd "$(command lf -print-last-dir "$@")" || return
+}
+alias lf=lfcd
+
 alias ld='ls -Alh --color=auto'
 alias cx='chmod +x'
 alias gl='git clone --depth=1'
@@ -64,6 +70,3 @@ shopt -s cmdhist histappend lithist
 PROMPT_COMMAND='history -a'
 
 fastfetch
-
-# opencode
-export PATH="$HOME/.opencode/bin:$PATH"

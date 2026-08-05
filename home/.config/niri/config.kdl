@@ -50,11 +50,13 @@ prefer-no-csd
 hotkey-overlay { skip-at-startup; }
 window-rule { open-floating false; }
 
-// xdg-desktop-portal-termfilechooser 使用这个标题启动 Alacritty。
+// xdg-desktop-portal-termfilechooser：浮动选文件窗口（title=termfilechooser）
 window-rule {
     match app-id="^Alacritty$" title="^termfilechooser$"
     open-floating true
     open-focused true
+    default-column-width { fixed 960; }
+    default-window-height { fixed 720; }
 }
 
 // Mod+n 便签：右上角浮动，niri-float-sticky 跨 workspace

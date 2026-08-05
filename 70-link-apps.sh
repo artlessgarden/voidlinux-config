@@ -19,6 +19,7 @@ ln -sfnT "$h/.config/vis" "$HOME/.config/vis"
 ln -sfnT "$h/.config/wl-kbptr" "$HOME/.config/wl-kbptr"
 ln -sfnT "$h/.config/fontconfig" "$HOME/.config/fontconfig"
 ln -sfnT "$h/.config/htop" "$HOME/.config/htop"
+ln -sfnT "$h/.config/mpv" "$HOME/.config/mpv"
 ln -sfnT "$h/.config/xdg-desktop-portal" "$HOME/.config/xdg-desktop-portal"
 ln -sfnT "$h/.config/xdg-desktop-portal-termfilechooser" \
 	"$HOME/.config/xdg-desktop-portal-termfilechooser"

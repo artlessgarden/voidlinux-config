@@ -1,0 +1,49 @@
+#!/bin/sh
+# lf 预览（无目录预览；Alacritty 下图片用 chafa symbols）
+# $1 path  $2 w  $3 h
+path=$1
+w=${2:-80}
+h=${3:-40}
+
+[ -f "$path" ] || [ -L "$path" ] || exit 0
+[ -d "$path" ] && exit 0
+
+ext=${path##*.}
+ext=$(printf '%s' "$ext" | tr '[:upper:]' '[:lower:]')
+mime=$(file --mime-type -Lb -- "$path" 2>/dev/null) || mime=
+
+case $ext in
+7z|bz|bz2|gz|lz|lz4|lzma|rar|tar|tbz|tbz2|tgz|tlz|txz|xz|zst|zip)
+	tar -tvf "$path" 2>/dev/null || unzip -l "$path" 2>/dev/null || file -Lb -- "$path"
+	exit 0
+	;;
+pdf)
+	pdftotext -l 2 -nopgbrk -q -- "$path" - 2>/dev/null | sed -n "1,${h}p" && exit 0
+	file -Lb -- "$path"
+	exit 0
+	;;
+esac
+
+case $mime in
+text/*|application/json|application/xml|application/javascript|\
+application/x-sh|application/x-shellscript|inode/x-empty)
+	bat --color=always --style=plain --paging=never --line-range ":$h" -- "$path" 2>/dev/null \
+		|| sed -n "1,${h}p" -- "$path"
+	;;
+image/*)
+	chafa -f symbols -s "${w}x${h}" --animate off --polite on -- "$path" 2>/dev/null \
+		|| file -Lb -- "$path"
+	;;
+video/*|audio/*)
+	# 有 mediainfo 更详；否则 file
+	mediainfo -- "$path" 2>/dev/null || file -Lb -- "$path"
+	;;
+application/pdf)
+	pdftotext -l 2 -nopgbrk -q -- "$path" - 2>/dev/null | sed -n "1,${h}p" \
+		|| file -Lb -- "$path"
+	;;
+*)
+	file -Lb -- "$path"
+	;;
+esac
+exit 0

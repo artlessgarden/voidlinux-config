@@ -1,7 +1,7 @@
 #!/bin/sh
 
-# xdg-desktop-portal-termfilechooser wrapper for lf.
-# Keep navigation on l/right, and use Enter as the explicit confirmation key.
+# 门户：选文件用 -selection-path（对文件按 Enter/l 即确认）
+# 选目录：Enter = 确认高亮文件夹并退出；l = 仍进入子目录
 
 set -eu
 
@@ -15,20 +15,19 @@ debug=$6
 [ "$debug" = 1 ] && set -x
 
 termcmd=${TERMCMD:-alacritty --title termfilechooser -e}
-file_config=$HOME/.config/lf/xdg-file.lfrc
-directory_config=$HOME/.config/lf/xdg-directory.lfrc
 
 if [ "$directory" = 1 ]; then
-    export LF_XDG_OUT=$out
-    set -- -single -config "$directory_config" "$path"
+	export LF_XDG_OUT=$out
+	set -- -single -command 'map <enter> :{{ portal-accept; quit }}' "$path"
 else
-    set -- -single -config "$file_config" -selection-path "$out" "$path"
+	unset LF_XDG_OUT || true
+	set -- -single -selection-path "$out" "$path"
 fi
 
 command="$termcmd lf"
 for arg in "$@"; do
-    escaped=$(printf '%s' "$arg" | sed 's/"/\\"/g')
-    command="$command \"$escaped\""
+	escaped=$(printf '%s' "$arg" | sed 's/"/\\"/g')
+	command="$command \"$escaped\""
 done
 
 sh -c "$command"
