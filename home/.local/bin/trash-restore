@@ -1,0 +1,67 @@
+#!/bin/sh
+# 从 Freedesktop 回收站恢复文件（gio trash --restore 需要 gvfs，这里自己读 .trashinfo）
+# 用法：trash-restore ~/.local/share/Trash/files/名字 ...
+set -eu
+
+trash=${XDG_DATA_HOME:-$HOME/.local/share}/Trash
+
+if [ $# -eq 0 ]; then
+	printf '用法: trash-restore <回收站中的文件>...\n' >&2
+	exit 1
+fi
+
+# trashinfo 里的 Path 是百分号编码
+decode() {
+	printf '%s' "$1" | awk '{
+		out = ""
+		while (match($0, /%[0-9A-Fa-f][0-9A-Fa-f]/)) {
+			out = out substr($0, 1, RSTART - 1)
+			out = out sprintf("%c", strtonum("0x" substr($0, RSTART + 1, 2)))
+			$0 = substr($0, RSTART + RLENGTH)
+		}
+		printf "%s%s", out, $0
+	}'
+}
+
+status=0
+for arg; do
+	name=${arg##*/}
+	file=$trash/files/$name
+	info=$trash/info/$name.trashinfo
+
+	if [ ! -e "$file" ]; then
+		printf '不在回收站: %s\n' "$name" >&2
+		status=1
+		continue
+	fi
+	if [ ! -f "$info" ]; then
+		printf '缺少 trashinfo: %s\n' "$name" >&2
+		status=1
+		continue
+	fi
+
+	orig=$(sed -n 's/^Path=//p' "$info" | head -n 1)
+	if [ -z "$orig" ]; then
+		printf '读不到原路径: %s\n' "$name" >&2
+		status=1
+		continue
+	fi
+	orig=$(decode "$orig")
+	case $orig in
+	/*) ;;
+	*) orig=$HOME/$orig ;;
+	esac
+
+	if [ -e "$orig" ]; then
+		printf '目标已存在，跳过: %s\n' "$orig" >&2
+		status=1
+		continue
+	fi
+
+	mkdir -p -- "$(dirname -- "$orig")"
+	mv -- "$file" "$orig"
+	rm -f -- "$info"
+	printf '已恢复: %s\n' "$orig"
+done
+
+exit "$status"

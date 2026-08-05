@@ -59,21 +59,13 @@ map D trash
 
 map gT cd ~/.local/share/Trash/files
 
-cmd trash-restore ${{
+cmd trash-restore !{{
 	set -f
-	for path in $fx; do
-		base=${path##*/}
-		gio trash --restore "trash:///$base" || printf '无法恢复: %s\n' "$base"
-	done
+	trash-restore $fx
 }}
 map U trash-restore
 
-cmd trash-empty ${{
-	printf '清空回收站？[y/N] '
-	read ans
-	[ "$ans" = y ] || [ "$ans" = Y ] || exit 0
-	gio trash --empty
-}}
+cmd trash-empty !trash-empty
 map gE trash-empty
 
 # 门户选目录用（写 XDG 路径；quit 在 map 里链式调用）
