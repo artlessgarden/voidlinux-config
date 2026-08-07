@@ -41,12 +41,11 @@ cd ~/voidlinux-config
 
 | 键 | 作用 |
 |---|---|
-| `,t` | Google 网页译（快） |
 | `,p` | 离线学习页（原文/译文/双语）→ `~/Documents/qute-learn/` |
-| `,y` / `,T` | 选区：顶栏 / Google 译文字页 |
-| `,e` | hint 译整段元素 |
+| `,e` | hint：在元素下方实时插入译文 |
+| `,y` | 选区 → 底栏 + 剪贴板 |
 | Esc | 回 normal 并切英文键盘（fcitx5） |
 
-可选：`export QUTE_DEEPL_KEY='…:fx'` 让 `,p` 走 DeepL 官方 API。  
+可选：`export QUTE_DEEPL_KEY='…:fx'` 走 DeepL，否则用 Google gtx。  
 广告：EasyList + China + Fanboy Annoyance（`python3-adblock`）。  
 油猴：`~/.config/qutebrowser/greasemonkey/`（如 bilibili-ip）。

@@ -1,31 +1,106 @@
-#!/bin/sh
-# 选中文本 → translate-shell 行内结果（message + 剪贴板）
-# 依赖: translate-shell (trans)
-set -eu
+#!/usr/bin/env python3
+"""选区翻译 → 底栏 + 剪贴板。用 gtx/DeepL，不用 trans。"""
+from __future__ import annotations
 
-text=${QUTE_SELECTED_TEXT:-}
-if [ -z "$text" ]; then
-	printf 'message-warning "没有选中文本（先用 v 或鼠标选中）"\n' >>"$QUTE_FIFO"
-	exit 0
-fi
+import json
+import os
+import subprocess
+import sys
+import urllib.error
+import urllib.parse
+import urllib.request
 
-tl=${QUTE_TRANS_TARGET:-zh}
-# -b：只要译文；失败时提示
-out=$(printf '%s' "$text" | trans -b -no-auto ":$tl" 2>/dev/null) || out=
+FIFO = os.environ["QUTE_FIFO"]
+TEXT = os.environ.get("QUTE_SELECTED_TEXT", "").strip()
+TL_RAW = os.environ.get("QUTE_TRANS_TARGET", "zh")
+TL = {"zh": "zh-CN", "zh-cn": "zh-CN", "zh_CN": "zh-CN"}.get(TL_RAW, TL_RAW)
+DEEPL_KEY = (
+    os.environ.get("QUTE_DEEPL_KEY") or os.environ.get("DEEPL_AUTH_KEY") or ""
+).strip()
 
-if [ -z "$out" ]; then
-	printf 'message-error "翻译失败（检查网络或 trans）"\n' >>"$QUTE_FIFO"
-	exit 0
-fi
 
-# 单行展示；过长截断
-summary=$(printf '%s' "$out" | tr '\n' ' ' | cut -c1-400)
-# 转义给 message-info 用的双引号
-esc=$(printf '%s' "$summary" | sed 's/\\/\\\\/g; s/"/\\"/g')
-printf 'message-info "译: %s"\n' "$esc" >>"$QUTE_FIFO"
+def cmd(msg: str) -> None:
+    with open(FIFO, "a", encoding="utf-8") as f:
+        f.write(msg.rstrip() + "\n")
 
-# 全文进剪贴板（方便长文）
-if command -v wl-copy >/dev/null 2>&1; then
-	printf '%s' "$out" | wl-copy
-	printf 'message-info "全文已复制到剪贴板"\n' >>"$QUTE_FIFO"
-fi
+
+def warn(msg: str) -> None:
+    esc = msg.replace("\\", "\\\\").replace('"', '\\"')
+    cmd(f'message-warning "{esc}"')
+
+
+def info(msg: str) -> None:
+    esc = msg.replace("\\", "\\\\").replace('"', '\\"')
+    cmd(f'message-info "{esc}"')
+
+
+def translate(text: str) -> str:
+    try:
+        if DEEPL_KEY:
+            target = "ZH" if TL.lower().startswith("zh") else TL.upper()[:5]
+            endpoint = (
+                "https://api-free.deepl.com/v2/translate"
+                if DEEPL_KEY.endswith(":fx")
+                else "https://api.deepl.com/v2/translate"
+            )
+            body = urllib.parse.urlencode(
+                {
+                    "auth_key": DEEPL_KEY,
+                    "target_lang": target,
+                    "preserve_formatting": "1",
+                    "text": text,
+                }
+            ).encode("utf-8")
+            req = urllib.request.Request(
+                endpoint,
+                data=body,
+                headers={
+                    "User-Agent": "qute-learn/1.0",
+                    "Content-Type": "application/x-www-form-urlencoded",
+                },
+                method="POST",
+            )
+            with urllib.request.urlopen(req, timeout=60) as resp:
+                payload = json.loads(resp.read().decode("utf-8", errors="replace"))
+            outs = payload.get("translations") or []
+            return (outs[0].get("text") if outs else "").strip()
+
+        qs = urllib.parse.urlencode(
+            {"client": "gtx", "sl": "auto", "tl": TL, "dt": "t", "q": text}
+        )
+        req = urllib.request.Request(
+            "https://translate.googleapis.com/translate_a/single?" + qs,
+            headers={"User-Agent": "Mozilla/5.0"},
+            method="GET",
+        )
+        with urllib.request.urlopen(req, timeout=30) as resp:
+            data = json.loads(resp.read().decode("utf-8", errors="replace"))
+        parts = data[0] or []
+        return "".join(p[0] for p in parts if p and p[0]).strip()
+    except (urllib.error.URLError, TimeoutError, json.JSONDecodeError, ValueError) as e:
+        warn(f"翻译失败: {e}")
+        return ""
+
+
+def main() -> int:
+    if not TEXT:
+        warn("没有选中文本（先用 v 或鼠标选中）")
+        return 0
+    info("翻译中…")
+    out = translate(TEXT)
+    if not out:
+        warn("翻译结果为空")
+        return 0
+    summary = " ".join(out.splitlines())[:400]
+    esc = summary.replace("\\", "\\\\").replace('"', '\\"')
+    cmd(f'message-info "译: {esc}"')
+    try:
+        subprocess.run(["wl-copy"], input=out, text=True, check=False, timeout=5)
+        info("全文已复制到剪贴板")
+    except (OSError, subprocess.TimeoutExpired):
+        pass
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

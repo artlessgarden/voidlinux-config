@@ -6,4 +6,4 @@ sudo xbps-install -S \
 	grim slurp satty wl-kbptr niri-float-sticky \
 	xdg-desktop-portal-termfilechooser xdg-utils lf bat chafa ripgrep \
 	curl fd fzf htop vis xz \
-	qutebrowser python3-adblock translate-shell
+	qutebrowser python3-adblock

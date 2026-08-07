@@ -68,17 +68,13 @@ c.content.blocking.adblock.lists = [
 # 译文 file:// 页拉原站 CSS/图（,p 用）
 c.content.local_content_can_access_remote_urls = True
 
-# 翻译
-# ,t  Google 网页译（快）
-# ,p  离线学习页：原文/译文/双语；默认 gtx，设 QUTE_DEEPL_KEY 则用 DeepL 官方
-# ,y  选区 → 顶栏
-# ,T  选区 → Google 译文字页
-# ,e  hint 译元素
-config.bind(",t", "spawn --userscript translate")
+# 翻译（gtx；有 QUTE_DEEPL_KEY 则 DeepL）
+# ,p  离线学习页 → ~/Documents/qute-learn/
+# ,e  hint：元素下方实时插译文
+# ,y  选区 → 底栏 + 剪贴板
 config.bind(",p", "spawn --userscript translate-page")
-config.bind(",y", "spawn --userscript translate-inline")
-config.bind(",T", "spawn --userscript translate --text")
 config.bind(",e", "hint text userscript translate-element")
+config.bind(",y", "spawn --userscript translate-inline")
 config.bind(";t", "hint inputs")
 
 c.hints.selectors["text"] = [
