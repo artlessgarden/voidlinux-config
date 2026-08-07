@@ -1,0 +1,68 @@
+#!/usr/bin/env python3
+"""hint 文本元素 → 选中其文首并进入 caret（不再拆词）。"""
+from __future__ import annotations
+
+import json
+import os
+import time
+
+FIFO = os.environ["QUTE_FIFO"]
+TEXT = os.environ.get("QUTE_SELECTED_TEXT", "").strip()
+
+
+def cmd(msg: str) -> None:
+    with open(FIFO, "a", encoding="utf-8") as f:
+        f.write(msg.rstrip() + "\n")
+
+
+def main() -> int:
+    if not TEXT:
+        cmd('message-warning "未选中文本元素"')
+        return 0
+
+    # 用 hint 给出的原文定位元素；选中至少 1 字再进 caret（否则会跳到页首）
+    js = f"""
+(function() {{
+  const orig = {json.dumps(TEXT)};
+  const all = Array.from(document.querySelectorAll("body *")).filter((el) => {{
+    if (el.closest && el.closest(".qute-live-trans")) return false;
+    return (el.innerText || "").trim() === orig;
+  }});
+  let best = all.find((el) => !all.some((o) => o !== el && el.contains(o))) || all[0];
+  if (!best) return "miss";
+
+  const walker = document.createTreeWalker(best, NodeFilter.SHOW_TEXT, {{
+    acceptNode(n) {{
+      return n.nodeValue && /\\S/.test(n.nodeValue)
+        ? NodeFilter.FILTER_ACCEPT
+        : NodeFilter.FILTER_REJECT;
+    }},
+  }});
+  const tn = walker.nextNode();
+  if (!tn) return "no-text";
+
+  const start = tn.nodeValue.search(/\\S/);
+  const i = start < 0 ? 0 : start;
+  const end = Math.min(i + 1, tn.nodeValue.length);
+  const range = document.createRange();
+  range.setStart(tn, i);
+  range.setEnd(tn, end);
+  const sel = window.getSelection();
+  sel.removeAllRanges();
+  sel.addRange(range);
+  try {{
+    best.scrollIntoView({{ block: "center", inline: "nearest", behavior: "auto" }});
+  }} catch (e) {{}}
+  return "ok";
+}})();
+"""
+    # 单行注入，避免 /tmp
+    one = " ".join(js.split())
+    cmd(f"jseval -q --world main {one}")
+    time.sleep(0.06)
+    cmd("mode-enter caret")
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

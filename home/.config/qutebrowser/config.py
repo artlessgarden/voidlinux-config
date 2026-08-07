@@ -55,12 +55,11 @@ _Completer._partition = _partition
 _IME_EN = "spawn -d fcitx5-remote -s keyboard-us"
 for _m in ("insert", "command", "caret", "prompt", "yesno", "register"):
     config.bind("<Escape>", f"mode-leave ;; {_IME_EN}", mode=_m)
-# hint 取消时拆掉词包装 / 可点标记 + 英文
+# hint 取消时清可点标记 + 英文
 config.bind(
     "<Escape>",
     (
         "mode-leave ;; "
-        "jseval -q -f --world main unwrap-words.js ;; "
         "jseval -q -f --world main unmark-clickables.js ;; "
         f"{_IME_EN}"
     ),
@@ -86,8 +85,8 @@ c.content.local_content_can_access_remote_urls = True
 config.bind(",p", "spawn --userscript translate-page")
 config.bind(",e", "hint text userscript translate-element")
 config.bind(",y", "spawn --userscript translate-inline")
-# SurfingKeys 风：hint 每个词 → caret 光标模式
-config.bind(";c", "spawn --userscript hint-words-caret")
+# ;c  hint 文本块 → caret（按元素，不拆词）
+config.bind(";c", "hint text userscript caret-at-element")
 config.bind(";t", "hint inputs")
 
 # f：先标可点（含 cursor:pointer）再用 JS 真点——B 站等 SPA 坐标点击常点到遮罩
@@ -180,4 +179,3 @@ c.hints.selectors["text"] = [
     "address",
     "div:not(:has(div, p, ul, ol, table, section, article, h1, h2, h3, h4, h5, h6, header, footer, nav))",
 ]
-c.hints.selectors["word"] = [".qute-word"]
