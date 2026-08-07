@@ -15,7 +15,7 @@ def cmd(msg: str) -> None:
 
 def main() -> int:
     cmd("jseval -q -f --world main wrap-words.js")
-    time.sleep(0.12)
+    time.sleep(0.18)
     cmd("hint word userscript caret-at-word")
     return 0
 
