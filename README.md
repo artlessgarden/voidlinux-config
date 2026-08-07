@@ -39,6 +39,9 @@ cd ~/voidlinux-config
 
 ### qutebrowser 速查
 
+配置与脚本都在 `~/.config/qutebrowser/`（`config.py`、`userscripts/`、`js/`、`greasemonkey/`）。  
+`~/.local/share/qutebrowser/` 只放运行时数据（历史、缓存）；其中 `js` 是指回 config 的软链。
+
 | 键 | 作用 |
 |---|---|
 | `,p` | 离线学习页（原文/译文/双语）→ `~/Documents/qute-learn/` |

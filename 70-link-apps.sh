@@ -21,6 +21,12 @@ ln -sfnT "$h/.config/fontconfig" "$HOME/.config/fontconfig"
 ln -sfnT "$h/.config/htop" "$HOME/.config/htop"
 ln -sfnT "$h/.config/mpv" "$HOME/.config/mpv"
 ln -sfnT "$h/.config/qutebrowser" "$HOME/.config/qutebrowser"
+# jseval -f 只认 data/js；链到 config 里同一份，仓库只维护 config
+mkdir -p "$HOME/.local/share/qutebrowser"
+ln -sfnT "$HOME/.config/qutebrowser/js" "$HOME/.local/share/qutebrowser/js"
+# 旧版曾链到 share/userscripts，清掉以免抢在 config 前面
+rm -rf "$HOME/.local/share/qutebrowser/userscripts"
+chmod +x "$h/.config/qutebrowser/userscripts/"* 2>/dev/null || true
 ln -sfnT "$h/.config/xdg-desktop-portal" "$HOME/.config/xdg-desktop-portal"
 ln -sfnT "$h/.config/xdg-desktop-portal-termfilechooser" \
 	"$HOME/.config/xdg-desktop-portal-termfilechooser"
@@ -32,13 +38,6 @@ ln -sfn "$h/.emacs.d/early-init.el" "$HOME/.emacs.d/early-init.el"
 ln -sfn "$h/.emacs.d/lisp" "$HOME/.emacs.d/lisp"
 
 ln -sf "$h/.local/bin/"* "$HOME/.local/bin/"
-mkdir -p "$HOME/.local/share/qutebrowser/userscripts" \
-	"$HOME/.local/share/qutebrowser/js"
-ln -sf "$h/.local/share/qutebrowser/userscripts/"* \
-	"$HOME/.local/share/qutebrowser/userscripts/"
-ln -sf "$h/.local/share/qutebrowser/js/"* \
-	"$HOME/.local/share/qutebrowser/js/"
-chmod +x "$h/.local/share/qutebrowser/userscripts/"* 2>/dev/null || true
 # 卸掉旧 Helium 桌面入口（若曾链过）
 rm -f "$HOME/.local/share/applications/helium.desktop"
 ln -sfn "$h/.local/share/applications/lf.desktop" \
