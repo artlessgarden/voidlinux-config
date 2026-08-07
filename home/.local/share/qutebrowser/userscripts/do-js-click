@@ -4,12 +4,13 @@ from __future__ import annotations
 
 import os
 import re
-import sys
+from pathlib import Path
 
 FIFO = os.environ["QUTE_FIFO"]
 HTML = os.environ.get("QUTE_SELECTED_HTML", "")
 URL = os.environ.get("QUTE_URL", "").strip()
-MODE = (sys.argv[1] if len(sys.argv) > 1 else "current").strip()
+DATA = Path(os.environ.get("QUTE_DATA_DIR", Path.home() / ".local/share/qutebrowser"))
+MODE_FILE = DATA / "hint-click-mode"
 
 
 def cmd(msg: str) -> None:
@@ -17,34 +18,41 @@ def cmd(msg: str) -> None:
         f.write(msg.rstrip() + "\n")
 
 
-def open_url(url: str) -> None:
+def read_mode() -> str:
+    try:
+        return MODE_FILE.read_text(encoding="utf-8").strip() or "current"
+    except OSError:
+        return "current"
+
+
+def open_url(url: str, mode: str) -> None:
     safe = url.replace(" ", "%20")
-    if MODE == "tab":
+    if mode == "tab":
         cmd(f"open -t {safe}")
-    elif MODE == "tab-bg":
+    elif mode == "tab-bg":
         cmd(f"open -b {safe}")
-    elif MODE == "tab-fg":
+    elif mode == "tab-fg":
         cmd(f"open -t {safe}")
-    elif MODE == "window":
+    elif mode == "window":
         cmd(f"open -w {safe}")
     else:
         cmd(f"open {safe}")
 
 
 def main() -> int:
+    mode = read_mode()
     m = re.search(r'data-qute-cid=["\']?(\d+)', HTML)
     if not m:
         cmd('message-warning "未找到可点标记"')
         cmd("jseval -q -f --world main unmark-clickables.js")
         return 0
 
-    if URL and MODE in ("tab", "tab-bg", "tab-fg", "window"):
-        open_url(URL)
+    if URL and mode in ("tab", "tab-bg", "tab-fg", "window"):
+        open_url(URL, mode)
         cmd("jseval -q -f --world main unmark-clickables.js")
         return 0
 
     cid = m.group(1)
-    # 一整段，无竞态、无 /tmp
     cmd(
         "jseval -q --world main "
         f"(function(){{var el=document.querySelector('[data-qute-cid=\"{cid}\"]');"
