@@ -85,8 +85,8 @@ c.content.local_content_can_access_remote_urls = True
 config.bind(",p", "spawn --userscript translate-page")
 config.bind(",e", "hint text userscript translate-element")
 config.bind(",y", "spawn --userscript translate-inline")
-# ;c  hint 文本块 → caret（按元素，不拆词）
-config.bind(";c", "hint text userscript caret-at-element")
+# v  hint 文本块 → caret（取代默认直接进 caret）
+config.bind("v", "hint text userscript caret-at-element")
 config.bind(";t", "hint inputs")
 
 # f：先标可点（含 cursor:pointer）再用 JS 真点——B 站等 SPA 坐标点击常点到遮罩
