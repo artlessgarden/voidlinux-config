@@ -34,5 +34,19 @@ cd ~/voidlinux-config
 # 按 flow.txt 依次执行
 ```
 
-本机 Niri / Helium 固定 AMD `renderD129`（见 `home/.config/niri/config.kdl`）。
+默认浏览器为 qutebrowser（`Mod+c`）。核显用 AMD `amdgpu`（nouveau 已屏蔽）。
 默认进 Windows；Esc 选 `void_grub` 进 Void，tty1 执行 `ni`。
+
+### qutebrowser 速查
+
+| 键 | 作用 |
+|---|---|
+| `,t` | Google 网页译（快） |
+| `,p` | 离线学习页（原文/译文/双语）→ `~/Documents/qute-learn/` |
+| `,y` / `,T` | 选区：顶栏 / Google 译文字页 |
+| `,e` | hint 译整段元素 |
+| Esc | 回 normal 并切英文键盘（fcitx5） |
+
+可选：`export QUTE_DEEPL_KEY='…:fx'` 让 `,p` 走 DeepL 官方 API。  
+广告：EasyList + China + Fanboy Annoyance（`python3-adblock`）。  
+油猴：`~/.config/qutebrowser/greasemonkey/`（如 bilibili-ip）。

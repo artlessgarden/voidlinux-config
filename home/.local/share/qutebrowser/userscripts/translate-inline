@@ -1,0 +1,31 @@
+#!/bin/sh
+# 选中文本 → translate-shell 行内结果（message + 剪贴板）
+# 依赖: translate-shell (trans)
+set -eu
+
+text=${QUTE_SELECTED_TEXT:-}
+if [ -z "$text" ]; then
+	printf 'message-warning "没有选中文本（先用 v 或鼠标选中）"\n' >>"$QUTE_FIFO"
+	exit 0
+fi
+
+tl=${QUTE_TRANS_TARGET:-zh}
+# -b：只要译文；失败时提示
+out=$(printf '%s' "$text" | trans -b -no-auto ":$tl" 2>/dev/null) || out=
+
+if [ -z "$out" ]; then
+	printf 'message-error "翻译失败（检查网络或 trans）"\n' >>"$QUTE_FIFO"
+	exit 0
+fi
+
+# 单行展示；过长截断
+summary=$(printf '%s' "$out" | tr '\n' ' ' | cut -c1-400)
+# 转义给 message-info 用的双引号
+esc=$(printf '%s' "$summary" | sed 's/\\/\\\\/g; s/"/\\"/g')
+printf 'message-info "译: %s"\n' "$esc" >>"$QUTE_FIFO"
+
+# 全文进剪贴板（方便长文）
+if command -v wl-copy >/dev/null 2>&1; then
+	printf '%s' "$out" | wl-copy
+	printf 'message-info "全文已复制到剪贴板"\n' >>"$QUTE_FIFO"
+fi

@@ -31,7 +31,10 @@ application/x-sh|application/x-shellscript|inode/x-empty)
 		|| sed -n "1,${h}p" -- "$path"
 	;;
 image/*)
-	file -Lb -- "$path"
+	# foot 支持 sixel；exit 1 避免缓存残影
+	chafa -f sixel -s "${w}x${h}" --animate off --polite on -- "$path" 2>/dev/null \
+		|| file -Lb -- "$path"
+	exit 1
 	;;
 video/*|audio/*)
 	mediainfo -- "$path" 2>/dev/null || file -Lb -- "$path"

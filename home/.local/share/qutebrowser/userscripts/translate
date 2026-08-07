@@ -1,0 +1,58 @@
+#!/bin/sh
+# qute userscript：翻译
+# 整页：新标签打开 translate.goog 代理页（尽量保留原站样式）
+# 选中：--text → Google 译选区
+set -eu
+
+tl=${QUTE_TRANS_TARGET:-zh-CN}
+sl=${QUTE_TRANS_SOURCE:-auto}
+
+enc() {
+	python3 -c 'import sys,urllib.parse; print(urllib.parse.quote(sys.stdin.read(), safe=""))'
+}
+
+# https://www.example.com/a?b=1 → https://www-example-com.translate.goog/a?b=1&_x_tr_...
+page_proxy_url() {
+	QUTE_TRANS_TARGET="$tl" QUTE_TRANS_SOURCE="$sl" python3 - "$1" <<'PY'
+import os, sys
+from urllib.parse import urlparse, urlencode, parse_qsl, urlunparse
+
+url = sys.argv[1]
+tl = os.environ.get("QUTE_TRANS_TARGET", "zh-CN")
+sl = os.environ.get("QUTE_TRANS_SOURCE", "auto")
+u = urlparse(url)
+if u.scheme not in ("http", "https") or not u.netloc:
+    raise SystemExit(1)
+host = u.netloc.replace("-", "--").replace(".", "-") + ".translate.goog"
+q = dict(parse_qsl(u.query, keep_blank_values=True))
+q.update({"_x_tr_sl": sl, "_x_tr_tl": tl, "_x_tr_hl": tl, "_x_tr_pto": "wapp"})
+print(urlunparse((u.scheme, host, u.path or "/", "", urlencode(q), u.fragment)))
+PY
+}
+
+if [ "${1:-}" = --text ]; then
+	text=${QUTE_SELECTED_TEXT:-}
+	if [ -z "$text" ]; then
+		printf 'message-warning "没有选中文本"\n' >>"$QUTE_FIFO"
+		exit 0
+	fi
+	q=$(printf '%s' "$text" | enc)
+	printf "open -t https://translate.google.com/?sl=%s&tl=%s&text=%s&op=translate\n" \
+		"$sl" "$tl" "$q" >>"$QUTE_FIFO"
+else
+	url=${QUTE_URL:-}
+	if [ -z "$url" ]; then
+		printf 'message-warning "没有当前 URL"\n' >>"$QUTE_FIFO"
+		exit 0
+	fi
+	if proxy=$(page_proxy_url "$url"); then
+		# open 用 simple_split：不要给 URL 加引号（引号会变成搜索词）
+		# & 也没问题，因为 maxsplit=0 会把 flag 后整段当一个参数
+		printf 'open -t %s\n' "$proxy" >>"$QUTE_FIFO"
+	else
+		# 回退旧式包装页
+		q=$(printf '%s' "$url" | enc)
+		printf "open -t https://translate.google.com/translate?sl=%s&tl=%s&u=%s\n" \
+			"$sl" "$tl" "$q" >>"$QUTE_FIFO"
+	fi
+fi

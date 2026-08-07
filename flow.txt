@@ -22,5 +22,4 @@ sh 80-grub.sh
 sh 85-asus-hw.sh
 sh 86-wifi-observe.sh
 # socklog + wpa 日志 + 空闲 wifi-snap（观察用；重新登录后 socklog 组生效）
-sh 90-helium.sh
 # 退出再进 niri，自启项生效

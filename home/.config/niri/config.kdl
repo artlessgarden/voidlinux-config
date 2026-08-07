@@ -104,7 +104,7 @@ Mod+w repeat=false { spawn "wl-kbptr" "-o" "modes=floating,click" "-o" "mode_flo
 Mod+escape repeat=false { power-off-monitors; }
 Mod+a repeat=false { spawn "foot"; }
 Mod+x repeat=false { spawn "foot" "vis" "+new-entry"; }
-Mod+c repeat=false { spawn "helium" "--new-window"; }
+Mod+c repeat=false { spawn "qutebrowser"; }
 Mod+v repeat=false { toggle-overview; }
 Mod+p repeat=false { spawn-sh "grim -g \"$(slurp)\" - | satty -f - --copy-command wl-copy --early-exit copy"; }
 Mod+ctrl+p repeat=false { spawn-sh "grim - | satty -f - --copy-command wl-copy --early-exit copy"; }

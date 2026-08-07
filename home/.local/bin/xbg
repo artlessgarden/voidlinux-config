@@ -1,5 +1,4 @@
 #!/usr/bin/env bash
-# 更新系统 + Helium 浏览器
+# 更新系统
 set -euo pipefail
 sudo xbps-install -Syu
-sh "$HOME/voidlinux-config/90-helium.sh"

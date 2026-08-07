@@ -1,0 +1,103 @@
+# 最小可改；:set 写进 autoconfig.yml，由下面加载
+config.load_autoconfig()
+
+# 搜索
+c.url.searchengines = {
+    "DEFAULT": "https://www.google.com/search?q={}",
+    "g": "https://www.google.com/search?q={}",
+}
+
+# 下载
+c.downloads.location.directory = "~/Downloads"
+c.downloads.location.prompt = False
+
+# 新标签 / 启动
+c.url.start_pages = ["about:blank"]
+c.url.default_page = "about:blank"
+
+# 补全
+c.completion.show = "always"
+c.completion.quick = True
+c.completion.use_best_match = True
+c.completion.cmd_history_max_items = 500
+c.completion.height = "40%"
+c.completion.shrink = True
+c.completion.open_categories = [
+    "history",
+    "searchengines",
+    "quickmarks",
+    "bookmarks",
+    "filesystem",
+]
+# ↑↓ 只在补全列表移动（默认会掺历史）
+config.bind("<Up>", "completion-item-focus prev", mode="command")
+config.bind("<Down>", "completion-item-focus next", mode="command")
+
+# :adb up 也能补出 adblock-update
+# （默认空格后会当成未知命令的参数，补全直接空）
+from qutebrowser.completion.completer import Completer as _Completer
+from qutebrowser.misc import objects as _objects
+
+_orig_partition = _Completer._partition
+
+
+def _partition(self):
+    before, center, after = _orig_partition(self)
+    if before and before[0] not in _objects.commands:
+        joined = " ".join([*before, center] if center else before).strip()
+        return [], joined, after
+    return before, center, after
+
+
+_Completer._partition = _partition
+
+# normal：离开编辑类模式时切英文键盘（不自动开 rime）
+_IME_EN = "spawn -d fcitx5-remote -s keyboard-us"
+for _m in ("insert", "command", "hint", "caret", "prompt", "yesno", "register"):
+    config.bind("<Escape>", f"mode-leave ;; {_IME_EN}", mode=_m)
+
+# 去广告（python3-adblock）
+c.content.blocking.method = "both"
+c.content.blocking.adblock.lists = [
+    "https://easylist.to/easylist/easylist.txt",
+    "https://easylist.to/easylist/easyprivacy.txt",
+    "https://easylist-downloads.adblockplus.org/easylistchina.txt",
+    "https://easylist-downloads.adblockplus.org/fanboy-annoyance.txt",
+]
+
+# 译文 file:// 页拉原站 CSS/图（,p 用）
+c.content.local_content_can_access_remote_urls = True
+
+# 翻译
+# ,t  Google 网页译（快）
+# ,p  离线学习页：原文/译文/双语；默认 gtx，设 QUTE_DEEPL_KEY 则用 DeepL 官方
+# ,y  选区 → 顶栏
+# ,T  选区 → Google 译文字页
+# ,e  hint 译元素
+config.bind(",t", "spawn --userscript translate")
+config.bind(",p", "spawn --userscript translate-page")
+config.bind(",y", "spawn --userscript translate-inline")
+config.bind(",T", "spawn --userscript translate --text")
+config.bind(",e", "hint text userscript translate-element")
+config.bind(";t", "hint inputs")
+
+c.hints.selectors["text"] = [
+    "p",
+    "h1",
+    "h2",
+    "h3",
+    "h4",
+    "h5",
+    "h6",
+    "li",
+    "td",
+    "th",
+    "blockquote",
+    "pre",
+    "figcaption",
+    "article",
+    "section",
+    "main",
+    "dt",
+    "dd",
+]
