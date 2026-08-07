@@ -53,8 +53,19 @@ _Completer._partition = _partition
 
 # normal：离开编辑类模式时切英文键盘（不自动开 rime）
 _IME_EN = "spawn -d fcitx5-remote -s keyboard-us"
-for _m in ("insert", "command", "hint", "caret", "prompt", "yesno", "register"):
+for _m in ("insert", "command", "caret", "prompt", "yesno", "register"):
     config.bind("<Escape>", f"mode-leave ;; {_IME_EN}", mode=_m)
+# hint 取消时拆掉词包装 / 可点标记 + 英文
+config.bind(
+    "<Escape>",
+    (
+        "mode-leave ;; "
+        "jseval -q -f --world main unwrap-words.js ;; "
+        "jseval -q -f --world main unmark-clickables.js ;; "
+        f"{_IME_EN}"
+    ),
+    mode="hint",
+)
 
 # 去广告（python3-adblock）
 c.content.blocking.method = "both"
@@ -75,8 +86,69 @@ c.content.local_content_can_access_remote_urls = True
 config.bind(",p", "spawn --userscript translate-page")
 config.bind(",e", "hint text userscript translate-element")
 config.bind(",y", "spawn --userscript translate-inline")
+# SurfingKeys 风：hint 每个词 → caret 光标模式
+config.bind(";c", "spawn --userscript hint-words-caret")
 config.bind(";t", "hint inputs")
 
+# f：先标可点（含 cursor:pointer）再用 JS 真点——B 站等 SPA 坐标点击常点到遮罩
+config.bind("f", "spawn --userscript hint-js-click")
+config.bind("F", "spawn --userscript hint-js-click tab")
+config.bind(";b", "spawn --userscript hint-js-click tab-bg")
+config.bind(";f", "spawn --userscript hint-js-click tab-fg")
+config.bind("wf", "spawn --userscript hint-js-click window")
+
+# 默认只有 asdfghjkl（9 个）；改成 26 字母，hint 更短
+c.hints.chars = "abcdefghijklmnopqrstuvwxyz"
+c.hints.min_chars = 1
+c.hints.scatter = True
+
+# 官方 all 上略增 role / 点击属性（给非 f 的 hint 用；f 走 clickable）
+c.hints.selectors["all"] = [
+    "a",
+    "area",
+    "textarea",
+    "select",
+    'input:not([type="hidden"])',
+    "button",
+    "frame",
+    "iframe",
+    "link",
+    "summary",
+    "details",
+    "label",
+    '[contenteditable]:not([contenteditable="false"])',
+    "[onclick]",
+    "[onmousedown]",
+    "[onmouseup]",
+    "[jsaction]",
+    "[data-href]",
+    "[data-url]",
+    "[data-link]",
+    "[ng-click]",
+    "[ngClick]",
+    "[data-ng-click]",
+    "[x-ng-click]",
+    '[role="link"]',
+    '[role="option"]',
+    '[role="button"]',
+    '[role="tab"]',
+    '[role="checkbox"]',
+    '[role="radio"]',
+    '[role="switch"]',
+    '[role="menuitem"]',
+    '[role="menuitemcheckbox"]',
+    '[role="menuitemradio"]',
+    '[role="treeitem"]',
+    '[role="combobox"]',
+    '[role="listbox"]',
+    '[role="textbox"]',
+    '[role="searchbox"]',
+    "[aria-haspopup]",
+    '[tabindex]:not([tabindex="-1"])',
+]
+c.hints.selectors["clickable"] = ["[data-qute-cid]"]
+
+# ,e：正文块
 c.hints.selectors["text"] = [
     "p",
     "h1",
@@ -96,4 +168,16 @@ c.hints.selectors["text"] = [
     "main",
     "dt",
     "dd",
+    "summary",
+    "label",
+    "a",
+    "span",
+    "em",
+    "strong",
+    "small",
+    "cite",
+    "time",
+    "address",
+    "div:not(:has(div, p, ul, ol, table, section, article, h1, h2, h3, h4, h5, h6, header, footer, nav))",
 ]
+c.hints.selectors["word"] = [".qute-word"]

@@ -32,9 +32,12 @@ ln -sfn "$h/.emacs.d/early-init.el" "$HOME/.emacs.d/early-init.el"
 ln -sfn "$h/.emacs.d/lisp" "$HOME/.emacs.d/lisp"
 
 ln -sf "$h/.local/bin/"* "$HOME/.local/bin/"
-mkdir -p "$HOME/.local/share/qutebrowser/userscripts"
+mkdir -p "$HOME/.local/share/qutebrowser/userscripts" \
+	"$HOME/.local/share/qutebrowser/js"
 ln -sf "$h/.local/share/qutebrowser/userscripts/"* \
 	"$HOME/.local/share/qutebrowser/userscripts/"
+ln -sf "$h/.local/share/qutebrowser/js/"* \
+	"$HOME/.local/share/qutebrowser/js/"
 chmod +x "$h/.local/share/qutebrowser/userscripts/"* 2>/dev/null || true
 # 卸掉旧 Helium 桌面入口（若曾链过）
 rm -f "$HOME/.local/share/applications/helium.desktop"

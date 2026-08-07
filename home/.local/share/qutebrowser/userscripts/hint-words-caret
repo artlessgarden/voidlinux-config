@@ -1,0 +1,24 @@
+#!/usr/bin/env python3
+"""包词 → hint → caret。"""
+from __future__ import annotations
+
+import os
+import time
+
+FIFO = os.environ["QUTE_FIFO"]
+
+
+def cmd(msg: str) -> None:
+    with open(FIFO, "a", encoding="utf-8") as f:
+        f.write(msg.rstrip() + "\n")
+
+
+def main() -> int:
+    cmd("jseval -q -f --world main wrap-words.js")
+    time.sleep(0.12)
+    cmd("hint word userscript caret-at-word")
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
