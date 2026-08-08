@@ -1,31 +1,73 @@
-#!/bin/sh
-# 下载上游 bilibili-cleaner，拼上 qute shim → data/greasemonkey
-set -e
-url=${QUTE_BILI_CLEANER_URL:-https://raw.githubusercontent.com/festoney8/bilibili-cleaner/release/bilibili-cleaner.github.user.js}
-cfg=${QUTE_CONFIG_DIR:-$HOME/.config/qutebrowser}
-shim=$cfg/gm-src/bili-cleaner-qute.js
-out=$HOME/.local/share/qutebrowser/greasemonkey/bilibili-cleaner.user.js
+#!/usr/bin/env python3
+"""Assemble bili-cleaner for qute: eval into real window (skip GM Proxy)."""
+import json
+import os
+import re
+import sys
+import urllib.request
+from pathlib import Path
 
-[ -f "$shim" ] || {
-	echo "missing shim: $shim" >&2
-	exit 1
-}
+UPSTREAM = os.environ.get(
+    "QUTE_BILI_CLEANER_URL",
+    "https://raw.githubusercontent.com/festoney8/bilibili-cleaner/release/"
+    "bilibili-cleaner.github.user.js",
+)
+VUE = os.environ.get(
+    "QUTE_BILI_VUE_URL",
+    "https://cdn.jsdelivr.net/npm/vue@3.5.40/dist/vue.global.prod.js",
+)
+CFG = Path(os.environ.get("QUTE_CONFIG_DIR", Path.home() / ".config/qutebrowser"))
+SHIM = CFG / "gm-src" / "bili-cleaner-qute.js"
+OUT = Path.home() / ".local/share/qutebrowser/greasemonkey/bilibili-cleaner.user.js"
 
-tmp=$(mktemp)
-trap 'rm -f "$tmp" "$tmp.up"' EXIT
-curl -fsSL "$url" -o "$tmp.up"
+HEADER_RE = re.compile(
+    r"// ==UserScript==.*?// ==/UserScript==\s*",
+    re.DOTALL,
+)
 
-mkdir -p "$(dirname "$out")"
-{
-	cat "$shim"
-	printf '\n// ---- upstream (header stripped) ----\n'
-	awk '
-		/^\/\/ ==UserScript==$/ { skip=1; next }
-		skip && /^\/\/ ==\/UserScript==$/ { skip=0; next }
-		!skip { print }
-	' "$tmp.up"
-} >"$tmp"
-mv "$tmp" "$out"
-trap - EXIT
-echo "wrote $out"
-echo "qute 里 :greasemonkey-reload"
+
+def fetch(url: str) -> str:
+    req = urllib.request.Request(url, headers={"User-Agent": "qute-gm-bili"})
+    with urllib.request.urlopen(req, timeout=60) as resp:
+        return resp.read().decode("utf-8")
+
+
+def main() -> None:
+    if not SHIM.is_file():
+        print(f"missing shim: {SHIM}", file=sys.stderr)
+        sys.exit(1)
+    shim_full = SHIM.read_text(encoding="utf-8")
+    m = HEADER_RE.search(shim_full)
+    if not m:
+        print("shim missing UserScript header", file=sys.stderr)
+        sys.exit(1)
+    header = m.group(0).rstrip() + "\n"
+    shim_js = shim_full[m.end() :].strip() + "\n"
+    upstream = HEADER_RE.sub("", fetch(UPSTREAM), count=1).strip() + "\n"
+    vue = fetch(VUE).strip() + "\n"
+    payload = (
+        "// qute page-world payload\n"
+        + shim_js
+        + "\n// ---- vue ----\n"
+        + vue
+        + "\n// ---- upstream ----\n"
+        + upstream
+    )
+    loader = (
+        header
+        + "\n(function () {\n"
+        + "  var uw = typeof unsafeWindow !== 'undefined' ? unsafeWindow : window;\n"
+        + "  try { uw.eval("
+        + json.dumps(payload)
+        + "); }\n"
+        + "  catch (e) { console.error('bili-cleaner', e); }\n"
+        + "})();\n"
+    )
+    OUT.parent.mkdir(parents=True, exist_ok=True)
+    OUT.write_text(loader, encoding="utf-8")
+    print(f"wrote {OUT} ({OUT.stat().st_size} bytes)")
+    print("qute: :greasemonkey-reload ，再刷新 B 站")
+
+
+if __name__ == "__main__":
+    main()

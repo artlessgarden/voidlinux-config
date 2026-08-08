@@ -82,34 +82,9 @@ from qutebrowser.api import cmdutils as _cmdutils
 from qutebrowser.utils import objreg as _objreg
 from qutebrowser.utils import message as _message
 from qutebrowser.utils import usertypes as _usertypes
-from qutebrowser.utils import jinja as _jinja
-from qutebrowser.utils import javascript as _javascript
-from qutebrowser.browser.greasemonkey import GreasemonkeyScript as _GMScript
-
-# Vue 油猴（净化大师）不能包在 window Proxy 里，否则设置面板挂不上
-_gm_code_orig = _GMScript.code
+from qutebrowser.misc import objects as _objects
 
 
-def _gm_code_maybe_no_proxy(self):
-    meta = self.script_meta or ""
-    if "@qute-no-proxy" not in meta and "净化大师" not in (self.name or ""):
-        return _gm_code_orig(self)
-    template = _jinja.js_environment.get_template("greasemonkey_wrapper.js")
-    return template.render(
-        scriptName=_javascript.string_escape(
-            "/".join([self.namespace or "", self.name])
-        ),
-        scriptInfo=self._meta_json(),
-        scriptMeta=_javascript.string_escape(meta),
-        scriptSource=self._code,
-        use_proxy=False,
-    )
-
-
-_GMScript.code = _gm_code_maybe_no_proxy
-
-
-@_cmdutils.register()
 def close_or_quit() -> None:
     """多标签关当前；多窗口关本窗；会退出整个程序时才底栏确认。"""
     win = _objreg.last_focused_window()
@@ -122,6 +97,12 @@ def close_or_quit() -> None:
         return
     if _message.ask("Really quit?", mode=_usertypes.PromptMode.yesno, default=True):
         win.close()
+
+
+if "close-or-quit" not in _objects.commands:
+    _cmdutils.register()(close_or_quit)
+else:
+    _objects.commands["close-or-quit"].handler = close_or_quit
 
 
 config.bind("d", "close-or-quit")
@@ -148,20 +129,19 @@ config.bind("<Down>", "completion-item-focus next", mode="command")
 # :adb up 也能补出 adblock-update
 # （默认空格后会当成未知命令的参数，补全直接空）
 from qutebrowser.completion.completer import Completer as _Completer
-from qutebrowser.misc import objects as _objects
 
-_orig_partition = _Completer._partition
+if not getattr(_Completer._partition, "_qute_cfg", False):
+    _orig_partition = _Completer._partition
 
+    def _partition(self):
+        before, center, after = _orig_partition(self)
+        if before and before[0] not in _objects.commands:
+            joined = " ".join([*before, center] if center else before).strip()
+            return [], joined, after
+        return before, center, after
 
-def _partition(self):
-    before, center, after = _orig_partition(self)
-    if before and before[0] not in _objects.commands:
-        joined = " ".join([*before, center] if center else before).strip()
-        return [], joined, after
-    return before, center, after
-
-
-_Completer._partition = _partition
+    _partition._qute_cfg = True
+    _Completer._partition = _partition
 
 # normal：离开编辑类模式时切英文键盘（不自动开 rime）
 _IME_EN = "spawn -d fcitx5-remote -s keyboard-us"

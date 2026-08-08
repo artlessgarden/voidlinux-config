@@ -25,22 +25,13 @@
 // @exclude      *://www.bilibili.com/blackboard/newplayer.html*
 // @exclude      *://www.bilibili.com/appeal/*
 // @exclude      *://www.bilibili.com/toy/*
-// @require      https://cdn.jsdelivr.net/npm/vue@3.5.40/dist/vue.global.prod.js
-// @grant        GM_addValueChangeListener
-// @grant        GM_deleteValue
-// @grant        GM_getValue
-// @grant        GM_listValues
-// @grant        GM_registerMenuCommand
-// @grant        GM_removeValueChangeListener
-// @grant        GM_setValue
 // @grant        unsafeWindow
 // @run-at       document-start
-// @qute-no-proxy
 // ==/UserScript==
 
 (function () {
-  const prefix =
-    typeof _qute_script_id !== "undefined" ? _qute_script_id : "__gm_bili_cleaner/";
+  const prefix = "__gm_bili_cleaner/";
+  window.unsafeWindow = window;
 
   const parse = (raw, fallback) => {
     if (raw == null) return fallback;
@@ -64,24 +55,24 @@
     }
   };
 
-  GM_setValue = function (key, value) {
+  window.GM_setValue = function (key, value) {
     const sk = prefix + key;
     const oldValue = parse(localStorage.getItem(sk), undefined);
     localStorage.setItem(sk, JSON.stringify(value));
     fire(key, oldValue, value, false);
   };
 
-  GM_getValue = function (key, def) {
+  window.GM_getValue = function (key, def) {
     const raw = localStorage.getItem(prefix + key);
     if (raw == null) return def;
     return parse(raw, def);
   };
 
-  GM_deleteValue = function (key) {
+  window.GM_deleteValue = function (key) {
     localStorage.removeItem(prefix + key);
   };
 
-  GM_listValues = function () {
+  window.GM_listValues = function () {
     const keys = [];
     for (let i = 0; i < localStorage.length; i++) {
       const k = localStorage.key(i);
@@ -90,13 +81,13 @@
     return keys;
   };
 
-  GM_addValueChangeListener = function (key, cb) {
+  window.GM_addValueChangeListener = function (key, cb) {
     const id = nextListenerId++;
     listeners.set(id, { key, cb });
     return id;
   };
 
-  GM_removeValueChangeListener = function (id) {
+  window.GM_removeValueChangeListener = function (id) {
     listeners.delete(id);
   };
 
@@ -106,7 +97,7 @@
     fire(key, parse(e.oldValue, undefined), parse(e.newValue, undefined), true);
   });
 
-  GM_registerMenuCommand = function (caption, fn) {
+  window.GM_registerMenuCommand = function (caption, fn) {
     menuItems.push({ caption, fn });
     return menuItems.length;
   };
