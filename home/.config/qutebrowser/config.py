@@ -63,6 +63,8 @@ c.url.searchengines = {
 # 日常：下完过一会清下载条；关网页通知
 c.content.notifications.enabled = False
 c.downloads.remove_finished = 15000
+# 视频/F11 全屏只占 qute 窗口，不铺满整块屏幕
+c.content.fullscreen.window = True
 
 # 下载
 c.downloads.location.directory = "~/Downloads"
