@@ -181,7 +181,7 @@ c.hints.selectors["text"] = [
 ]
 
 # 历史：启动时后台清理「超过 N 天未再访问」的 URL（每天最多一次，无 cron）
-# 天数可用环境变量 QUTE_HISTORY_DAYS（默认 90）；手动：:spawn --userscript history-prune --force
+# 天数可用环境变量 QUTE_HISTORY_DAYS（默认 30）；手动：:spawn --userscript history-prune --force
 import subprocess as _sp
 import sys as _sys
 from pathlib import Path as _Path

@@ -5,7 +5,7 @@
   :spawn --userscript history-prune
   :spawn --userscript history-prune --force
 
-天数：环境变量 QUTE_HISTORY_DAYS（默认 90）。
+天数：环境变量 QUTE_HISTORY_DAYS（默认 30）。
 """
 from __future__ import annotations
 
@@ -16,7 +16,7 @@ import sys
 import time
 from pathlib import Path
 
-DEFAULT_DAYS = 90
+DEFAULT_DAYS = 30
 STAMP_NAME = "history-prune.stamp"
 DAY_SEC = 86400
 
