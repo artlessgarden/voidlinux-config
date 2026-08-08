@@ -47,7 +47,8 @@ cd ~/voidlinux-config
 | `,p` | 离线学习页（原文/译文/双语）→ `~/Documents/qute-learn/` |
 | `,e` | hint：在元素下方实时插入译文 |
 | `,y` | 选区 → 底栏 + 剪贴板 |
-| `v` | hint 文本元素 → caret |
+| `,d` | 切换网页 dark mode 并刷新 |
+| `v` | hint 文本元素 → caret（原 `v` 直接进 caret；行选 caret 仍是 `V`） |
 | `f` / `F` | JS 真点可点元素（含 cursor:pointer）；`F` 新标签 |
 | Esc | 回 normal 并切英文键盘（fcitx5） |
 
