@@ -74,6 +74,9 @@ c.url.start_pages = [_STARTPAGE_URL]
 c.url.default_page = _STARTPAGE_URL
 c.auto_save.session = True
 c.session.lazy_restore = True
+# d 关最后一个标签 = 关窗口，但先确认
+c.tabs.last_close = "close"
+c.confirm_quit = ["always"]
 
 # 补全
 c.completion.show = "always"
