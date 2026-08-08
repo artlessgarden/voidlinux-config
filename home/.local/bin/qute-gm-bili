@@ -28,6 +28,9 @@ HEADER = """\
 // @namespace    qute-local
 // @description  从 festoney8/bilibili-cleaner 抽出的 html[attr]+CSS 净化
 // @match        *://*.bilibili.com/*
+// @match        *://bilibili.com/*
+// @include      *://*.bilibili.com/*
+// @include      *://bilibili.com/*
 // @exclude      *://message.bilibili.com/pages/nav/header_sync
 // @exclude      *://message.bilibili.com/pages/nav/index_new_pc_sync
 // @exclude      *://data.bilibili.com/*
@@ -36,7 +39,7 @@ HEADER = """\
 // @exclude      *://api.*.bilibili.com/*
 // @exclude      *://passport.bilibili.com/*
 // @exclude      *://member.bilibili.com/*
-// @run-at       document-start
+// @run-at       document-end
 // ==/UserScript==
 """
 
@@ -105,11 +108,14 @@ def main() -> None:
         )
         sys.exit(1)
     runtime = RUNTIME.read_text(encoding="utf-8")
+    # 必须包进 IIFE 并用 var：qute GM 的 with(proxy) 里顶层 const/let 会直接语法错误
     out = (
         HEADER
-        + f"\nconst CSS = {json.dumps(css)};\n"
-        + f"const RULES = {json.dumps(rules, ensure_ascii=False)};\n"
+        + "\n(function () {\n"
+        + f"var CSS = {json.dumps(css)};\n"
+        + f"var RULES = {json.dumps(rules, ensure_ascii=False)};\n"
         + runtime
+        + "\n})();\n"
     )
     OUT.parent.mkdir(parents=True, exist_ok=True)
     OUT.write_text(out, encoding="utf-8")

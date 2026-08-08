@@ -1,6 +1,7 @@
 (function () {
-  if (window.__biliQute) return;
-  window.__biliQute = true;
+  var uw = typeof unsafeWindow !== "undefined" ? unsafeWindow : window;
+  if (uw.__biliQute) return;
+  uw.__biliQute = true;
 
   const KEY = "bili-clean-qute";
   const DARK_KEY = "bili-clean-dark";
@@ -98,16 +99,16 @@
     const wrap = document.createElement("div");
     wrap.id = "bili-qute-wrap";
     wrap.style.cssText =
-      "position:fixed;left:10px;bottom:12px;z-index:2147483646;font:13px sans-serif;";
+      "position:fixed;top:72px;right:12px;z-index:2147483646;font:13px sans-serif;";
     const btn = document.createElement("button");
     btn.id = "bili-qute-btn";
     btn.type = "button";
     btn.textContent = "净化";
     btn.style.cssText =
-      "padding:5px 10px;border:0;border-radius:8px;background:#00aeec;color:#fff;cursor:pointer;";
+      "padding:8px 14px;border:0;border-radius:8px;background:#00aeec;color:#fff;cursor:pointer;font-size:14px;box-shadow:0 2px 8px #0004;";
     box = document.createElement("div");
     box.style.cssText =
-      "display:none;margin-bottom:8px;width:min(360px,calc(100vw - 24px));max-height:min(70vh,560px);overflow:auto;background:#fff;color:#111;border-radius:10px;box-shadow:0 8px 24px #0003;";
+      "display:none;margin-top:8px;width:min(360px,calc(100vw - 24px));max-height:min(70vh,560px);overflow:auto;background:#fff;color:#111;border-radius:10px;box-shadow:0 8px 24px #0003;";
     box.innerHTML =
       '<div style="position:sticky;top:0;background:#fff;padding:8px;border-bottom:1px solid #eee;display:flex;gap:6px;flex-wrap:wrap">' +
       '<input data-q placeholder="搜索功能" style="flex:1;min-width:120px;padding:4px 8px">' +
@@ -136,7 +137,7 @@
     renderList("");
   };
 
-  window.__biliQuteToggle = () => {
+  uw.__biliQuteToggle = function () {
     const b = document.getElementById("bili-qute-btn");
     if (b) b.click();
     else {
@@ -147,6 +148,15 @@
   };
 
   if (document.body) mount();
-  else document.addEventListener("DOMContentLoaded", mount);
-  setTimeout(mount, 800);
+  else {
+    document.addEventListener("DOMContentLoaded", mount);
+    new MutationObserver(function (_, ob) {
+      if (document.body) {
+        ob.disconnect();
+        mount();
+      }
+    }).observe(document.documentElement, { childList: true, subtree: true });
+  }
+  setTimeout(mount, 300);
+  setTimeout(mount, 1500);
 })();
