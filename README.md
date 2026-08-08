@@ -51,6 +51,8 @@ cd ~/voidlinux-config
 | `f` / `F` | JS 真点可点元素（含 cursor:pointer）；`F` 新标签 |
 | Esc | 回 normal 并切英文键盘（fcitx5） |
 
+搜索（`:open` / `o` 后）：`g` Google（默认）、`gi` 图、`d` DDG、`b` B 站、`yt` YouTube、`gh` GitHub、`w`/`we` 维基中/英、`so` SO、`mdn`、`aw` Arch Wiki、`vd` Void 文档、`xp` Void 包、`m` 地图、`tr` 网页翻译、`npm`、`py`。只打前缀（如 `o b`）开站点首页。
+
 可选：`export QUTE_DEEPL_KEY='…:fx'` 走 DeepL，否则用 Google gtx。  
 广告：EasyList + China + Fanboy Annoyance（`python3-adblock`）。  
 油猴：`~/.config/qutebrowser/greasemonkey/`（如 bilibili-ip）。  

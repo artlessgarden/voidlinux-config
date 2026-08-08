@@ -1,19 +1,77 @@
 # 最小可改；:set 写进 autoconfig.yml，由下面加载
 config.load_autoconfig()
 
-# 搜索
+# Van startpage：打开 qute 时若未运行则启动 npm run dev
+import socket
+import subprocess
+import time
+from pathlib import Path
+
+_STARTPAGE_DIR = Path.home() / "Drafts/vanjs/startpage"
+_STARTPAGE_HOST = "127.0.0.1"
+_STARTPAGE_PORT = 17321
+_STARTPAGE_URL = f"http://{_STARTPAGE_HOST}:{_STARTPAGE_PORT}/"
+
+
+def _startpage_up() -> bool:
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+        s.settimeout(0.2)
+        return s.connect_ex((_STARTPAGE_HOST, _STARTPAGE_PORT)) == 0
+
+
+def _ensure_startpage_dev() -> None:
+    if _startpage_up():
+        return
+    subprocess.Popen(
+        ["/usr/bin/npm", "run", "dev"],
+        cwd=str(_STARTPAGE_DIR),
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
+        start_new_session=True,
+    )
+    for _ in range(50):
+        if _startpage_up():
+            return
+        time.sleep(0.1)
+
+
+_ensure_startpage_dev()
+
+# 搜索：o 后空格 → 补全里能看到前缀；单独打前缀（如 :open b）打开站点首页
+c.url.open_base_url = True
 c.url.searchengines = {
     "DEFAULT": "https://www.google.com/search?q={}",
     "g": "https://www.google.com/search?q={}",
+    "gi": "https://www.google.com/search?tbm=isch&q={}",
+    "d": "https://duckduckgo.com/?q={}",
+    "b": "https://search.bilibili.com/all?keyword={}",
+    "yt": "https://www.youtube.com/results?search_query={}",
+    "gh": "https://github.com/search?q={}",
+    "w": "https://zh.wikipedia.org/w/index.php?search={}",
+    "we": "https://en.wikipedia.org/w/index.php?search={}",
+    "so": "https://stackoverflow.com/search?q={}",
+    "mdn": "https://developer.mozilla.org/search?q={}",
+    "aw": "https://wiki.archlinux.org/index.php?search={}",
+    "vd": "https://www.google.com/search?q=site%3Adocs.voidlinux.org+{}",
+    "xp": "https://voidlinux.org/packages/?arch=x86_64&q={}",
+    "m": "https://www.google.com/maps/search/{}",
+    "tr": "https://translate.google.com/?sl=auto&tl=zh-CN&text={}&op=translate",
+    "npm": "https://www.npmjs.com/search?q={}",
+    "py": "https://pypi.org/search/?q={}",
 }
+
+# 日常：少被视频/通知打断；下完过一会清下载条
+c.content.autoplay = False
+c.content.notifications.enabled = False
+c.downloads.remove_finished = 15000
 
 # 下载
 c.downloads.location.directory = "~/Downloads"
 c.downloads.location.prompt = False
 
 # 新标签 / 启动
-c.url.start_pages = ["about:blank"]
-c.url.default_page = "about:blank"
+c.url.start_pages = [_STARTPAGE_URL]
+c.url.default_page = _STARTPAGE_URL
 
 # 补全
 c.completion.show = "always"
