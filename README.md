@@ -58,4 +58,4 @@ cd ~/voidlinux-config
 广告：EasyList + China + Fanboy Annoyance（`python3-adblock`）。  
 油猴：`~/.config/qutebrowser/greasemonkey/`（如 bilibili-ip）。  
 历史：启动时自动删「超过 30 天未再访问」的条目（每天最多一次）；`QUTE_HISTORY_DAYS` 改天数；手动 `:spawn --userscript history-prune --force`。  
-会话：退出后下次自动恢复标签（点到才加载）；无会话时才开 startpage。只剩一个窗口时，最后一个标签 `d` / `ZZ` 在底栏确认后再退（页面还在）；多个窗口直接关，不提醒。
+会话：退出后下次自动恢复标签（点到才加载）；无会话时才开 startpage。`d` 只在会退出整个程序时底栏确认；`ZZ` 默认直接退。
