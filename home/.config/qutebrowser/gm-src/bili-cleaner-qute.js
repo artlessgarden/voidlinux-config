@@ -35,6 +35,7 @@
 // @grant        GM_setValue
 // @grant        unsafeWindow
 // @run-at       document-start
+// @qute-no-proxy
 // ==/UserScript==
 
 (function () {
@@ -171,4 +172,13 @@
     setTimeout(waitMenu, 250);
   };
   setTimeout(waitMenu, 0);
+
+  const attachRoot = () => {
+    const el = document.getElementById("bili-cleaner");
+    const body = document.body;
+    if (el && body && el.parentNode !== body) body.appendChild(el);
+  };
+  document.addEventListener("DOMContentLoaded", attachRoot);
+  setTimeout(attachRoot, 500);
+  setTimeout(attachRoot, 2000);
 })();

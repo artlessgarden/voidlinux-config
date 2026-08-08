@@ -82,6 +82,31 @@ from qutebrowser.api import cmdutils as _cmdutils
 from qutebrowser.utils import objreg as _objreg
 from qutebrowser.utils import message as _message
 from qutebrowser.utils import usertypes as _usertypes
+from qutebrowser.utils import jinja as _jinja
+from qutebrowser.utils import javascript as _javascript
+from qutebrowser.browser.greasemonkey import GreasemonkeyScript as _GMScript
+
+# Vue 油猴（净化大师）不能包在 window Proxy 里，否则设置面板挂不上
+_gm_code_orig = _GMScript.code
+
+
+def _gm_code_maybe_no_proxy(self):
+    meta = self.script_meta or ""
+    if "@qute-no-proxy" not in meta and "净化大师" not in (self.name or ""):
+        return _gm_code_orig(self)
+    template = _jinja.js_environment.get_template("greasemonkey_wrapper.js")
+    return template.render(
+        scriptName=_javascript.string_escape(
+            "/".join([self.namespace or "", self.name])
+        ),
+        scriptInfo=self._meta_json(),
+        scriptMeta=_javascript.string_escape(meta),
+        scriptSource=self._code,
+        use_proxy=False,
+    )
+
+
+_GMScript.code = _gm_code_maybe_no_proxy
 
 
 @_cmdutils.register()
