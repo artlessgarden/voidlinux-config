@@ -23,8 +23,11 @@ ln -sfnT "$h/.config/mpv" "$HOME/.config/mpv"
 ln -sfnT "$h/.config/mouseless" "$HOME/.config/mouseless"
 ln -sfnT "$h/.config/qutebrowser" "$HOME/.config/qutebrowser"
 # jseval -f 只认 data/js；链到 config 里同一份，仓库只维护 config
-mkdir -p "$HOME/.local/share/qutebrowser"
+mkdir -p "$HOME/.local/share/qutebrowser" \
+	"$HOME/.local/share/qutebrowser/greasemonkey"
 ln -sfnT "$HOME/.config/qutebrowser/js" "$HOME/.local/share/qutebrowser/js"
+# 页面净化大师：上游 + qute shim → data/greasemonkey（失败不挡装机）
+"$h/.local/bin/qute-gm-bili" || echo "qute-gm-bili skipped"
 # 旧版曾链到 share/userscripts，清掉以免抢在 config 前面
 rm -rf "$HOME/.local/share/qutebrowser/userscripts"
 chmod +x "$h/.config/qutebrowser/userscripts/"* 2>/dev/null || true
