@@ -21,4 +21,6 @@ sh 70-link-apps.sh
 sh 80-grub.sh
 sh 85-asus-hw.sh
 # 电池 80%、quiet、iwlwifi 关省电 + 掉线/唤醒重连
+sh 86-mouseless.sh
+# keyd F13+ 控鼠标；重新登录后 input/uinput 组生效
 # 退出再进 niri，自启项生效

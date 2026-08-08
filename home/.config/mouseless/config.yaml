@@ -1,0 +1,26 @@
+# keyd mouseless 层发出 F13+；只听 keyd 虚拟键盘，避免和物理键盘抢设备
+devices:
+  - "keyd virtual keyboard"
+
+baseMouseSpeed: 800.0
+baseScrollSpeed: 22.0
+mouseAccelerationTime: 180.0
+startMouseSpeed: 40.0
+
+layers:
+  - name: initial
+    passThrough: true
+    bindings:
+      # i/k/j/l
+      f13: move 0 -1
+      f14: move 0 1
+      f15: move -1 0
+      f16: move 1 0
+      # y/h 滚轮；u/o 左右滚
+      f21: scroll up
+      f22: scroll down
+      f23: scroll left
+      f24: scroll right
+      # s（60.conf）/ d（new.conf）慢速
+      f17: speed 0.3
+      f18: speed 4.0

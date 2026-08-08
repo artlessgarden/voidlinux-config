@@ -20,6 +20,7 @@ ln -sfnT "$h/.config/wl-kbptr" "$HOME/.config/wl-kbptr"
 ln -sfnT "$h/.config/fontconfig" "$HOME/.config/fontconfig"
 ln -sfnT "$h/.config/htop" "$HOME/.config/htop"
 ln -sfnT "$h/.config/mpv" "$HOME/.config/mpv"
+ln -sfnT "$h/.config/mouseless" "$HOME/.config/mouseless"
 ln -sfnT "$h/.config/qutebrowser" "$HOME/.config/qutebrowser"
 # jseval -f 只认 data/js；链到 config 里同一份，仓库只维护 config
 mkdir -p "$HOME/.local/share/qutebrowser"
