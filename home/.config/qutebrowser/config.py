@@ -73,9 +73,26 @@ c.url.start_pages = [_STARTPAGE_URL]
 c.url.default_page = _STARTPAGE_URL
 c.auto_save.session = True
 c.session.lazy_restore = True
-# d 关最后一个标签 = 关窗口，但先确认
-c.tabs.last_close = "close"
+# 关窗 / ZZ 用底栏 y/n（页面还在）；最后一个标签的 d 也走这条
 c.confirm_quit = ["always"]
+
+from qutebrowser.api import cmdutils as _cmdutils
+from qutebrowser.utils import objreg as _objreg
+
+
+@_cmdutils.register()
+def close_or_quit() -> None:
+    """多标签则关当前；只剩一个则确认后退出（不先拆掉页面）。"""
+    win = _objreg.last_focused_window()
+    tb = _objreg.get("tabbed-browser", scope="window", window=win.win_id)
+    if tb.widget.count() > 1:
+        tab = tb.widget.currentWidget()
+        tb.close_tab(tab)
+        return
+    win.close()
+
+
+config.bind("d", "close-or-quit")
 
 # 补全
 c.completion.show = "always"
