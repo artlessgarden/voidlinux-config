@@ -98,7 +98,7 @@ spawn-at-startup "wlsunset" "-l" "20" "-L" "100"
 // 只把 title=sticky 的浮动窗钉在所有 workspace（配合 Mod+n 便签）
 spawn-at-startup "niri-float-sticky" "-title" "^sticky$"
 // keyd mouseless 层（; 按住 / g 切换）→ F13+；root 读 uinput（nopasswd）
-spawn-at-startup "sudo" "-n" "mouseless" "--config" "/home/xiang/.config/mouseless/config.yaml"
+spawn-at-startup "sudo" "-n" "/usr/local/bin/mouseless" "--config" "/home/xiang/.config/mouseless/config.yaml"
 
 binds {
 Mod+w repeat=false { spawn "wl-kbptr" "-o" "modes=floating,click" "-o" "mode_floating.source=detect"; }
