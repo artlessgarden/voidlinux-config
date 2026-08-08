@@ -34,7 +34,7 @@ cd ~/voidlinux-config
 # 按 flow.txt 依次执行
 ```
 
-默认浏览器为 qutebrowser（`Mod+c`）。核显用 AMD `amdgpu`（nouveau 已屏蔽）。
+默认浏览器为 qutebrowser（`Mod+c`，已有实例则同进程开新窗）。核显用 AMD `amdgpu`（nouveau 已屏蔽）。
 默认进 Windows；Esc 选 `void_grub` 进 Void，tty1 执行 `ni`。
 
 ### qutebrowser 速查
