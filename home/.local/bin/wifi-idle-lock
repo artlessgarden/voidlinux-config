@@ -1,4 +1,0 @@
-#!/bin/sh
-wifi-snap idle-lock
-swaylock -f -i "$HOME/.config/niri/bg3.jpg"
-wifi-snap idle-unlock

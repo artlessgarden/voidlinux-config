@@ -1,3 +1,0 @@
-#!/bin/sh
-wifi-snap monitors-off
-exec niri msg action power-off-monitors

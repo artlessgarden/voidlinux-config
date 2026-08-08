@@ -91,9 +91,8 @@ animations { off ;}
 spawn-at-startup "swaybg" "-i" "/home/xiang/.config/niri/bg4.jpg"
 spawn-at-startup "fcitx5"
 spawn-at-startup "swayidle" "-w" \
-    "timeout" "180" "wifi-idle-lock" \
-    "timeout" "240" "wifi-monitors-off" \
-    "after-resume" "wifi-snap after-resume"
+    "timeout" "180" "swaylock" "-f" "-i" "/home/xiang/.config/niri/bg3.jpg" \
+    "timeout" "240" "niri" "msg" "action" "power-off-monitors"
 spawn-at-startup "foot"
 spawn-at-startup "wlsunset" "-l" "20" "-L" "100"
 // 只把 title=sticky 的浮动窗钉在所有 workspace（配合 Mod+n 便签）
