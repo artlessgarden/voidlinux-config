@@ -69,9 +69,11 @@ c.downloads.remove_finished = 15000
 c.downloads.location.directory = "~/Downloads"
 c.downloads.location.prompt = False
 
-# 新标签 / 启动
+# 新标签 / 启动；退出后下次自动恢复标签（无会话时才用 startpage）
 c.url.start_pages = [_STARTPAGE_URL]
 c.url.default_page = _STARTPAGE_URL
+c.auto_save.session = True
+c.session.lazy_restore = True
 
 # 补全
 c.completion.show = "always"
