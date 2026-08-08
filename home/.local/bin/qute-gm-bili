@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Assemble bili-cleaner for qute: eval into real window (skip GM Proxy)."""
+"""从 bilibili-cleaner 抽出 html[attr]+CSS，生成精简 qute 油猴。"""
 import json
 import os
 import re
@@ -12,18 +12,33 @@ UPSTREAM = os.environ.get(
     "https://raw.githubusercontent.com/festoney8/bilibili-cleaner/release/"
     "bilibili-cleaner.github.user.js",
 )
-VUE = os.environ.get(
-    "QUTE_BILI_VUE_URL",
-    "https://cdn.jsdelivr.net/npm/vue@3.5.40/dist/vue.global.prod.js",
-)
 CFG = Path(os.environ.get("QUTE_CONFIG_DIR", Path.home() / ".config/qutebrowser"))
-SHIM = CFG / "gm-src" / "bili-cleaner-qute.js"
-OUT = Path.home() / ".local/share/qutebrowser/greasemonkey/bilibili-cleaner.user.js"
+RUNTIME = CFG / "gm-src" / "bili-clean.runtime.js"
+OUT = Path.home() / ".local/share/qutebrowser/greasemonkey/bili-clean.user.js"
+OLD = Path.home() / ".local/share/qutebrowser/greasemonkey/bilibili-cleaner.user.js"
 
-HEADER_RE = re.compile(
-    r"// ==UserScript==.*?// ==/UserScript==\s*",
-    re.DOTALL,
+SWITCH_RE = re.compile(
+    r'type:\s*"switch"\s*,\s*id:\s*"(?P<id>[^"]+)"\s*,\s*name:\s*"(?P<name>[^"]+)"',
 )
+STYLE_RE = re.compile(r'_style\("((?:\\.|[^"\\])*)"\)')
+HTMLSTR_RE = re.compile(r'=\s*"(html\[(?:\\.|[^"\\])*)"')
+HEADER = """\
+// ==UserScript==
+// @name         bili-clean (qute)
+// @namespace    qute-local
+// @description  从 festoney8/bilibili-cleaner 抽出的 html[attr]+CSS 净化
+// @match        *://*.bilibili.com/*
+// @exclude      *://message.bilibili.com/pages/nav/header_sync
+// @exclude      *://message.bilibili.com/pages/nav/index_new_pc_sync
+// @exclude      *://data.bilibili.com/*
+// @exclude      *://cm.bilibili.com/*
+// @exclude      *://api.bilibili.com/*
+// @exclude      *://api.*.bilibili.com/*
+// @exclude      *://passport.bilibili.com/*
+// @exclude      *://member.bilibili.com/*
+// @run-at       document-start
+// ==/UserScript==
+"""
 
 
 def fetch(url: str) -> str:
@@ -32,41 +47,77 @@ def fetch(url: str) -> str:
         return resp.read().decode("utf-8")
 
 
+def unesc(s: str) -> str:
+    try:
+        return bytes(s, "utf-8").decode("unicode_escape")
+    except Exception:
+        return s.replace('\\"', '"').replace("\\n", "\n")
+
+
+def extract_rules(src: str) -> list[dict]:
+    rules = []
+    seen = set()
+    for m in SWITCH_RE.finditer(src):
+        rid = m.group("id")
+        if rid in seen:
+            continue
+        seen.add(rid)
+        rest = src[m.end() :]
+        nxt = re.search(r'\btype:\s*"', rest)
+        if nxt:
+            rest = rest[: nxt.start()]
+        rules.append(
+            {
+                "id": rid,
+                "name": m.group("name"),
+                "def": bool(re.search(r"defaultEnable:\s*true", rest)),
+                "noStyle": bool(re.search(r"noStyle:\s*true", rest)),
+            }
+        )
+    return rules
+
+
+def extract_css(src: str) -> str:
+    chunks = []
+    seen = set()
+    for raw in STYLE_RE.findall(src) + HTMLSTR_RE.findall(src):
+        css = unesc(raw)
+        if "html[" not in css or css.lstrip().startswith("/*! tailwindcss"):
+            continue
+        if css in seen:
+            continue
+        seen.add(css)
+        chunks.append(css)
+    return "\n".join(chunks)
+
+
 def main() -> None:
-    if not SHIM.is_file():
-        print(f"missing shim: {SHIM}", file=sys.stderr)
+    if not RUNTIME.is_file():
+        print(f"missing runtime: {RUNTIME}", file=sys.stderr)
         sys.exit(1)
-    shim_full = SHIM.read_text(encoding="utf-8")
-    m = HEADER_RE.search(shim_full)
-    if not m:
-        print("shim missing UserScript header", file=sys.stderr)
+    src = fetch(UPSTREAM)
+    rules = extract_rules(src)
+    css = extract_css(src)
+    if len(rules) < 50 or len(css) < 10000:
+        print(
+            f"extract too small: rules={len(rules)} css={len(css)} (upstream changed?)",
+            file=sys.stderr,
+        )
         sys.exit(1)
-    header = m.group(0).rstrip() + "\n"
-    shim_js = shim_full[m.end() :].strip() + "\n"
-    upstream = HEADER_RE.sub("", fetch(UPSTREAM), count=1).strip() + "\n"
-    vue = fetch(VUE).strip() + "\n"
-    payload = (
-        "// qute page-world payload\n"
-        + shim_js
-        + "\n// ---- vue ----\n"
-        + vue
-        + "\n// ---- upstream ----\n"
-        + upstream
-    )
-    loader = (
-        header
-        + "\n(function () {\n"
-        + "  var uw = typeof unsafeWindow !== 'undefined' ? unsafeWindow : window;\n"
-        + "  try { uw.eval("
-        + json.dumps(payload)
-        + "); }\n"
-        + "  catch (e) { console.error('bili-cleaner', e); }\n"
-        + "})();\n"
+    runtime = RUNTIME.read_text(encoding="utf-8")
+    out = (
+        HEADER
+        + f"\nconst CSS = {json.dumps(css)};\n"
+        + f"const RULES = {json.dumps(rules, ensure_ascii=False)};\n"
+        + runtime
     )
     OUT.parent.mkdir(parents=True, exist_ok=True)
-    OUT.write_text(loader, encoding="utf-8")
-    print(f"wrote {OUT} ({OUT.stat().st_size} bytes)")
-    print("qute: :greasemonkey-reload ，再刷新 B 站")
+    OUT.write_text(out, encoding="utf-8")
+    if OLD.exists():
+        OLD.unlink()
+    on = sum(1 for r in rules if r["def"])
+    print(f"wrote {OUT}  rules={len(rules)} default-on={on} css={len(css)}B")
+    print("qute: :greasemonkey-reload ，刷新 B 站；,b 开面板")
 
 
 if __name__ == "__main__":

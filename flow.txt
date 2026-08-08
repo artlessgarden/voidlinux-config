@@ -18,7 +18,7 @@ sh 50-link-home.sh
 ni
 sh 60-pkg-apps.sh
 sh 70-link-apps.sh
-# 含 qute-gm-bili（B 站净化大师）
+# 含 qute-gm-bili（B 站净化 CSS）
 sh 80-grub.sh
 sh 85-asus-hw.sh
 # 电池 80%、quiet、iwlwifi 关省电 + 掉线/唤醒重连

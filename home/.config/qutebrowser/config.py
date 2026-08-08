@@ -178,6 +178,7 @@ config.bind(",p", "spawn --userscript translate-page")
 config.bind(",e", "hint text userscript translate-element")
 config.bind(",y", "spawn --userscript translate-inline")
 config.bind(",d", "config-cycle colors.webpage.darkmode.enabled ;; reload")
+config.bind(",b", "jseval -q --world main __biliQuteToggle && __biliQuteToggle()")
 # v  hint 文本块 → caret（取代默认直接进 caret）
 config.bind("v", "hint text userscript caret-at-element")
 config.bind(";t", "hint inputs")
