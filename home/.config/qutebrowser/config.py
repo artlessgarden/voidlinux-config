@@ -61,7 +61,10 @@ c.url.searchengines = {
 }
 
 # 日常：少被视频/通知打断；下完过一会清下载条
+# 全局关自动播放时 Chromium 仍允许「静音自动播」，B 站会一直 mute 开播
 c.content.autoplay = False
+config.set("content.autoplay", True, "*://*.bilibili.com/*")
+config.set("content.autoplay", True, "*://bilibili.com/*")
 c.content.notifications.enabled = False
 c.downloads.remove_finished = 15000
 
