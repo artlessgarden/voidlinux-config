@@ -38,6 +38,7 @@ ln -sfn "$h/.emacs.d/init.el" "$HOME/.emacs.d/init.el"
 ln -sfn "$h/.emacs.d/early-init.el" "$HOME/.emacs.d/early-init.el"
 ln -sfn "$h/.emacs.d/lisp" "$HOME/.emacs.d/lisp"
 
+chmod +x "$h/.local/bin/"* 2>/dev/null || true
 ln -sf "$h/.local/bin/"* "$HOME/.local/bin/"
 # 卸掉旧 Helium 桌面入口（若曾链过）
 rm -f "$HOME/.local/share/applications/helium.desktop"
