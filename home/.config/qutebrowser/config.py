@@ -75,26 +75,47 @@ c.url.start_pages = [_STARTPAGE_URL]
 c.url.default_page = _STARTPAGE_URL
 c.auto_save.session = True
 c.session.lazy_restore = True
-# 关窗 / ZZ 用底栏 y/n（页面还在）；最后一个标签的 d 也走这条
-c.confirm_quit = ["always"]
+# 关窗不弹 Qt 确认（多窗口时也不烦）；下载仍在最后一个窗口提醒
+c.confirm_quit = ["downloads"]
 
 from qutebrowser.api import cmdutils as _cmdutils
 from qutebrowser.utils import objreg as _objreg
+from qutebrowser.utils import message as _message
+from qutebrowser.utils import usertypes as _usertypes
+from qutebrowser.misc import quitter as _quitter
+
+
+def _is_last_window() -> bool:
+    return len(_objreg.window_registry) <= 1
+
+
+def _confirm_last_quit() -> bool:
+    return bool(
+        _message.ask("Really quit?", mode=_usertypes.PromptMode.yesno, default=True)
+    )
 
 
 @_cmdutils.register()
 def close_or_quit() -> None:
-    """多标签则关当前；只剩一个则确认后退出（不先拆掉页面）。"""
+    """多标签关当前；多窗口关本窗；最后一个窗口才底栏确认。"""
     win = _objreg.last_focused_window()
     tb = _objreg.get("tabbed-browser", scope="window", window=win.win_id)
     if tb.widget.count() > 1:
-        tab = tb.widget.currentWidget()
-        tb.close_tab(tab)
+        tb.close_tab(tb.widget.currentWidget())
         return
-    win.close()
+    if not _is_last_window() or _confirm_last_quit():
+        win.close()
+
+
+@_cmdutils.register()
+def quit_or_confirm() -> None:
+    """ZZ：多窗口直接退；只剩一个窗口则底栏确认。"""
+    if not _is_last_window() or _confirm_last_quit():
+        _quitter.quit_(save=True)
 
 
 config.bind("d", "close-or-quit")
+config.bind("ZZ", "quit-or-confirm")
 
 # 补全
 c.completion.show = "always"
