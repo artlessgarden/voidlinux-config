@@ -1,0 +1,120 @@
+#!/usr/bin/env python3
+"""按「最后访问时间」清理 qute 历史：超过 N 天未再打开的 URL 整段删除。
+
+可由 config.py 启动时后台调用（每天最多一次），或手动：
+  :spawn --userscript history-prune
+  :spawn --userscript history-prune --force
+
+天数：环境变量 QUTE_HISTORY_DAYS（默认 90）。
+"""
+from __future__ import annotations
+
+import argparse
+import os
+import sqlite3
+import sys
+import time
+from pathlib import Path
+
+DEFAULT_DAYS = 90
+STAMP_NAME = "history-prune.stamp"
+DAY_SEC = 86400
+
+
+def data_dir() -> Path:
+    if d := os.environ.get("QUTE_DATA_DIR"):
+        return Path(d)
+    xdg = os.environ.get("XDG_DATA_HOME")
+    base = Path(xdg) if xdg else Path.home() / ".local/share"
+    return base / "qutebrowser"
+
+
+def cmd(msg: str) -> None:
+    fifo = os.environ.get("QUTE_FIFO")
+    if not fifo:
+        return
+    try:
+        with open(fifo, "a", encoding="utf-8") as f:
+            f.write(msg.rstrip() + "\n")
+    except OSError:
+        pass
+
+
+def prune(db_path: Path, days: int) -> tuple[int, int]:
+    cutoff = int(time.time()) - days * DAY_SEC
+    # uri + timeout：浏览器开着时也能等锁
+    conn = sqlite3.connect(f"file:{db_path}?mode=rw", uri=True, timeout=15.0)
+    try:
+        conn.execute("PRAGMA busy_timeout=15000")
+        cur = conn.cursor()
+        cur.execute(
+            """
+            DELETE FROM History
+            WHERE url IN (
+                SELECT url FROM History
+                GROUP BY url
+                HAVING MAX(atime) < ?
+            )
+            """,
+            (cutoff,),
+        )
+        hist_n = cur.rowcount if cur.rowcount is not None and cur.rowcount >= 0 else 0
+        cur.execute(
+            "DELETE FROM CompletionHistory WHERE last_atime < ?",
+            (cutoff,),
+        )
+        comp_n = cur.rowcount if cur.rowcount is not None and cur.rowcount >= 0 else 0
+        conn.commit()
+        return hist_n, comp_n
+    finally:
+        conn.close()
+
+
+def main() -> int:
+    ap = argparse.ArgumentParser(description="Prune old qutebrowser history")
+    ap.add_argument(
+        "--days",
+        type=int,
+        default=int(os.environ.get("QUTE_HISTORY_DAYS", DEFAULT_DAYS)),
+        help=f"delete URLs not visited within N days (default {DEFAULT_DAYS})",
+    )
+    ap.add_argument(
+        "--force",
+        action="store_true",
+        help="run even if already pruned within 24h",
+    )
+    args = ap.parse_args()
+    if args.days < 1:
+        cmd('message-warning "history-prune: --days must be >= 1"')
+        return 1
+
+    data = data_dir()
+    db_path = data / "history.sqlite"
+    stamp = data / STAMP_NAME
+
+    if not args.force and stamp.exists():
+        age = time.time() - stamp.stat().st_mtime
+        if age < DAY_SEC:
+            return 0
+
+    if not db_path.is_file():
+        return 0
+
+    try:
+        hist_n, comp_n = prune(db_path, args.days)
+        stamp.write_text(f"{int(time.time())}\n", encoding="utf-8")
+    except sqlite3.Error as e:
+        cmd(f'message-warning "history-prune failed: {e}"')
+        return 1
+
+    # 仅 userscript / 手动时打底栏；启动静默跑不刷屏
+    if os.environ.get("QUTE_FIFO") and (args.force or hist_n or comp_n):
+        cmd(
+            f'message-info "history-prune: -{hist_n} History, '
+            f'-{comp_n} Completion (>{args.days}d)"'
+        )
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

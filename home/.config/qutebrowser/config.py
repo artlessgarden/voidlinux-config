@@ -179,3 +179,19 @@ c.hints.selectors["text"] = [
     "address",
     "div:not(:has(div, p, ul, ol, table, section, article, h1, h2, h3, h4, h5, h6, header, footer, nav))",
 ]
+
+# 历史：启动时后台清理「超过 N 天未再访问」的 URL（每天最多一次，无 cron）
+# 天数可用环境变量 QUTE_HISTORY_DAYS（默认 90）；手动：:spawn --userscript history-prune --force
+import subprocess as _sp
+import sys as _sys
+from pathlib import Path as _Path
+
+_history_prune = _Path(__file__).resolve().parent / "userscripts" / "history-prune"
+if _history_prune.is_file():
+    _sp.Popen(
+        [_sys.executable, str(_history_prune)],
+        stdin=_sp.DEVNULL,
+        stdout=_sp.DEVNULL,
+        stderr=_sp.DEVNULL,
+        start_new_session=True,
+    )

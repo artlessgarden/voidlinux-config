@@ -53,4 +53,5 @@ cd ~/voidlinux-config
 
 可选：`export QUTE_DEEPL_KEY='…:fx'` 走 DeepL，否则用 Google gtx。  
 广告：EasyList + China + Fanboy Annoyance（`python3-adblock`）。  
-油猴：`~/.config/qutebrowser/greasemonkey/`（如 bilibili-ip）。
+油猴：`~/.config/qutebrowser/greasemonkey/`（如 bilibili-ip）。  
+历史：启动时自动删「超过 90 天未再访问」的条目（每天最多一次）；`QUTE_HISTORY_DAYS` 改天数；手动 `:spawn --userscript history-prune --force`。
