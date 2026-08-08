@@ -1,4 +1,5 @@
-# keyd mouseless 层发出 F13+；只听 keyd 虚拟键盘，避免和物理键盘抢设备
+# 默认路径 ~/.config/mouseless/config.yaml，直接跑 mouseless 即可
+# keyd mouseless 层发 F13+；只听 keyd 虚拟键盘
 devices:
   - "keyd virtual keyboard"
 

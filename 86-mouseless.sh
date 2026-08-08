@@ -1,8 +1,8 @@
 #!/bin/sh
-# mouseless（keyd F13+ 控鼠标）。Void 无包，装官方 amd64 二进制。
+# mouseless：用户进程，读 keyd 虚拟键盘 → uinput 鼠标。
+# 二进制只放 ~/.local/bin；权限靠 uinput/input 组，不要 sudo。
 set -e
 dir=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
-h=$dir/home
 ver=${MOUSELESS_VER:-v0.3.0}
 url="https://github.com/jbensmann/mouseless/releases/download/${ver}/mouseless_linux_amd64.tar.gz"
 
@@ -11,9 +11,8 @@ tmp=$(mktemp -d)
 trap 'rm -rf "$tmp"' EXIT
 curl -fsSL "$url" | tar -xzf - -C "$tmp"
 install -m 755 "$tmp/mouseless" "$HOME/.local/bin/mouseless"
-sudo install -m 755 "$tmp/mouseless" /usr/local/bin/mouseless
-rm -rf "$HOME/.config/mouseless"
-ln -sfnT "$h/.config/mouseless" "$HOME/.config/mouseless"
+# 以前为了 sudo 另装过一份，清掉
+sudo rm -f /usr/local/bin/mouseless
 
 sudo groupadd --system uinput 2>/dev/null || true
 sudo usermod -aG input,uinput "$USER"
@@ -23,7 +22,8 @@ sudo install -o root -g root -m 644 \
 echo uinput | sudo tee /etc/modules-load.d/uinput.conf >/dev/null
 sudo modprobe uinput 2>/dev/null || true
 sudo udevadm control --reload-rules 2>/dev/null || true
-sudo udevadm trigger 2>/dev/null || true
+sudo udevadm trigger --name-match=uinput 2>/dev/null || true
 
-echo "mouseless -> /usr/local/bin/mouseless ($ver)"
-echo "组 input+uinput 要重新登录才不用 sudo；当前: sudo -n mouseless --config ~/.config/mouseless/config.yaml"
+echo "mouseless -> ~/.local/bin/mouseless ($ver)"
+echo "配置默认 ~/.config/mouseless/config.yaml（niri 里 spawn mouseless 即可）"
+echo "input+uinput 要重新登录（退 niri → 登出 tty → 再 ni）才进当前会话"
