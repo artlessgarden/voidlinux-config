@@ -59,16 +59,6 @@ window-rule {
     default-window-height { fixed 720; }
 }
 
-// Mod+n 便签：右上角浮动，niri-float-sticky 跨 workspace
-window-rule {
-    match app-id="^foot$" title="^sticky$"
-    open-floating true
-    open-focused true
-    default-column-width { fixed 480; }
-    default-window-height { fixed 360; }
-    default-floating-position x=16 y=16 relative-to="top-right"
-}
-
 output "eDP-1" {
        scale 1.5
        mode "2560x1600@60"
@@ -88,15 +78,14 @@ animations { off ;}
 // --session 会自行把 WAYLAND_DISPLAY 导入会话 D-Bus，这里不再重复调用
 // dbus-update-activation-environment。
 // niri spawn 不展开参数里的 $HOME/~，壁纸路径写绝对。
+// swayidle 的 timeout 命令必须是一整段参数，不能拆成 swaylock / -f / -i …
 spawn-at-startup "swaybg" "-i" "/home/xiang/.config/niri/bg4.jpg"
 spawn-at-startup "fcitx5"
 spawn-at-startup "swayidle" "-w" \
-    "timeout" "180" "swaylock" "-f" "-i" "/home/xiang/.config/niri/bg3.jpg" \
-    "timeout" "240" "niri" "msg" "action" "power-off-monitors"
+    "timeout" "180" "swaylock -f -i /home/xiang/.config/niri/bg3.jpg" \
+    "timeout" "240" "niri msg action power-off-monitors"
 spawn-at-startup "foot"
 spawn-at-startup "wlsunset" "-l" "20" "-L" "100"
-// 只把 title=sticky 的浮动窗钉在所有 workspace（配合 Mod+n 便签）
-spawn-at-startup "niri-float-sticky" "-title" "^sticky$"
 // keyd mouseless 层 → F13+；用户进程，默认读 ~/.config/mouseless/config.yaml
 spawn-at-startup "mouseless"
 
@@ -104,12 +93,11 @@ binds {
 Mod+w repeat=false { spawn "wl-kbptr" "-o" "modes=floating,click" "-o" "mode_floating.source=detect"; }
 Mod+escape repeat=false { power-off-monitors; }
 Mod+a repeat=false { spawn "foot"; }
-Mod+x repeat=false { spawn "foot" "vis" "+new-entry"; }
-Mod+c repeat=false { spawn "qute-new"; }
+Mod+c repeat=false { spawn "helium"; }
 Mod+v repeat=false { toggle-overview; }
 Mod+p repeat=false { spawn-sh "grim -g \"$(slurp)\" - | satty -f - --copy-command wl-copy --early-exit copy"; }
 Mod+ctrl+p repeat=false { spawn-sh "grim - | satty -f - --copy-command wl-copy --early-exit copy"; }
-Mod+n repeat=false { spawn "sticky-note"; }
+Mod+n repeat=false { spawn "foot" "vis" "/home/xiang/Drafts/memo/inbox.md"; }
 Mod+r repeat=false { switch-preset-column-width; }
 
 Mod+s  cooldown-ms=70   { focus-column-left; }

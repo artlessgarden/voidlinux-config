@@ -31,6 +31,7 @@ shopt -s checkwinsize
 
 export EDITOR=vis
 export VISUAL=vis
+export BROWSER=helium
 
 # lf：退出后 shell 留在上次浏览的目录（桌面入口仍直接调 /usr/bin/lf）
 lfcd() {

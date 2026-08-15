@@ -10,7 +10,6 @@ local formatter = require("my.formatter")
 local navigate = require("my.navigate")
 local entry = require("my.entry")
 local toggle = require("my.toggle")
-require("my.theme")
 require("my.completion")
 require("my.cursor")
 require("my.fcitx")
@@ -19,6 +18,7 @@ require("my.lock")
 require("my.status")
 
 vis.events.subscribe(vis.events.INIT, function()
+	vis:command("set theme mytheme-dark")
 	entry.setup({
 		root = os.getenv("VIS_ZK_ROOT") or (home .. "/Drafts/memo"),
 	})

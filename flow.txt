@@ -18,9 +18,11 @@ sh 50-link-home.sh
 ni
 sh 60-pkg-apps.sh
 sh 70-link-apps.sh
-# 含 qute-gm-bili（B 站净化 CSS）
+# 含 Helium desktop/mime/策略
 sh 80-grub.sh
 sh 85-asus-hw.sh
 # 电池 80%、quiet、iwlwifi 关省电 + 掉线/唤醒重连
 sh 86-mouseless.sh
 # keyd F13+ 控鼠标；退 niri、登出 tty 再 ni，input+uinput 才进会话（不用 sudo）
+sh 90-helium.sh
+# 默认浏览器；数据在 ~/.config/net.imput.helium；之后用 xbg 一并更新

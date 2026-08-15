@@ -152,7 +152,17 @@ local treesitter_languages = {
 	"yaml",
 }
 
-require("nvim-treesitter").install(treesitter_languages)
+-- 新版 nvim-treesitter 编译 parser 需要 tree-sitter CLI + C 编译器
+if vim.fn.executable("tree-sitter") == 1 and vim.fn.executable("gcc") == 1 then
+	require("nvim-treesitter").install(treesitter_languages)
+else
+	vim.schedule(function()
+		vim.notify(
+			"nvim-treesitter: 需要 tree-sitter-cli 与 gcc（xbps: tree-sitter-cli gcc）",
+			vim.log.levels.WARN
+		)
+	end)
+end
 
 pcall(vim.treesitter.language.register, "markdown", { "markdown.mdx" })
 
