@@ -4,9 +4,31 @@ tri 是面向 River 0.4 的个人窗口管理器：左侧主窗口，右侧为�
 
 ## 支持边界
 
-tri 冻结现有功能，不计划加入 workspace、IPC、动画、窗口规则或传统浮动布局。正式支持单输出、单 seat；多输出环境只使用 River 报告的第一个有效输出。
+tri 冻结现有功能，不计划加入 workspace、IPC、动画、窗口规则或传统浮动布局。正式支持 River 0.4、单输出、单 seat；多输出环境只使用 River 报告的第一个有效输出。仓库内二进制面向 Void Linux glibc 2.38+、基础 x86_64 指令集，AMD 和 Intel 共用；系统需提供 `libwayland-client.so.0`、`libxkbcommon.so.0`、`libfcft.so.4` 和 `libpixman-1.so.0`。
 
 完整键位见 `CODE.md`，布局语义见 `DESIGN.md`。
+
+## 换设备使用
+
+拉取 `voidlinux-config` 后，让正式配置指向仓库目录：
+
+```sh
+ln -s "$HOME/voidlinux-config/home/.config/tri" "$HOME/.config/tri"
+ln -s "$HOME/.config/tri/session.sh" "$HOME/.local/bin/tri-session"
+ldd "$HOME/.config/tri/zig-out/bin/tri"
+```
+
+然后只编辑 `config`。另一台机器通常需要调整 `output/mode/scale`、`env.*`、`start.*` 和外部命令；`output = auto` 表示不调用 `wlr-randr`。仓库已经带源码和通用二进制，不需要安装 Zig。
+
+也可用 `TRI_CONFIG=/path/config` 指定配置、`TRI_BIN=/path/tri` 指定二进制。
+
+## 配置
+
+- `env.NAME = value`：在 D-Bus 和 tri 启动前导出环境变量。
+- `start.label = command`：按文件顺序启动一次；标签仅用于阅读。
+- `bind.key = command`：运行 shell 命令；值以 `:` 开头时调用 tri 内部动作。
+- 长驻的简单命令建议写 `exec program`，避免多留一层 shell。
+- 删除一行即可禁用；无效的可选项只会警告或跳过。
 
 ## 构建
 
@@ -14,9 +36,9 @@ tri 冻结现有功能，不计划加入 workspace、IPC、动画、窗口规则
 ./rebuild.sh
 ```
 
-脚本先运行单元测试，再在仓库内的临时目录生成 ReleaseSafe 候选文件。构建成功后保存当前 `zig-out/bin/tri` 为 `tri.previous`，最后通过同一文件系统上的重命名原子替换日用二进制。
+只有修改源码时才需要 Zig 0.16。脚本先运行单元测试，再用 `x86_64-linux-gnu.2.38`、`cpu=baseline` 生成 ReleaseSafe 候选文件；通过 ELF 和动态库检查后保存当前二进制为 `tri.previous`，最后原子替换日用二进制。
 
-键位完全由 `config` 定义：`bind.Super+a = exec alacritty` 直接运行 shell 命令，`bind.Super+s = :focus_toggle` 调用 tri 内部布局动作。长驻的简单命令建议加 `exec`，避免保留一层等待它的 shell；删除一行即可禁用。完整日用配置见 `config`。
+完整日用配置见 `config`。
 
 ## 版本策略
 

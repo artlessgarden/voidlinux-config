@@ -42,4 +42,4 @@ mouseless：`~/.local/bin/mouseless`，会话自启（无 sudo）；配置 `~/.c
 
 默认进 Windows；Esc 选 `void_grub` 进 Void，tty1 使用 `rv`（River + tri），`ni` 保留作备用。
 
-River 二进制在 `~/.local/bin/river`；tri 源码、配置及二进制在 `~/.config/tri`。
+River 二进制在 `~/.local/bin/river`；tri 源码、配置及 baseline x86_64 glibc 二进制在 `~/.config/tri`，换设备只需调整其中的 `config`。

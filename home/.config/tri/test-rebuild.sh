@@ -14,3 +14,6 @@ if TRI_REBUILD_TEST_FILE=$invalid "$tri_dir/rebuild.sh" >/dev/null 2>&1; then
 	echo 'rebuild accepted a non-ELF artifact' >&2
 	exit 1
 fi
+
+TRI_REBUILD_TEST_FILE=$tri_dir/zig-out/bin/tri "$tri_dir/rebuild.sh"
+grep -F 'zig build -Dtarget=x86_64-linux-gnu.2.38 -Dcpu=baseline' "$tri_dir/rebuild.sh" >/dev/null

@@ -11,6 +11,9 @@
 | `src/config.zig` | 读 `config` |
 | `src/bindings.zig` | 键位、命令/内部动作解析与冲突处理 |
 | `src/child_reaper.zig` | 回收快捷键命令子进程 |
+| `session.sh` | 读取会话环境/输出并启动 tri |
+| `test-session.sh` | session 安全解析测试 |
+| `test-rebuild.sh` | 构建产物拒绝测试 |
 | `config` | 日用配置 |
 
 ---
@@ -43,6 +46,13 @@ master, stack[9], expanded, focus_side, stack_on_left, monocle
 
 格式：`bind.Super+a = exec alacritty` 或 `bind.Super+s = :focus_toggle`。长驻的简单命令建议加 `exec`；管道等 shell 表达式直接写。修饰键支持 `Super/Ctrl/Shift/Alt`；删除配置行即可禁用。无效项和重复键会被忽略并记录警告，不会终止 WM；短命令结束后由 tri 回收，不留僵尸进程。
 
+## 会话
+
+- `env.NAME = value`：由 `session.sh` 安全导出，不会 source/eval 配置。
+- `output/mode/scale`：启动 tri 前交给 `wlr-randr`；`output = auto` 跳过。
+- `start.label = command`：由 tri 按配置顺序启动，标签无内建含义。
+- 应用、输入法、portal、音频、锁屏和设备路径只写在 `config`，不写死进脚本或 Zig。
+
 ---
 
 ## chip
@@ -55,5 +65,5 @@ master, stack[9], expanded, focus_side, stack_on_left, monocle
 ## 构建
 
 ```bash
-./rebuild.sh   # → zig-out/bin/tri
+./rebuild.sh   # baseline x86_64 glibc → zig-out/bin/tri
 ```

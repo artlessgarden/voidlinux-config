@@ -65,7 +65,7 @@
 - Modify: `.gitignore` if the build produces a new stable temporary name
 
 **Interfaces:**
-- Produces: tracked `zig-out/bin/tri` built using `-Dtarget=x86_64-linux-gnu -Dcpu=baseline`.
+- Produces: tracked `zig-out/bin/tri` built using `-Dtarget=x86_64-linux-gnu.2.38 -Dcpu=baseline`.
 - Preserves: atomic replacement and `tri.previous` fallback.
 
 - [ ] Add pre-replacement checks in `rebuild.sh` asserting `readelf -h` reports `Advanced Micro Devices X86-64`, `readelf -d` contains expected shared-library entries, and `ldd` contains no `not found` line.

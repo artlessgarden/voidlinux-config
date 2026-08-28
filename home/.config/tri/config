@@ -16,7 +16,7 @@ env.XMODIFIERS = @im=fcitx
 
 # Session startup, in file order. Labels are only for readability.
 start.portal_filechooser = test ! -x /usr/libexec/xdg-desktop-portal-termfilechooser || exec /usr/libexec/xdg-desktop-portal-termfilechooser
-start.portal = test ! -x /usr/libexec/xdg-desktop-portal || exec /usr/libexec/xdg-desktop-portal
+start.portal = sleep 0.2; test ! -x /usr/libexec/xdg-desktop-portal || exec /usr/libexec/xdg-desktop-portal
 start.input_method = exec fcitx5
 start.audio = exec pipewire
 start.sunset = exec wlsunset -l 20 -L 100

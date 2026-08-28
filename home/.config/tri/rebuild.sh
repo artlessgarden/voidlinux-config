@@ -1,12 +1,14 @@
 #!/bin/sh
 set -e
+LC_ALL=C
+export LC_ALL
 cd "$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)"
 
 check_artifact() {
 	artifact=$1
 	[ -x "$artifact" ] || return 1
-	readelf -h "$artifact" 2>/dev/null | grep -F 'Class:                             ELF64' >/dev/null || return 1
-	readelf -h "$artifact" 2>/dev/null | grep -F 'Machine:                           Advanced Micro Devices X86-64' >/dev/null || return 1
+	readelf -h "$artifact" 2>/dev/null | grep -E 'Class:[[:space:]]+ELF64' >/dev/null || return 1
+	readelf -h "$artifact" 2>/dev/null | grep -E 'Machine:[[:space:]]+Advanced Micro Devices X86-64' >/dev/null || return 1
 	dynamic=$(readelf -d "$artifact" 2>/dev/null) || return 1
 	for library in libwayland-client.so.0 libxkbcommon.so.0 libfcft.so.4 libpixman-1.so.0 libc.so.6; do
 		printf '%s\n' "$dynamic" | grep -F "[$library]" >/dev/null || return 1
@@ -15,6 +17,9 @@ check_artifact() {
 	if printf '%s\n' "$resolved" | grep -F 'not found' >/dev/null; then
 		return 1
 	fi
+	versions=$(readelf --version-info "$artifact" 2>/dev/null | sed -n 's/.*Name: GLIBC_\([0-9.]*\).*/\1/p') || return 1
+	max_version=$(printf '2.38\n%s\n' "$versions" | sort -Vu | tail -n 1)
+	[ "$max_version" = 2.38 ] || return 1
 }
 
 if [ -n "${TRI_REBUILD_TEST_FILE:-}" ]; then

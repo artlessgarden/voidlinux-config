@@ -56,10 +56,14 @@ output = eDP-1
 mode = 2560x1600@60Hz
 scale = 1.5
 
-bind.Super+a = alacritty
+env.QT_IM_MODULE = fcitx
+start.input_method = exec fcitx5
+bind.Super+a = exec alacritty
 bind.Super+s = :focus_toggle
 bind.XF86AudioRaiseVolume = wpctl set-volume @DEFAULT_AUDIO_SINK@ 2%+
 ```
+
+`env.*` 属于会话环境，`start.*` 是有序自启命令，`bind.*` 左侧是键位。换设备只改此文件；`output = auto` 可交给 River/系统保持当前输出配置。
 
 ---
 
@@ -68,3 +72,5 @@ bind.XF86AudioRaiseVolume = wpctl set-volume @DEFAULT_AUDIO_SINK@ 2%+
 ```bash
 cd ~/.config/tri && ./rebuild.sh
 ```
+
+构建固定为 baseline x86_64 glibc，仓库追踪的二进制可在 AMD/Intel 的 Void glibc 机器间共用。

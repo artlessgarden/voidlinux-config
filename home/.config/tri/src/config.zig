@@ -16,9 +16,6 @@ pub const Config = struct {
     master_ratio: f32 = 0.62,
     cursor_size: u32 = 28,
     cursor_theme: [:0]const u8 = "Adwaita",
-    output: []const u8 = "eDP-1",
-    mode: []const u8 = "2560x1600@60Hz",
-    scale: []const u8 = "1.5",
     binding_specs: std.ArrayListUnmanaged(bindings.Spec) = .empty,
     startup_specs: std.ArrayListUnmanaged(CommandSpec) = .empty,
 
@@ -81,12 +78,6 @@ pub const Config = struct {
             self.cursor_size = try std.fmt.parseInt(u32, value, 10);
         } else if (std.mem.eql(u8, key, "cursor_theme")) {
             self.cursor_theme = try self.dupZ(gpa, value);
-        } else if (std.mem.eql(u8, key, "output")) {
-            self.output = try self.dup(gpa, value);
-        } else if (std.mem.eql(u8, key, "mode")) {
-            self.mode = try self.dup(gpa, value);
-        } else if (std.mem.eql(u8, key, "scale")) {
-            self.scale = try self.dup(gpa, value);
         } else if (std.mem.startsWith(u8, key, "start.")) {
             const label = try self.dup(gpa, key["start.".len..]);
             const command = try self.dup(gpa, value);

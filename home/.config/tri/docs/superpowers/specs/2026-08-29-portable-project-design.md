@@ -17,7 +17,7 @@ The tracked `zig-out/bin/tri` is dynamically linked like a normal WM. No archive
 
 `home/.config/tri` remains the only project directory. It contains config, scripts, build files, source, protocols, vendored Zig packages and `zig-out/bin/tri`.
 
-`rebuild.sh` always targets baseline `x86_64-linux-gnu`, so its tracked result is not specialized for the build machine's AMD or Intel CPU. It runs tests, builds ReleaseSafe into a temporary prefix, atomically replaces the tracked binary and retains `tri.previous` as today.
+`rebuild.sh` always targets `x86_64-linux-gnu.2.38` with baseline CPU features, so its tracked result is not specialized for the build machine's AMD or Intel CPU. It runs tests, builds ReleaseSafe into a temporary prefix, atomically replaces the tracked binary and retains `tri.previous` as today.
 
 Another machine obtains source and binary through the normal `voidlinux-config` pull. It does not need Zig unless rebuilding tri.
 
