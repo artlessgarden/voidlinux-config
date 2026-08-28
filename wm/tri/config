@@ -1,0 +1,14 @@
+# tri — shared by session.sh and the WM binary.
+# Copy or symlink to ~/.config/tri/config to override.
+
+master_ratio = 0.62
+cursor_size = 28
+cursor_theme = Adwaita
+
+memo = /home/xiang/Drafts/memo/inbox.md
+term = alacritty
+browser = helium
+
+output = eDP-1
+mode = 2560x1600@60Hz
+scale = 1.5
