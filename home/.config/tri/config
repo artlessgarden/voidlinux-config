@@ -5,56 +5,51 @@ master_ratio = 0.62
 cursor_size = 28
 cursor_theme = Adwaita
 
-memo = /home/xiang/Drafts/memo/inbox.md
-term = alacritty
-browser = helium
-
 output = eDP-1
 mode = 2560x1600@60Hz
 scale = 1.5
 
-# Keyboard bindings. Missing entries use the same built-in defaults.
-# Modifiers: Super, Ctrl, Shift, Alt. Use "none" to disable an action.
-bind.term = Super+a
-bind.browser = Super+c
-bind.memo = Super+v
-bind.screenshot = Super+w
+# Keyboard: bind.<key> = shell command, or :tri_internal_action.
+# Modifiers: Super, Ctrl, Shift, Alt. Delete a line to disable it.
+bind.Super+a = alacritty
+bind.Super+c = helium
+bind.Super+v = alacritty -e vis /home/xiang/Drafts/memo/inbox.md
+bind.Super+w = grim - | satty -f - --copy-command wl-copy --early-exit copy
+bind.Super+Escape = wlopm --toggle '*'
 
-bind.power_off = Super+Escape
-bind.close = Super+Shift+q
-bind.exit = Super+Ctrl+Shift+q
+bind.XF86MonBrightnessUp = brightnessctl set 2%+
+bind.XF86MonBrightnessDown = brightnessctl set 2%-
+bind.XF86AudioRaiseVolume = wpctl set-volume @DEFAULT_AUDIO_SINK@ 2%+
+bind.XF86AudioLowerVolume = wpctl set-volume @DEFAULT_AUDIO_SINK@ 2%-
+bind.XF86AudioMute = wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle
 
-bind.focus_toggle = Super+s
-bind.expand_prev = Super+e
-bind.expand_next = Super+d
-bind.swap = Super+Shift+s
-bind.move_expand_prev = Super+Shift+e
-bind.move_expand_next = Super+Shift+d
-bind.fill_screen = Super+f
-bind.flip_ratio = Super+r
-bind.flip_columns = Super+Shift+r
+bind.Super+Shift+q = :close
+bind.Super+Ctrl+Shift+q = :exit
+bind.Super+s = :focus_toggle
+bind.Super+e = :expand_prev
+bind.Super+d = :expand_next
+bind.Super+Shift+s = :swap
+bind.Super+Shift+e = :move_expand_prev
+bind.Super+Shift+d = :move_expand_next
+bind.Super+f = :fill_screen
+bind.Super+r = :flip_ratio
+bind.Super+Shift+r = :flip_columns
 
-bind.expand_slot_1 = Super+1
-bind.expand_slot_2 = Super+2
-bind.expand_slot_3 = Super+3
-bind.expand_slot_4 = Super+4
-bind.expand_slot_5 = Super+5
-bind.expand_slot_6 = Super+6
-bind.expand_slot_7 = Super+7
-bind.expand_slot_8 = Super+8
-bind.expand_slot_9 = Super+9
-bind.move_slot_1 = Super+Shift+1
-bind.move_slot_2 = Super+Shift+2
-bind.move_slot_3 = Super+Shift+3
-bind.move_slot_4 = Super+Shift+4
-bind.move_slot_5 = Super+Shift+5
-bind.move_slot_6 = Super+Shift+6
-bind.move_slot_7 = Super+Shift+7
-bind.move_slot_8 = Super+Shift+8
-bind.move_slot_9 = Super+Shift+9
-
-bind.brightness_up = XF86MonBrightnessUp
-bind.brightness_down = XF86MonBrightnessDown
-bind.volume_up = XF86AudioRaiseVolume
-bind.volume_down = XF86AudioLowerVolume
-bind.volume_mute = XF86AudioMute
+bind.Super+1 = :expand_slot_1
+bind.Super+2 = :expand_slot_2
+bind.Super+3 = :expand_slot_3
+bind.Super+4 = :expand_slot_4
+bind.Super+5 = :expand_slot_5
+bind.Super+6 = :expand_slot_6
+bind.Super+7 = :expand_slot_7
+bind.Super+8 = :expand_slot_8
+bind.Super+9 = :expand_slot_9
+bind.Super+Shift+1 = :move_slot_1
+bind.Super+Shift+2 = :move_slot_2
+bind.Super+Shift+3 = :move_slot_3
+bind.Super+Shift+4 = :move_slot_4
+bind.Super+Shift+5 = :move_slot_5
+bind.Super+Shift+6 = :move_slot_6
+bind.Super+Shift+7 = :move_slot_7
+bind.Super+Shift+8 = :move_slot_8
+bind.Super+Shift+9 = :move_slot_9

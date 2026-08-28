@@ -16,7 +16,7 @@ tri 冻结现有功能，不计划加入 workspace、IPC、动画、窗口规则
 
 脚本先运行单元测试，再在仓库内的临时目录生成 ReleaseSafe 候选文件。构建成功后保存当前 `zig-out/bin/tri` 为 `tri.previous`，最后通过同一文件系统上的重命名原子替换日用二进制。
 
-键位可在 `config` 通过 `bind.<action> = Super+key` 覆盖；缺失项使用内建默认值，`none` 禁用对应动作。完整默认表见 `config`。
+键位完全由 `config` 定义：`bind.Super+a = alacritty` 直接运行 shell 命令，`bind.Super+s = :focus_toggle` 调用 tri 内部布局动作。删除一行即可禁用；完整日用配置见 `config`。
 
 ## 版本策略
 

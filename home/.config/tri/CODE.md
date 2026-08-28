@@ -9,8 +9,8 @@
 | `src/main.zig` | 布局、焦点、键鼠 |
 | `src/titlebar.zig` | chip（序号左、标题右；列镜像时反过来） |
 | `src/config.zig` | 读 `config` |
-| `src/bindings.zig` | 默认键位、配置解析与冲突处理 |
-| `config` | 默认配置 |
+| `src/bindings.zig` | 键位、命令/内部动作解析与冲突处理 |
+| `config` | 日用配置 |
 
 ---
 
@@ -26,7 +26,7 @@ master, stack[9], expanded, focus_side, stack_on_left, monocle
 
 ## 键位
 
-当前完整默认值写在 `config` 的 `bind.*` 中；代码内保留相同默认值，删掉配置项也能正常使用。
+当前完整键位写在 `config`：左边是键，右边是 shell 命令或以 `:` 开头的 tri 内部动作。代码不预设终端、浏览器、截图、亮度和音量命令。
 
 - `Super+a / c / v` → 终端 / 浏览器 / 备忘
 - `Super+w` → 全屏截图
@@ -40,7 +40,7 @@ master, stack[9], expanded, focus_side, stack_on_left, monocle
 - `Super+Shift+1…9` → `move_slot_1…9`
 - `Super+Escape` → 开关屏幕；亮度、音量和静音使用硬件键
 
-覆盖格式：`bind.close = Super+Shift+q`。修饰键支持 `Super/Ctrl/Shift/Alt`；写 `none` 可禁用动作。无效值回退到该动作默认键，重复组合只启用动作表中靠前的一项并记录警告，避免坏配置终止 WM。
+格式：`bind.Super+a = alacritty` 或 `bind.Super+s = :focus_toggle`。修饰键支持 `Super/Ctrl/Shift/Alt`；删除配置行即可禁用。无效项和重复键会被忽略并记录警告，不会终止 WM。
 
 ---
 

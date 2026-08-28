@@ -10,13 +10,10 @@ pub const Config = struct {
     master_ratio: f32 = 0.62,
     cursor_size: u32 = 28,
     cursor_theme: [:0]const u8 = "Adwaita",
-    memo_path: []const u8 = "/home/xiang/Drafts/memo/inbox.md",
-    term: []const u8 = "alacritty",
-    browser: []const u8 = "helium",
     output: []const u8 = "eDP-1",
     mode: []const u8 = "2560x1600@60Hz",
     scale: []const u8 = "1.5",
-    binding_overrides: bindings.Overrides = .{},
+    binding_specs: std.ArrayListUnmanaged(bindings.Spec) = .empty,
 
     strings: std.ArrayListUnmanaged([]const u8) = .empty,
 
@@ -51,6 +48,7 @@ pub const Config = struct {
     pub fn deinit(self: *Config, gpa: std.mem.Allocator) void {
         for (self.strings.items) |s| gpa.free(s);
         self.strings.deinit(gpa);
+        self.binding_specs.deinit(gpa);
     }
 
     fn dup(self: *Config, gpa: std.mem.Allocator, value: []const u8) ![]const u8 {
@@ -75,12 +73,6 @@ pub const Config = struct {
             self.cursor_size = try std.fmt.parseInt(u32, value, 10);
         } else if (std.mem.eql(u8, key, "cursor_theme")) {
             self.cursor_theme = try self.dupZ(gpa, value);
-        } else if (std.mem.eql(u8, key, "memo")) {
-            self.memo_path = try self.dup(gpa, value);
-        } else if (std.mem.eql(u8, key, "term")) {
-            self.term = try self.dup(gpa, value);
-        } else if (std.mem.eql(u8, key, "browser")) {
-            self.browser = try self.dup(gpa, value);
         } else if (std.mem.eql(u8, key, "output")) {
             self.output = try self.dup(gpa, value);
         } else if (std.mem.eql(u8, key, "mode")) {
@@ -88,8 +80,9 @@ pub const Config = struct {
         } else if (std.mem.eql(u8, key, "scale")) {
             self.scale = try self.dup(gpa, value);
         } else if (std.mem.startsWith(u8, key, "bind.")) {
-            const action = bindings.actionFromName(key["bind.".len..]) orelse return;
-            self.binding_overrides.set(action, try self.dup(gpa, value));
+            const key_text = try self.dup(gpa, key["bind.".len..]);
+            const behavior_text = try self.dup(gpa, value);
+            try self.binding_specs.append(gpa, .{ .key_text = key_text, .behavior_text = behavior_text });
         }
     }
 

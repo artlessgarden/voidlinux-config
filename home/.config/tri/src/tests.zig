@@ -5,61 +5,46 @@ const model = @import("model.zig");
 const buffer_state = @import("buffer_state.zig");
 const bindings = @import("bindings.zig");
 
-test "binding parser accepts modifiers xkb names and none" {
+test "binding parser accepts a key from the configuration key" {
     try std.testing.expectEqual(bindings.Binding{
         .mods = .{ .super = true, .ctrl = true, .shift = true },
         .keysym = .q,
-    }, (try bindings.parse("Super+Ctrl+Shift+q")).?);
+    }, try bindings.parseKey("Super+Ctrl+Shift+q"));
     try std.testing.expectEqual(bindings.Binding{
         .mods = .{},
         .keysym = .XF86AudioRaiseVolume,
-    }, (try bindings.parse("XF86AudioRaiseVolume")).?);
-    try std.testing.expectEqual(@as(?bindings.Binding, null), try bindings.parse("none"));
+    }, try bindings.parseKey("XF86AudioRaiseVolume"));
 }
 
-test "invalid binding override falls back to its default" {
-    var overrides = bindings.Overrides{};
-    overrides.set(.close, "Hyper+q");
-    const resolved = bindings.resolve(&overrides);
-    try std.testing.expectEqual(bindings.Status.invalid, resolved.status(.close));
-    try std.testing.expect(resolved.wasInvalid(.close));
-    try std.testing.expectEqual(bindings.defaultFor(.close), resolved.get(.close));
+test "binding behavior distinguishes internal actions from commands" {
+    try std.testing.expectEqual(bindings.Behavior{ .internal = .close }, try bindings.parseBehavior(":close"));
+    const command = try bindings.parseBehavior("brightnessctl set 2%+");
+    try std.testing.expectEqualStrings("brightnessctl set 2%+", command.command);
+    try std.testing.expectError(error.InvalidBehavior, bindings.parseBehavior(":not_an_action"));
 }
 
-test "disabled binding stays disabled" {
-    var overrides = bindings.Overrides{};
-    overrides.set(.screenshot, "none");
-    const resolved = bindings.resolve(&overrides);
-    try std.testing.expectEqual(bindings.Status.disabled, resolved.status(.screenshot));
-    try std.testing.expectEqual(@as(?bindings.Binding, null), resolved.get(.screenshot));
+test "resolver ignores invalid and duplicate entries without failing" {
+    const specs = [_]bindings.Spec{
+        .{ .key_text = "Super+a", .behavior_text = "alacritty" },
+        .{ .key_text = "Super+a", .behavior_text = "helium" },
+        .{ .key_text = "Hyper+x", .behavior_text = ":close" },
+    };
+    var resolved = try bindings.resolve(std.testing.allocator, &specs);
+    defer resolved.deinit(std.testing.allocator);
+    try std.testing.expectEqual(@as(usize, 1), resolved.items.items.len);
+    try std.testing.expectEqual(@as(usize, 1), resolved.invalid_count);
+    try std.testing.expectEqual(@as(usize, 1), resolved.duplicate_count);
+    try std.testing.expectEqualStrings("alacritty", resolved.items.items[0].behavior.command);
 }
 
-test "duplicate binding keeps first action and suppresses later action" {
-    var overrides = bindings.Overrides{};
-    overrides.set(.browser, "Super+a");
-    const resolved = bindings.resolve(&overrides);
-    try std.testing.expect(resolved.get(.term) != null);
-    try std.testing.expectEqual(bindings.Status.conflict, resolved.status(.browser));
-    try std.testing.expectEqual(@as(?bindings.Binding, null), resolved.get(.browser));
-}
-
-test "invalid fallback still participates in conflict handling" {
-    var overrides = bindings.Overrides{};
-    overrides.set(.term, "Super+Shift+q");
-    overrides.set(.close, "not+a+valid+binding");
-    const resolved = bindings.resolve(&overrides);
-    try std.testing.expect(resolved.get(.term) != null);
-    try std.testing.expect(resolved.wasInvalid(.close));
-    try std.testing.expectEqual(bindings.Status.conflict, resolved.status(.close));
-    try std.testing.expectEqual(@as(?bindings.Binding, null), resolved.get(.close));
-}
-
-test "configuration stores known binding overrides and ignores unknown actions" {
+test "configuration stores arbitrary key to behavior bindings" {
     var cfg: config.Config = .{};
     defer cfg.deinit(std.testing.allocator);
-    try cfg.apply(std.testing.allocator, "bind.close", "Super+q");
-    try cfg.apply(std.testing.allocator, "bind.not_an_action", "Super+x");
-    try std.testing.expectEqualStrings("Super+q", cfg.binding_overrides.get(.close).?);
+    try cfg.apply(std.testing.allocator, "bind.Super+a", "alacritty");
+    try cfg.apply(std.testing.allocator, "bind.Super+s", ":focus_toggle");
+    try std.testing.expectEqual(@as(usize, 2), cfg.binding_specs.items.len);
+    try std.testing.expectEqualStrings("Super+a", cfg.binding_specs.items[0].key_text);
+    try std.testing.expectEqualStrings("alacritty", cfg.binding_specs.items[0].behavior_text);
 }
 
 test "app fullscreen requests stay pending until manage" {

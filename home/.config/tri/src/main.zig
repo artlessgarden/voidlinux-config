@@ -17,10 +17,8 @@ const river = wayland.client.river;
 const wl = wayland.client.wl;
 const fatal = std.process.fatal;
 
-const max_shortcut_stack: usize = 9;
-
 const FocusSide = model.FocusSide;
-const Action = bindings.Action;
+const Action = bindings.InternalAction;
 
 const Output = struct {
     obj: *river.OutputV1,
@@ -184,17 +182,6 @@ fn spawnSh(cmd: []const u8) void {
     spawnArgv(&.{ "sh", "-c", cmd });
 }
 
-/// 快捷键 spawn 上限；外部打开的窗口不受此限。
-fn canSpawnFromShortcut(window_manager: *const WindowManager) bool {
-    if (window_manager.state.master == null and window_manager.state.stack.items.len == 0) return true;
-    if (window_manager.state.stack.items.len == 0) return true;
-    return window_manager.state.stack.items.len < max_shortcut_stack;
-}
-
-fn logShortcutStackFull() void {
-    std.log.warn("shortcut stack full ({d}), not spawning", .{max_shortcut_stack});
-}
-
 fn slotFromExpandAction(action: Action) ?usize {
     const base = @intFromEnum(Action.expand_slot_1);
     const v = @intFromEnum(action);
@@ -221,23 +208,23 @@ fn riverModifiers(mods: bindings.Modifiers) river.SeatV1.Modifiers {
 const XkbBinding = struct {
     obj: *river.XkbBindingV1,
     seat: *Seat,
-    action: Action = .none,
+    behavior: bindings.Behavior,
     link: wl.list.Link,
 
     fn listener(_: *river.XkbBindingV1, event: river.XkbBindingV1.Event, binding: *XkbBinding) void {
         switch (event) {
-            .pressed => binding.seat.pending_action = binding.action,
+            .pressed => binding.seat.pending_behavior = binding.behavior,
             else => {},
         }
     }
 
-    fn create(seat: *Seat, mods: river.SeatV1.Modifiers, keysym: xkb.Keysym, action: Action) void {
+    fn create(seat: *Seat, mods: river.SeatV1.Modifiers, keysym: xkb.Keysym, behavior: bindings.Behavior) void {
         const binding = wm.gpa.create(XkbBinding) catch fatal("Out of memory.", .{});
         const obj = wm.xkb_bindings.getXkbBinding(seat.obj, @intFromEnum(keysym), mods) catch fatal("Out of memory.", .{});
         binding.* = .{
             .obj = obj,
             .seat = seat,
-            .action = action,
+            .behavior = behavior,
             .link = undefined,
         };
         seat.xkb_bindings.append(binding);
@@ -263,7 +250,7 @@ const Seat = struct {
     shell_pressed: ?*river.ShellSurfaceV1 = null,
 
     xkb_bindings: wl.list.Head(XkbBinding, .link),
-    pending_action: Action = .none,
+    pending_behavior: ?bindings.Behavior = null,
 
     fn listener(_: *river.SeatV1, event: river.SeatV1.Event, seat: *Seat) void {
         switch (event) {
@@ -317,24 +304,7 @@ const Seat = struct {
     }
 
     fn handleAction(seat: *Seat, action: Action) void {
-        if (action.needsTiledSlot() and !canSpawnFromShortcut(&wm)) {
-            logShortcutStackFull();
-            return;
-        }
         switch (action) {
-            .none => {},
-            .term => spawnArgv(&.{cfg.term}),
-            .browser => spawnArgv(&.{cfg.browser}),
-            .memo => spawnArgv(&.{ cfg.term, "-e", "vis", cfg.memo_path }),
-            .screenshot => spawnSh(
-                \\grim - | satty -f - --copy-command wl-copy --early-exit copy
-            ),
-            .brightness_up => spawnArgv(&.{ "brightnessctl", "set", "2%+" }),
-            .brightness_down => spawnArgv(&.{ "brightnessctl", "set", "2%-" }),
-            .volume_up => spawnArgv(&.{ "wpctl", "set-volume", "@DEFAULT_AUDIO_SINK@", "2%+" }),
-            .volume_down => spawnArgv(&.{ "wpctl", "set-volume", "@DEFAULT_AUDIO_SINK@", "2%-" }),
-            .volume_mute => spawnArgv(&.{ "wpctl", "set-mute", "@DEFAULT_AUDIO_SINK@", "toggle" }),
-            .power_off => spawnArgv(&.{ "wlopm", "--toggle", "*" }),
             .close => {
                 if (seat.focused) |window| window.obj.close();
             },
@@ -357,28 +327,32 @@ const Seat = struct {
         }
     }
 
+    fn handleBehavior(seat: *Seat, behavior: bindings.Behavior) void {
+        switch (behavior) {
+            .internal => |action| seat.handleAction(action),
+            .command => |command| spawnSh(command),
+        }
+    }
+
     fn manage(seat: *Seat) void {
         if (seat.new) {
             seat.new = false;
             seat.obj.setXcursorTheme(cfg.cursor_theme, cfg.cursor_size);
-            const resolved = bindings.resolve(&cfg.binding_overrides);
-            for (0..bindings.action_count) |i| {
-                const action: Action = @enumFromInt(i);
-                if (resolved.wasInvalid(action)) {
-                    std.log.warn("invalid bind.{s}; using default", .{@tagName(action)});
-                }
-                switch (resolved.status(action)) {
-                    .conflict => std.log.warn("duplicate bind.{s}; disabled", .{@tagName(action)}),
-                    else => {},
-                }
-                if (resolved.get(action)) |binding| {
-                    XkbBinding.create(seat, riverModifiers(binding.mods), binding.keysym, action);
-                }
+            var resolved = bindings.resolve(wm.gpa, cfg.binding_specs.items) catch fatal("Out of memory.", .{});
+            defer resolved.deinit(wm.gpa);
+            if (resolved.invalid_count > 0) {
+                std.log.warn("ignored {d} invalid key binding(s)", .{resolved.invalid_count});
+            }
+            if (resolved.duplicate_count > 0) {
+                std.log.warn("ignored {d} duplicate key binding(s)", .{resolved.duplicate_count});
+            }
+            for (resolved.items.items) |item| {
+                XkbBinding.create(seat, riverModifiers(item.binding.mods), item.binding.keysym, item.behavior);
             }
         }
 
-        seat.handleAction(seat.pending_action);
-        seat.pending_action = .none;
+        if (seat.pending_behavior) |behavior| seat.handleBehavior(behavior);
+        seat.pending_behavior = null;
 
         if (seat.shell_pressed) |shell| {
             if (wm.stackIndexForShell(shell)) |idx| wm.focusStackIndex(idx);

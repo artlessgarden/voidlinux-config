@@ -52,11 +52,13 @@ River ≥0.4 上的 Zig 窗口管理器。配置与二进制在 `~/.config/tri/`
 
 ```ini
 master_ratio = 0.62
-term = alacritty
-browser = helium
 output = eDP-1
 mode = 2560x1600@60Hz
 scale = 1.5
+
+bind.Super+a = alacritty
+bind.Super+s = :focus_toggle
+bind.XF86AudioRaiseVolume = wpctl set-volume @DEFAULT_AUDIO_SINK@ 2%+
 ```
 
 ---
