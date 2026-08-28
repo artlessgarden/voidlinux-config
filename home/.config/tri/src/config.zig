@@ -105,9 +105,6 @@ pub const Config = struct {
                     return cfg;
                 }
             } else |_| {}
-            if (std.fmt.bufPrint(&buf, "{s}/voidlinux-config/wm/tri/config", .{home})) |path| {
-                _ = loadFile(gpa, io, &cfg, path);
-            } else |_| {}
         }
         cfg.validateAndLog();
         return cfg;

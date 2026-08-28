@@ -22,6 +22,8 @@ sh 70-link-apps.sh
 sh 80-grub.sh
 sh 85-asus-hw.sh
 # 电池 80%、quiet、iwlwifi 关省电 + 掉线/唤醒重连
+sh 87-bluetooth.sh
+# PipeWire + BlueZ；连耳机自动切换默认输出
 sh 86-mouseless.sh
 # keyd F13+ 控鼠标；退 niri、登出 tty 再 ni，input+uinput 才进会话（不用 sudo）
 sh 90-helium.sh

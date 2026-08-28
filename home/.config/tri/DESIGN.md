@@ -1,6 +1,6 @@
 # tri — 左主 + 右列手风琴
 
-River ≥0.4 上的 Zig 窗口管理器。配置与二进制在 `~/tri/`。会话 `rv` → `session.sh` → `exec zig-out/bin/tri`。
+River ≥0.4 上的 Zig 窗口管理器。配置与二进制在 `~/.config/tri/`。会话 `rv` → `session.sh` → `exec zig-out/bin/tri`。
 
 ---
 
@@ -64,5 +64,5 @@ scale = 1.5
 ## 构建
 
 ```bash
-cd ~/tri && ./rebuild.sh
+cd ~/.config/tri && ./rebuild.sh
 ```

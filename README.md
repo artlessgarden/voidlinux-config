@@ -36,5 +36,10 @@ cd ~/voidlinux-config
 
 默认浏览器为 Helium（`Mod+c` → `helium`）。二进制在 `~/.local/opt/helium`，数据在 `~/.config/net.imput.helium`。  
 `xbg`：xbps 系统更新 + 检查/更新 Helium。核显用 AMD `amdgpu`（nouveau 已屏蔽）。  
-mouseless：`~/.local/bin/mouseless`，niri 自启（无 sudo）；配置 `~/.config/mouseless/config.yaml`。
-默认进 Windows；Esc 选 `void_grub` 进 Void，tty1 执行 `ni`。
+mouseless：`~/.local/bin/mouseless`，会话自启（无 sudo）；配置 `~/.config/mouseless/config.yaml`。
+
+音频：PipeWire（`87-bluetooth.sh`）；连蓝牙耳机后浏览器自动出声。音量键走 `wpctl`。
+
+默认进 Windows；Esc 选 `void_grub` 进 Void，tty1 使用 `rv`（River + tri），`ni` 保留作备用。
+
+River 二进制在 `~/.local/bin/river`；tri 源码、配置及二进制在 `~/.config/tri`。

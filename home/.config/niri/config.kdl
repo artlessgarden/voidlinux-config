@@ -1,4 +1,6 @@
-// 本文件保存在 voidlinux-config 仓库，通过符号链接作为 Niri 的实际配置。
+// 左主列 + 右 tabbed 列（放松版：最多两块内容，其余进右 tab）
+// 源文件：voidlinux-config/home/.config/niri/config.kdl
+// 热重载：niri 改配置会自动；或 niri msg action load-config-file
 
 input {
     keyboard { repeat-delay 200; repeat-rate 30; }
@@ -21,21 +23,36 @@ input {
     mouse { accel-speed 0.2; }
 }
 
-// 内屏挂 AMD；nouveau 已 blacklist，只剩一块 GPU，无需再指定 render 节点。
-
-
 cursor {
     xcursor-theme "Adwaita"
     xcursor-size 24
 }
 
 layout {
-    preset-column-widths { proportion 0.382; proportion 0.618; proportion 1.0;}
+    // 左主约 62%，右栏其余；单列时居中
+    preset-column-widths {
+        proportion 0.382
+        proportion 0.618
+        proportion 1.0
+    }
     default-column-width { proportion 0.618; }
     background-color "transparent"
     always-center-single-column
+    center-focused-column "never"
     gaps 0
-    focus-ring {        off;}
+    focus-ring { off; }
+
+    // 新列默认 tab；单窗时隐藏指示条
+    default-column-display "tabbed"
+    tab-indicator {
+        hide-when-single-tab
+        place-within-column
+        position "top"
+        gap 4
+        width 4
+        length total-proportion=1.0
+    }
+
     shadow {
         on
         softness 30
@@ -46,11 +63,11 @@ layout {
         inactive-color "#00000054"
     }
 }
+
 prefer-no-csd
 hotkey-overlay { skip-at-startup; }
 window-rule { open-floating false; }
 
-// xdg-desktop-portal-termfilechooser：浮动选文件窗口（title=termfilechooser）
 window-rule {
     match app-id="^foot$" title="^termfilechooser$"
     open-floating true
@@ -60,25 +77,19 @@ window-rule {
 }
 
 output "eDP-1" {
-       scale 1.5
-       mode "2560x1600@60"
+    scale 1.5
+    mode "2560x1600@60"
 }
 
-// Put swaybg inside the overview backdrop.
 layer-rule {
     match namespace="^wallpaper$"
-
     place-within-backdrop true
 }
 
-gestures { hot-corners { off; };}
-animations { off ;}
+gestures { hot-corners { off; }; }
+animations { off; }
 
-// Niri 由 `dbus-run-session niri --session` 启动。
-// --session 会自行把 WAYLAND_DISPLAY 导入会话 D-Bus，这里不再重复调用
-// dbus-update-activation-environment。
-// niri spawn 不展开参数里的 $HOME/~，壁纸路径写绝对。
-// swayidle 的 timeout 命令必须是一整段参数，不能拆成 swaylock / -f / -i …
+spawn-at-startup "pipewire"
 spawn-at-startup "swaybg" "-i" "/home/xiang/.config/niri/bg4.jpg"
 spawn-at-startup "fcitx5"
 spawn-at-startup "swayidle" "-w" \
@@ -86,43 +97,58 @@ spawn-at-startup "swayidle" "-w" \
     "timeout" "240" "niri msg action power-off-monitors"
 spawn-at-startup "foot"
 spawn-at-startup "wlsunset" "-l" "20" "-L" "100"
-// keyd mouseless 层 → F13+；用户进程，默认读 ~/.config/mouseless/config.yaml
 spawn-at-startup "mouseless"
 
 binds {
-Mod+w repeat=false { spawn "wl-kbptr" "-o" "modes=floating,click" "-o" "mode_floating.source=detect"; }
-Mod+escape repeat=false { power-off-monitors; }
-Mod+a repeat=false { spawn "foot"; }
-Mod+c repeat=false { spawn "helium"; }
-Mod+v repeat=false { toggle-overview; }
-Mod+p repeat=false { spawn-sh "grim -g \"$(slurp)\" - | satty -f - --copy-command wl-copy --early-exit copy"; }
-Mod+ctrl+p repeat=false { spawn-sh "grim - | satty -f - --copy-command wl-copy --early-exit copy"; }
-Mod+n repeat=false { spawn "foot" "vis" "/home/xiang/Drafts/memo/inbox.md"; }
-Mod+r repeat=false { switch-preset-column-width; }
+    // 应用：经 niri-spawn 尽量进右 tab 列
+    Mod+a repeat=false { spawn "/home/xiang/.local/bin/niri-spawn" "foot"; }
+    Mod+Return repeat=false { spawn "/home/xiang/.local/bin/niri-spawn" "foot"; }
+    Mod+c repeat=false { spawn "/home/xiang/.local/bin/niri-spawn" "helium"; }
+    Mod+n repeat=false { spawn "/home/xiang/.local/bin/niri-spawn" "foot" "vis" "/home/xiang/Drafts/memo/inbox.md"; }
 
-Mod+s  cooldown-ms=70   { focus-column-left; }
-Mod+f  cooldown-ms=70   { focus-column-right; }
-Mod+e  cooldown-ms=70   { focus-window-or-workspace-up; }
-Mod+d  cooldown-ms=70  { focus-window-or-workspace-down; }
-Mod+ctrl+s cooldown-ms=70    { move-column-left; }
-Mod+ctrl+f cooldown-ms=70    { move-column-right; }
-Mod+ctrl+e cooldown-ms=70 { move-window-up-or-to-workspace-up; }
-Mod+ctrl+d cooldown-ms=70 { move-window-down-or-to-workspace-down; }
+    Mod+w repeat=false { spawn "wl-kbptr" "-o" "modes=floating,click" "-o" "mode_floating.source=detect"; }
+    Mod+escape repeat=false { power-off-monitors; }
+    Mod+v repeat=false { toggle-overview; }
+    Mod+p repeat=false { spawn-sh "grim -g \"$(slurp)\" - | satty -f - --copy-command wl-copy --early-exit copy"; }
+    Mod+ctrl+p repeat=false { spawn-sh "grim - | satty -f - --copy-command wl-copy --early-exit copy"; }
+    Mod+r repeat=false { switch-preset-column-width; }
 
-Mod+alt+e cooldown-ms=70 { move-column-to-workspace-up; }
-Mod+alt+d cooldown-ms=70 { move-column-to-workspace-down; }
+    // Super+1 左右列循环；Super+2 右列 tab 上下循环
+    Mod+1 cooldown-ms=70 { focus-column-right-or-first; }
+    Mod+2 cooldown-ms=70 { focus-window-down-or-top; }
 
-Mod+alt+s cooldown-ms=70 { consume-or-expel-window-left; }
-Mod+alt+f cooldown-ms=70 { consume-or-expel-window-right; }
+    // 保留原 hjkl 风格
+    Mod+s cooldown-ms=70 { focus-column-left; }
+    Mod+f cooldown-ms=70 { focus-column-right; }
+    Mod+e cooldown-ms=70 { focus-window-or-workspace-up; }
+    Mod+d cooldown-ms=70 { focus-window-or-workspace-down; }
 
-XF86MonBrightnessDown allow-when-locked=true { spawn "brightnessctl" "set" "2%-"; }
-XF86MonBrightnessUp allow-when-locked=true { spawn "brightnessctl" "set" "2%+"; }
-XF86AudioLowerVolume allow-when-locked=true { spawn "amixer" "set" "Master" "2%-"; }
-XF86AudioRaiseVolume allow-when-locked=true { spawn "amixer" "set" "Master" "2%+"; }
-XF86AudioMute allow-when-locked=true { spawn "amixer" "set" "Master" "toggle"; }
+    Mod+ctrl+s cooldown-ms=70 { move-column-left; }
+    Mod+ctrl+f cooldown-ms=70 { move-column-right; }
+    Mod+ctrl+e cooldown-ms=70 { move-window-up-or-to-workspace-up; }
+    Mod+ctrl+d cooldown-ms=70 { move-window-down-or-to-workspace-down; }
 
-Mod+WheelScrollDown cooldown-ms=70 { focus-workspace-down; }
-Mod+WheelScrollUp   cooldown-ms=70 { focus-workspace-up; }
-Mod+MouseRight  { focus-column-right; }
-Mod+MouseLeft  { focus-column-left; }
+    Mod+alt+e cooldown-ms=70 { move-column-to-workspace-up; }
+    Mod+alt+d cooldown-ms=70 { move-column-to-workspace-down; }
+
+    // 手动收进左/右列（脚本失败时用）
+    Mod+alt+s cooldown-ms=70 { consume-or-expel-window-left; }
+    Mod+alt+f cooldown-ms=70 { consume-or-expel-window-right; }
+
+    // 当前列切 tab / 普通
+    Mod+t repeat=false { toggle-column-tabbed-display; }
+
+    Mod+q repeat=false { close-window; }
+    Mod+Shift+f repeat=false { fullscreen-window; }
+
+    XF86MonBrightnessDown allow-when-locked=true { spawn "brightnessctl" "set" "2%-"; }
+    XF86MonBrightnessUp allow-when-locked=true { spawn "brightnessctl" "set" "2%+"; }
+    XF86AudioLowerVolume allow-when-locked=true { spawn "wpctl" "set-volume" "@DEFAULT_AUDIO_SINK@" "2%-"; }
+    XF86AudioRaiseVolume allow-when-locked=true { spawn "wpctl" "set-volume" "@DEFAULT_AUDIO_SINK@" "2%+"; }
+    XF86AudioMute allow-when-locked=true { spawn "wpctl" "set-mute" "@DEFAULT_AUDIO_SINK@" "toggle"; }
+
+    Mod+WheelScrollDown cooldown-ms=70 { focus-workspace-down; }
+    Mod+WheelScrollUp cooldown-ms=70 { focus-workspace-up; }
+    Mod+MouseRight { focus-column-right; }
+    Mod+MouseLeft { focus-column-left; }
 }

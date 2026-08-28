@@ -31,10 +31,9 @@ application/x-sh|application/x-shellscript|inode/x-empty)
 		|| sed -n "1,${h}p" -- "$path"
 	;;
 image/*)
-	# foot 支持 sixel；exit 1 避免缓存残影
-	chafa -f sixel -s "${w}x${h}" --animate off --polite on -- "$path" 2>/dev/null \
+	# alacritty：用 Unicode 块字符像素预览（无 sixel/kitty）
+	chafa -f symbols -s "${w}x${h}" --animate off -- "$path" 2>/dev/null \
 		|| file -Lb -- "$path"
-	exit 1
 	;;
 video/*|audio/*)
 	mediainfo -- "$path" 2>/dev/null || file -Lb -- "$path"

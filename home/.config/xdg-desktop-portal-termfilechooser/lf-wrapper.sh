@@ -1,7 +1,5 @@
 #!/bin/sh
-
-# 门户：选文件用 -selection-path（对文件按 Enter/l 即确认）
-# 选目录：Enter = 确认高亮文件夹并退出；l = 仍进入子目录
+# 门户 lf：alacritty 须 -e lf（kitty/foot 可直接 termcmd lf）
 
 set -eu
 
@@ -14,7 +12,7 @@ debug=$6
 
 [ "$debug" = 1 ] && set -x
 
-termcmd=${TERMCMD:-foot -T termfilechooser}
+termcmd=${TERMCMD:-alacritty -e}
 
 if [ "$directory" = 1 ]; then
 	export LF_XDG_OUT=$out

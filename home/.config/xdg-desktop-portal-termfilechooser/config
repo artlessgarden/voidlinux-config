@@ -1,5 +1,5 @@
 [filechooser]
 cmd=$HOME/.config/xdg-desktop-portal-termfilechooser/lf-wrapper.sh
 default_dir=$HOME
-env=TERMCMD=foot -T termfilechooser
+env=TERMCMD=alacritty -e
 open_mode=suggested
