@@ -11,6 +11,7 @@ const titlebar = @import("titlebar.zig");
 const input = @import("input.zig");
 const config = @import("config.zig");
 const bindings = @import("bindings.zig");
+const child_reaper = @import("child_reaper.zig");
 const layout = @import("layout.zig");
 const model = @import("model.zig");
 const river = wayland.client.river;
@@ -843,6 +844,7 @@ var wm: WindowManager = undefined;
 var cfg: config.Config = undefined;
 
 pub fn main(init: std.process.Init) !void {
+    child_reaper.install();
     cfg = config.Config.load(init.gpa, init.io);
     defer cfg.deinit(init.gpa);
 

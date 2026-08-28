@@ -10,6 +10,7 @@
 | `src/titlebar.zig` | chip（序号左、标题右；列镜像时反过来） |
 | `src/config.zig` | 读 `config` |
 | `src/bindings.zig` | 键位、命令/内部动作解析与冲突处理 |
+| `src/child_reaper.zig` | 回收快捷键命令子进程 |
 | `config` | 日用配置 |
 
 ---
@@ -40,7 +41,7 @@ master, stack[9], expanded, focus_side, stack_on_left, monocle
 - `Super+Shift+1…9` → `move_slot_1…9`
 - `Super+Escape` → 开关屏幕；亮度、音量和静音使用硬件键
 
-格式：`bind.Super+a = alacritty` 或 `bind.Super+s = :focus_toggle`。修饰键支持 `Super/Ctrl/Shift/Alt`；删除配置行即可禁用。无效项和重复键会被忽略并记录警告，不会终止 WM。
+格式：`bind.Super+a = exec alacritty` 或 `bind.Super+s = :focus_toggle`。长驻的简单命令建议加 `exec`；管道等 shell 表达式直接写。修饰键支持 `Super/Ctrl/Shift/Alt`；删除配置行即可禁用。无效项和重复键会被忽略并记录警告，不会终止 WM；短命令结束后由 tri 回收，不留僵尸进程。
 
 ---
 

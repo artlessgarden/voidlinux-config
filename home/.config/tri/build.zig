@@ -67,6 +67,7 @@ pub fn build(b: *std.Build) void {
             },
         }),
     });
+    unit_tests.root_module.link_libc = true;
     unit_tests.root_module.linkSystemLibrary("xkbcommon", .{});
     const test_step = b.step("test", "Run unit tests");
     test_step.dependOn(&b.addRunArtifact(unit_tests).step);

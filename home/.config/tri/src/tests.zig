@@ -4,6 +4,28 @@ const layout = @import("layout.zig");
 const model = @import("model.zig");
 const buffer_state = @import("buffer_state.zig");
 const bindings = @import("bindings.zig");
+const child_reaper = @import("child_reaper.zig");
+
+test "short-lived child is reaped by the kernel" {
+    child_reaper.install();
+    const child = try std.process.spawn(std.testing.io, .{ .argv = &.{ "sh", "-c", "exit 0" } });
+    const pid = child.id.?;
+    var path_buf: [64]u8 = undefined;
+    const path = try std.fmt.bufPrint(&path_buf, "/proc/{d}/status", .{pid});
+    var reaped = false;
+    for (0..100) |_| {
+        const file = std.Io.Dir.cwd().openFile(std.testing.io, path, .{}) catch |err| {
+            if (err == error.FileNotFound) {
+                reaped = true;
+                break;
+            }
+            return err;
+        };
+        file.close(std.testing.io);
+        try std.testing.io.sleep(.fromMilliseconds(10), .awake);
+    }
+    try std.testing.expect(reaped);
+}
 
 test "binding parser accepts a key from the configuration key" {
     try std.testing.expectEqual(bindings.Binding{

@@ -11,9 +11,9 @@ scale = 1.5
 
 # Keyboard: bind.<key> = shell command, or :tri_internal_action.
 # Modifiers: Super, Ctrl, Shift, Alt. Delete a line to disable it.
-bind.Super+a = alacritty
-bind.Super+c = helium
-bind.Super+v = alacritty -e vis /home/xiang/Drafts/memo/inbox.md
+bind.Super+a = exec alacritty
+bind.Super+c = exec helium
+bind.Super+v = exec alacritty -e vis /home/xiang/Drafts/memo/inbox.md
 bind.Super+w = grim - | satty -f - --copy-command wl-copy --early-exit copy
 bind.Super+Escape = wlopm --toggle '*'
 
