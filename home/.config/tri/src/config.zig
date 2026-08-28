@@ -3,6 +3,12 @@
 
 const std = @import("std");
 const bindings = @import("bindings.zig");
+
+pub const CommandSpec = struct {
+    label: []const u8,
+    command: []const u8,
+};
+
 pub const Config = struct {
     const default_master_ratio: f32 = 0.62;
     const default_cursor_size: u32 = 28;
@@ -14,6 +20,7 @@ pub const Config = struct {
     mode: []const u8 = "2560x1600@60Hz",
     scale: []const u8 = "1.5",
     binding_specs: std.ArrayListUnmanaged(bindings.Spec) = .empty,
+    startup_specs: std.ArrayListUnmanaged(CommandSpec) = .empty,
 
     strings: std.ArrayListUnmanaged([]const u8) = .empty,
 
@@ -49,6 +56,7 @@ pub const Config = struct {
         for (self.strings.items) |s| gpa.free(s);
         self.strings.deinit(gpa);
         self.binding_specs.deinit(gpa);
+        self.startup_specs.deinit(gpa);
     }
 
     fn dup(self: *Config, gpa: std.mem.Allocator, value: []const u8) ![]const u8 {
@@ -79,6 +87,10 @@ pub const Config = struct {
             self.mode = try self.dup(gpa, value);
         } else if (std.mem.eql(u8, key, "scale")) {
             self.scale = try self.dup(gpa, value);
+        } else if (std.mem.startsWith(u8, key, "start.")) {
+            const label = try self.dup(gpa, key["start.".len..]);
+            const command = try self.dup(gpa, value);
+            try self.startup_specs.append(gpa, .{ .label = label, .command = command });
         } else if (std.mem.startsWith(u8, key, "bind.")) {
             const key_text = try self.dup(gpa, key["bind.".len..]);
             const behavior_text = try self.dup(gpa, value);

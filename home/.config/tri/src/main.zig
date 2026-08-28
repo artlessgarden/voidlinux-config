@@ -183,6 +183,16 @@ fn spawnSh(cmd: []const u8) void {
     spawnArgv(&.{ "sh", "-c", cmd });
 }
 
+fn startConfiguredCommands() void {
+    for (cfg.startup_specs.items) |spec| {
+        if (spec.label.len == 0 or std.mem.trim(u8, spec.command, " \t\r").len == 0) {
+            std.log.warn("ignored empty start.{s}", .{spec.label});
+            continue;
+        }
+        spawnSh(spec.command);
+    }
+}
+
 fn slotFromExpandAction(action: Action) ?usize {
     const base = @intFromEnum(Action.expand_slot_1);
     const v = @intFromEnum(action);
@@ -876,6 +886,7 @@ pub fn main(init: std.process.Init) !void {
     wm.seats.init();
     wm.outputs.init();
     wm.windows.init();
+    startConfiguredCommands();
 
     while (true) {
         if (display.dispatch() != .SUCCESS) {

@@ -69,6 +69,21 @@ test "configuration stores arbitrary key to behavior bindings" {
     try std.testing.expectEqualStrings("alacritty", cfg.binding_specs.items[0].behavior_text);
 }
 
+test "configuration preserves ordered arbitrary startup commands" {
+    var cfg: config.Config = .{};
+    defer cfg.deinit(std.testing.allocator);
+    try cfg.apply(std.testing.allocator, "start.audio", "exec pipewire");
+    try cfg.apply(std.testing.allocator, "start.my_input", "exec fcitx5");
+    try cfg.apply(std.testing.allocator, "start.disabled", "");
+    try cfg.apply(std.testing.allocator, "bind.Super+a", "exec alacritty");
+    try std.testing.expectEqual(@as(usize, 3), cfg.startup_specs.items.len);
+    try std.testing.expectEqualStrings("audio", cfg.startup_specs.items[0].label);
+    try std.testing.expectEqualStrings("exec pipewire", cfg.startup_specs.items[0].command);
+    try std.testing.expectEqualStrings("my_input", cfg.startup_specs.items[1].label);
+    try std.testing.expectEqualStrings("", cfg.startup_specs.items[2].command);
+    try std.testing.expectEqual(@as(usize, 1), cfg.binding_specs.items.len);
+}
+
 test "app fullscreen requests stay pending until manage" {
     var intent: model.FullscreenIntent = .none;
     intent.request(true);
