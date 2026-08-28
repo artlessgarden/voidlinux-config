@@ -52,6 +52,7 @@ pub fn build(b: *std.Build) void {
     });
 
     exe.root_module.linkSystemLibrary("wayland-client", .{});
+    exe.root_module.linkSystemLibrary("xkbcommon", .{});
     exe.root_module.linkSystemLibrary("fcft", .{});
     exe.root_module.linkSystemLibrary("pixman-1", .{});
     b.installArtifact(exe);
@@ -61,8 +62,12 @@ pub fn build(b: *std.Build) void {
             .root_source_file = b.path("src/tests.zig"),
             .target = target,
             .optimize = optimize,
+            .imports = &.{
+                .{ .name = "xkbcommon", .module = xkbcommon },
+            },
         }),
     });
+    unit_tests.root_module.linkSystemLibrary("xkbcommon", .{});
     const test_step = b.step("test", "Run unit tests");
     test_step.dependOn(&b.addRunArtifact(unit_tests).step);
 

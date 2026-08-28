@@ -10,6 +10,7 @@ const c = @import("c");
 const titlebar = @import("titlebar.zig");
 const input = @import("input.zig");
 const config = @import("config.zig");
+const bindings = @import("bindings.zig");
 const layout = @import("layout.zig");
 const model = @import("model.zig");
 const river = wayland.client.river;
@@ -19,6 +20,7 @@ const fatal = std.process.fatal;
 const max_shortcut_stack: usize = 9;
 
 const FocusSide = model.FocusSide;
+const Action = bindings.Action;
 
 const Output = struct {
     obj: *river.OutputV1,
@@ -172,57 +174,6 @@ const Window = struct {
     }
 };
 
-const Action = enum {
-    none,
-    spawn_term,
-    spawn_helium,
-    spawn_memo,
-    screenshot,
-    brightness_up,
-    brightness_down,
-    volume_up,
-    volume_down,
-    volume_mute,
-    power_off,
-    close,
-    focus_toggle,
-    expand_next,
-    expand_prev,
-    swap,
-    move_expand_next,
-    move_expand_prev,
-    fill_screen,
-    exit,
-    flip_ratio,
-    flip_columns,
-    expand_slot_1,
-    expand_slot_2,
-    expand_slot_3,
-    expand_slot_4,
-    expand_slot_5,
-    expand_slot_6,
-    expand_slot_7,
-    expand_slot_8,
-    expand_slot_9,
-    move_slot_1,
-    move_slot_2,
-    move_slot_3,
-    move_slot_4,
-    move_slot_5,
-    move_slot_6,
-    move_slot_7,
-    move_slot_8,
-    move_slot_9,
-
-    /// 会新开平铺窗、占栈槽的快捷键。
-    fn needsTiledSlot(self: Action) bool {
-        return switch (self) {
-            .spawn_term, .spawn_helium, .spawn_memo, .screenshot => true,
-            else => false,
-        };
-    }
-};
-
 fn spawnArgv(argv: []const []const u8) void {
     _ = std.process.spawn(wm.io, .{ .argv = argv }) catch |err| {
         std.log.err("spawn {s}: {}", .{ argv[0], err });
@@ -256,6 +207,15 @@ fn slotFromMoveAction(action: Action) ?usize {
     const v = @intFromEnum(action);
     if (v < base or v > @intFromEnum(Action.move_slot_9)) return null;
     return v - base;
+}
+
+fn riverModifiers(mods: bindings.Modifiers) river.SeatV1.Modifiers {
+    return .{
+        .shift = mods.shift,
+        .ctrl = mods.ctrl,
+        .mod1 = mods.alt,
+        .mod4 = mods.super,
+    };
 }
 
 const XkbBinding = struct {
@@ -363,9 +323,9 @@ const Seat = struct {
         }
         switch (action) {
             .none => {},
-            .spawn_term => spawnArgv(&.{cfg.term}),
-            .spawn_helium => spawnArgv(&.{cfg.browser}),
-            .spawn_memo => spawnArgv(&.{ cfg.term, "-e", "vis", cfg.memo_path }),
+            .term => spawnArgv(&.{cfg.term}),
+            .browser => spawnArgv(&.{cfg.browser}),
+            .memo => spawnArgv(&.{ cfg.term, "-e", "vis", cfg.memo_path }),
             .screenshot => spawnSh(
                 \\grim - | satty -f - --copy-command wl-copy --early-exit copy
             ),
@@ -401,49 +361,19 @@ const Seat = struct {
         if (seat.new) {
             seat.new = false;
             seat.obj.setXcursorTheme(cfg.cursor_theme, cfg.cursor_size);
-            const super: river.SeatV1.Modifiers = .{ .mod4 = true };
-            const super_shift: river.SeatV1.Modifiers = .{ .mod4 = true, .shift = true };
-            const super_ctrl_shift: river.SeatV1.Modifiers = .{ .mod4 = true, .ctrl = true, .shift = true };
-            const none: river.SeatV1.Modifiers = .{};
-
-            XkbBinding.create(seat, super, .a, .spawn_term);
-            XkbBinding.create(seat, super, .c, .spawn_helium);
-            XkbBinding.create(seat, super, .v, .spawn_memo);
-            XkbBinding.create(seat, super, .w, .screenshot);
-            XkbBinding.create(seat, super, .Escape, .power_off);
-            XkbBinding.create(seat, super_ctrl_shift, .q, .exit);
-
-            XkbBinding.create(seat, none, .XF86MonBrightnessUp, .brightness_up);
-            XkbBinding.create(seat, none, .XF86MonBrightnessDown, .brightness_down);
-            XkbBinding.create(seat, none, .XF86AudioRaiseVolume, .volume_up);
-            XkbBinding.create(seat, none, .XF86AudioLowerVolume, .volume_down);
-            XkbBinding.create(seat, none, .XF86AudioMute, .volume_mute);
-
-            XkbBinding.create(seat, super_shift, .q, .close);
-            XkbBinding.create(seat, super, .s, .focus_toggle);
-            XkbBinding.create(seat, super, .e, .expand_prev);
-            XkbBinding.create(seat, super, .d, .expand_next);
-            XkbBinding.create(seat, super_shift, .s, .swap);
-            XkbBinding.create(seat, super_shift, .e, .move_expand_prev);
-            XkbBinding.create(seat, super_shift, .d, .move_expand_next);
-            XkbBinding.create(seat, super, .f, .fill_screen);
-            XkbBinding.create(seat, super, .r, .flip_ratio);
-            XkbBinding.create(seat, super_shift, .r, .flip_columns);
-
-            const slot_keys = [_]xkb.Keysym{
-                .@"1", .@"2", .@"3", .@"4", .@"5", .@"6", .@"7", .@"8", .@"9",
-            };
-            const expand_slots = [_]Action{
-                .expand_slot_1, .expand_slot_2, .expand_slot_3, .expand_slot_4, .expand_slot_5,
-                .expand_slot_6, .expand_slot_7, .expand_slot_8, .expand_slot_9,
-            };
-            const move_slots = [_]Action{
-                .move_slot_1, .move_slot_2, .move_slot_3, .move_slot_4, .move_slot_5,
-                .move_slot_6, .move_slot_7, .move_slot_8, .move_slot_9,
-            };
-            for (slot_keys, expand_slots, move_slots) |ksym, exp, mov| {
-                XkbBinding.create(seat, super, ksym, exp);
-                XkbBinding.create(seat, super_shift, ksym, mov);
+            const resolved = bindings.resolve(&cfg.binding_overrides);
+            for (0..bindings.action_count) |i| {
+                const action: Action = @enumFromInt(i);
+                if (resolved.wasInvalid(action)) {
+                    std.log.warn("invalid bind.{s}; using default", .{@tagName(action)});
+                }
+                switch (resolved.status(action)) {
+                    .conflict => std.log.warn("duplicate bind.{s}; disabled", .{@tagName(action)}),
+                    else => {},
+                }
+                if (resolved.get(action)) |binding| {
+                    XkbBinding.create(seat, riverModifiers(binding.mods), binding.keysym, action);
+                }
             }
         }
 

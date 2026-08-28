@@ -12,3 +12,49 @@ browser = helium
 output = eDP-1
 mode = 2560x1600@60Hz
 scale = 1.5
+
+# Keyboard bindings. Missing entries use the same built-in defaults.
+# Modifiers: Super, Ctrl, Shift, Alt. Use "none" to disable an action.
+bind.term = Super+a
+bind.browser = Super+c
+bind.memo = Super+v
+bind.screenshot = Super+w
+
+bind.power_off = Super+Escape
+bind.close = Super+Shift+q
+bind.exit = Super+Ctrl+Shift+q
+
+bind.focus_toggle = Super+s
+bind.expand_prev = Super+e
+bind.expand_next = Super+d
+bind.swap = Super+Shift+s
+bind.move_expand_prev = Super+Shift+e
+bind.move_expand_next = Super+Shift+d
+bind.fill_screen = Super+f
+bind.flip_ratio = Super+r
+bind.flip_columns = Super+Shift+r
+
+bind.expand_slot_1 = Super+1
+bind.expand_slot_2 = Super+2
+bind.expand_slot_3 = Super+3
+bind.expand_slot_4 = Super+4
+bind.expand_slot_5 = Super+5
+bind.expand_slot_6 = Super+6
+bind.expand_slot_7 = Super+7
+bind.expand_slot_8 = Super+8
+bind.expand_slot_9 = Super+9
+bind.move_slot_1 = Super+Shift+1
+bind.move_slot_2 = Super+Shift+2
+bind.move_slot_3 = Super+Shift+3
+bind.move_slot_4 = Super+Shift+4
+bind.move_slot_5 = Super+Shift+5
+bind.move_slot_6 = Super+Shift+6
+bind.move_slot_7 = Super+Shift+7
+bind.move_slot_8 = Super+Shift+8
+bind.move_slot_9 = Super+Shift+9
+
+bind.brightness_up = XF86MonBrightnessUp
+bind.brightness_down = XF86MonBrightnessDown
+bind.volume_up = XF86AudioRaiseVolume
+bind.volume_down = XF86AudioLowerVolume
+bind.volume_mute = XF86AudioMute

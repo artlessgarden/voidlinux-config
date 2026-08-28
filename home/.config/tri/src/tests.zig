@@ -3,6 +3,64 @@ const config = @import("config.zig");
 const layout = @import("layout.zig");
 const model = @import("model.zig");
 const buffer_state = @import("buffer_state.zig");
+const bindings = @import("bindings.zig");
+
+test "binding parser accepts modifiers xkb names and none" {
+    try std.testing.expectEqual(bindings.Binding{
+        .mods = .{ .super = true, .ctrl = true, .shift = true },
+        .keysym = .q,
+    }, (try bindings.parse("Super+Ctrl+Shift+q")).?);
+    try std.testing.expectEqual(bindings.Binding{
+        .mods = .{},
+        .keysym = .XF86AudioRaiseVolume,
+    }, (try bindings.parse("XF86AudioRaiseVolume")).?);
+    try std.testing.expectEqual(@as(?bindings.Binding, null), try bindings.parse("none"));
+}
+
+test "invalid binding override falls back to its default" {
+    var overrides = bindings.Overrides{};
+    overrides.set(.close, "Hyper+q");
+    const resolved = bindings.resolve(&overrides);
+    try std.testing.expectEqual(bindings.Status.invalid, resolved.status(.close));
+    try std.testing.expect(resolved.wasInvalid(.close));
+    try std.testing.expectEqual(bindings.defaultFor(.close), resolved.get(.close));
+}
+
+test "disabled binding stays disabled" {
+    var overrides = bindings.Overrides{};
+    overrides.set(.screenshot, "none");
+    const resolved = bindings.resolve(&overrides);
+    try std.testing.expectEqual(bindings.Status.disabled, resolved.status(.screenshot));
+    try std.testing.expectEqual(@as(?bindings.Binding, null), resolved.get(.screenshot));
+}
+
+test "duplicate binding keeps first action and suppresses later action" {
+    var overrides = bindings.Overrides{};
+    overrides.set(.browser, "Super+a");
+    const resolved = bindings.resolve(&overrides);
+    try std.testing.expect(resolved.get(.term) != null);
+    try std.testing.expectEqual(bindings.Status.conflict, resolved.status(.browser));
+    try std.testing.expectEqual(@as(?bindings.Binding, null), resolved.get(.browser));
+}
+
+test "invalid fallback still participates in conflict handling" {
+    var overrides = bindings.Overrides{};
+    overrides.set(.term, "Super+Shift+q");
+    overrides.set(.close, "not+a+valid+binding");
+    const resolved = bindings.resolve(&overrides);
+    try std.testing.expect(resolved.get(.term) != null);
+    try std.testing.expect(resolved.wasInvalid(.close));
+    try std.testing.expectEqual(bindings.Status.conflict, resolved.status(.close));
+    try std.testing.expectEqual(@as(?bindings.Binding, null), resolved.get(.close));
+}
+
+test "configuration stores known binding overrides and ignores unknown actions" {
+    var cfg: config.Config = .{};
+    defer cfg.deinit(std.testing.allocator);
+    try cfg.apply(std.testing.allocator, "bind.close", "Super+q");
+    try cfg.apply(std.testing.allocator, "bind.not_an_action", "Super+x");
+    try std.testing.expectEqualStrings("Super+q", cfg.binding_overrides.get(.close).?);
+}
 
 test "app fullscreen requests stay pending until manage" {
     var intent: model.FullscreenIntent = .none;

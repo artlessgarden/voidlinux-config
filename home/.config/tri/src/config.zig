@@ -2,6 +2,7 @@
 //! Simple key=value config for tri (~/.config/tri/config or $TRI_CONFIG).
 
 const std = @import("std");
+const bindings = @import("bindings.zig");
 pub const Config = struct {
     const default_master_ratio: f32 = 0.62;
     const default_cursor_size: u32 = 28;
@@ -15,6 +16,7 @@ pub const Config = struct {
     output: []const u8 = "eDP-1",
     mode: []const u8 = "2560x1600@60Hz",
     scale: []const u8 = "1.5",
+    binding_overrides: bindings.Overrides = .{},
 
     strings: std.ArrayListUnmanaged([]const u8) = .empty,
 
@@ -66,7 +68,7 @@ pub const Config = struct {
         return copy;
     }
 
-    fn apply(self: *Config, gpa: std.mem.Allocator, key: []const u8, value: []const u8) !void {
+    pub fn apply(self: *Config, gpa: std.mem.Allocator, key: []const u8, value: []const u8) !void {
         if (std.mem.eql(u8, key, "master_ratio")) {
             self.master_ratio = try std.fmt.parseFloat(f32, value);
         } else if (std.mem.eql(u8, key, "cursor_size")) {
@@ -85,6 +87,9 @@ pub const Config = struct {
             self.mode = try self.dup(gpa, value);
         } else if (std.mem.eql(u8, key, "scale")) {
             self.scale = try self.dup(gpa, value);
+        } else if (std.mem.startsWith(u8, key, "bind.")) {
+            const action = bindings.actionFromName(key["bind.".len..]) orelse return;
+            self.binding_overrides.set(action, try self.dup(gpa, value));
         }
     }
 
