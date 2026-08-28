@@ -1,6 +1,27 @@
 #!/bin/sh
 set -e
 cd "$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)"
+
+check_artifact() {
+	artifact=$1
+	[ -x "$artifact" ] || return 1
+	readelf -h "$artifact" 2>/dev/null | grep -F 'Class:                             ELF64' >/dev/null || return 1
+	readelf -h "$artifact" 2>/dev/null | grep -F 'Machine:                           Advanced Micro Devices X86-64' >/dev/null || return 1
+	dynamic=$(readelf -d "$artifact" 2>/dev/null) || return 1
+	for library in libwayland-client.so.0 libxkbcommon.so.0 libfcft.so.4 libpixman-1.so.0 libc.so.6; do
+		printf '%s\n' "$dynamic" | grep -F "[$library]" >/dev/null || return 1
+	done
+	resolved=$(ldd "$artifact" 2>/dev/null) || return 1
+	if printf '%s\n' "$resolved" | grep -F 'not found' >/dev/null; then
+		return 1
+	fi
+}
+
+if [ -n "${TRI_REBUILD_TEST_FILE:-}" ]; then
+	check_artifact "$TRI_REBUILD_TEST_FILE"
+	exit
+fi
+
 zig build test
 stage_dir=$(mktemp -d "$PWD/.tri-build.XXXXXX")
 cleanup() {
@@ -10,7 +31,8 @@ cleanup() {
 }
 trap cleanup EXIT HUP INT TERM
 
-zig build -Doptimize=ReleaseSafe --prefix "$stage_dir"
+zig build -Dtarget=x86_64-linux-gnu.2.38 -Dcpu=baseline -Doptimize=ReleaseSafe --prefix "$stage_dir"
+check_artifact "$stage_dir/bin/tri"
 mkdir -p zig-out/bin
 if [ -x zig-out/bin/tri ]; then
 	cp -p zig-out/bin/tri zig-out/bin/tri.previous

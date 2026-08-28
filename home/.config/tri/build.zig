@@ -55,6 +55,7 @@ pub fn build(b: *std.Build) void {
     exe.root_module.linkSystemLibrary("xkbcommon", .{});
     exe.root_module.linkSystemLibrary("fcft", .{});
     exe.root_module.linkSystemLibrary("pixman-1", .{});
+    exe.root_module.addLibraryPath(.{ .cwd_relative = "/usr/lib64" });
     b.installArtifact(exe);
 
     const unit_tests = b.addTest(.{
