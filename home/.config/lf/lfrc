@@ -1,7 +1,4 @@
-# lf：l / → / Enter = 内置 open（目录进入，文件走 cmd open）— 这是唯一稳的做法
-# 同步 ${{ }} 里调 lf -remote 会卡住（闪一下没反应）；fzf 跳转才用 &{{ + remote
-# 门户选目录：wrapper 把 Enter 绑成 portal-accept; quit
-
+# Normal interactive lf configuration. Portal selection uses dedicated configs.
 set shell sh
 set shellopts '-eu'
 set ifs "\n"
@@ -16,7 +13,6 @@ set scrolloff 3
 set mouse
 set period 1
 
-# 仅文件；目录由内置 open cd
 cmd open ${{
 	set -f
 	case $(file --mime-type -Lb -- "$f") in
@@ -44,25 +40,13 @@ cmd open ${{
 map l open
 map <right> open
 map <enter> open
-
 map a :push %touch<space>
 map A :push %mkdir<space>
-
-# 内置 delete：提示后 y 确认
 map D delete
 
-# 门户选目录用（写 XDG 路径；quit 在 map 里链式调用）
-cmd portal-accept ${{
-	set -f
-	[ -n "${LF_XDG_OUT:-}" ] || exit 0
-	[ -d "$f" ] || exit 0
-	printf '%s\n' "$f" > "$LF_XDG_OUT"
-}}
-
-# fzf / rg：必须同步 ${{ 才能抢 tty；选完后再 remote（和进目录那种一上来 remote 不同）
 cmd fzf_jump ${{
 	set -f
-	target=$(/usr/bin/fd --type f --type d --hidden --follow --exclude .git 2>/dev/null | /usr/bin/fzf) || exit 0
+	target=$(fd --type f --type d --hidden --follow --exclude .git 2>/dev/null | fzf) || exit 0
 	[ -n "$target" ] || exit 0
 	escaped=$(printf '%s' "$target" | sed 's/\\/\\\\/g;s/"/\\"/g')
 	lf -remote "send $id select \"$escaped\""
@@ -73,8 +57,8 @@ cmd fzf_rg ${{
 	set -f
 	pattern=$1
 	[ -n "$pattern" ] || exit 0
-	target=$(/usr/bin/rg -l --hidden --glob '!.git' -- "$pattern" 2>/dev/null | /usr/bin/fzf \
-		--preview "/usr/bin/rg -n --color=always -- \"$pattern\" {} 2>/dev/null | head -100") || exit 0
+	target=$(rg -l --hidden --glob '!.git' -- "$pattern" 2>/dev/null | fzf \
+		--preview "rg -n --color=always -- \"$pattern\" {} 2>/dev/null | head -100") || exit 0
 	[ -n "$target" ] || exit 0
 	escaped=$(printf '%s' "$target" | sed 's/\\/\\\\/g;s/"/\\"/g')
 	lf -remote "send $id select \"$escaped\""
@@ -95,16 +79,12 @@ cmd extract ${{
 
 cmd tar ${{
 	set -f
-	mkdir "$1"
-	cp -r $fx "$1"
-	tar czf "$1.tar.gz" "$1"
-	rm -rf "$1"
+	[ -n "${1:-}" ] || { printf 'archive name required\n' >&2; exit 2; }
+	lf-archive tar "$1.tar.gz" $fx
 }}
 
 cmd zip ${{
 	set -f
-	mkdir "$1"
-	cp -r $fx "$1"
-	zip -r "$1.zip" "$1"
-	rm -rf "$1"
+	[ -n "${1:-}" ] || { printf 'archive name required\n' >&2; exit 2; }
+	lf-archive zip "$1.zip" $fx
 }}

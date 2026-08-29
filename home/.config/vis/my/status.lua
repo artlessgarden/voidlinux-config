@@ -13,25 +13,19 @@ local mode_names = {
   [vis.modes.VISUAL_LINE] = "V-LINE",
 }
 
-local mode_styles = {}
+local mode_styles
 
-local function define_styles(win)
-  if mode_styles[win] then return mode_styles[win] end
+local function define_styles()
+  if mode_styles then return mode_styles end
 
-  local styles = {
-    insert = win.STYLE_LEXER_MAX - 2,
-    normal = win.STYLE_LEXER_MAX - 1,
-    replace = win.STYLE_LEXER_MAX - 4,
-    visual = win.STYLE_LEXER_MAX - 3,
+  mode_styles = {
+    normal = assert(vis.ui:style_push("fore:#222222,back:#d8d8d8,bold")),
+    insert = assert(vis.ui:style_push("fore:#222222,back:#b8e6b8,bold")),
+    visual = assert(vis.ui:style_push("fore:#222222,back:#efb1a6,bold")),
+    replace = assert(vis.ui:style_push("fore:#222222,back:#f0df9a,bold")),
   }
 
-  win:style_define(styles.normal, "fore:#222222,back:#d8d8d8,bold")
-  win:style_define(styles.insert, "fore:#222222,back:#b8e6b8,bold")
-  win:style_define(styles.visual, "fore:#222222,back:#efb1a6,bold")
-  win:style_define(styles.replace, "fore:#222222,back:#f0df9a,bold")
-
-  mode_styles[win] = styles
-  return styles
+  return mode_styles
 end
 
 local function mode_style(styles)
@@ -90,7 +84,7 @@ local function draw(win)
   )
 
   if win == vis.win then
-    local styles = define_styles(win)
+    local styles = define_styles()
     for x = 0, #mode_label - 1 do
       win:style_pos(mode_style(styles), x, win.height - 1)
     end
@@ -100,6 +94,3 @@ local function draw(win)
 end
 
 vis.events.subscribe(vis.events.WIN_STATUS, draw)
-vis.events.subscribe(vis.events.WIN_CLOSE, function(win)
-  mode_styles[win] = nil
-end)

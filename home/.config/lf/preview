@@ -1,6 +1,6 @@
 #!/bin/sh
-# lf 预览
-# $1 path  $2 w  $3 h
+set -eu
+
 path=$1
 w=${2:-80}
 h=${3:-40}
@@ -31,7 +31,6 @@ application/x-sh|application/x-shellscript|inode/x-empty)
 		|| sed -n "1,${h}p" -- "$path"
 	;;
 image/*)
-	# alacritty：用 Unicode 块字符像素预览（无 sixel/kitty）
 	chafa -f symbols -s "${w}x${h}" --animate off -- "$path" 2>/dev/null \
 		|| file -Lb -- "$path"
 	;;
@@ -42,8 +41,5 @@ application/pdf)
 	pdftotext -l 2 -nopgbrk -q -- "$path" - 2>/dev/null | sed -n "1,${h}p" \
 		|| file -Lb -- "$path"
 	;;
-*)
-	file -Lb -- "$path"
-	;;
+*) file -Lb -- "$path" ;;
 esac
-exit 0

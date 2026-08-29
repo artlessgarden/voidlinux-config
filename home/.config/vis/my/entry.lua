@@ -8,7 +8,7 @@ local util = require("my.util")
 local M = {}
 
 local config = {
-  root = ((os.getenv("HOME") or ".") .. "/Drafts/memo"):gsub("/+$", ""),
+  root = ((os.getenv("HOME") or ".") .. "/notes"):gsub("/+$", ""),
 }
 
 local styles = {}

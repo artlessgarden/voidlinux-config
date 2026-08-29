@@ -1,5 +1,7 @@
 #!/bin/sh
-# 门户 lf：alacritty 须 -e lf（kitty/foot 可直接 termcmd lf）
+
+# xdg-desktop-portal-termfilechooser wrapper for lf.
+# Keep navigation on l/right, and use Enter as the explicit confirmation key.
 
 set -eu
 
@@ -12,20 +14,26 @@ debug=$6
 
 [ "$debug" = 1 ] && set -x
 
-termcmd=${TERMCMD:-alacritty -e}
+termcmd=${TERMCMD:-alacritty --title termfilechooser -e}
+file_config=$HOME/.config/lf/xdg-file.lfrc
+directory_config=$HOME/.config/lf/xdg-directory.lfrc
 
 if [ "$directory" = 1 ]; then
-	export LF_XDG_OUT=$out
-	set -- -single -command 'map <enter> :{{ portal-accept; quit }}' "$path"
+    # lf's stock -last-dir-path selects the directory after entering it and
+    # quitting.  Use an explicit output variable so Enter can select the
+    # highlighted directory instead.
+    export LF_XDG_OUT=$out
+    set -- -single -config "$directory_config" "$path"
 else
-	unset LF_XDG_OUT || true
-	set -- -single -selection-path "$out" "$path"
+    # -selection-path exits when a file is opened.  xdg-file.lfrc maps Enter
+    # to that action while retaining l/right for directory navigation.
+    set -- -single -config "$file_config" -selection-path "$out" "$path"
 fi
 
 command="$termcmd lf"
 for arg in "$@"; do
-	escaped=$(printf '%s' "$arg" | sed 's/"/\\"/g')
-	command="$command \"$escaped\""
+    escaped=$(printf '%s' "$arg" | sed 's/"/\\"/g')
+    command="$command \"$escaped\""
 done
 
 sh -c "$command"

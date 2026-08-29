@@ -1,10 +1,7 @@
 #!/usr/bin/env bash
-# 更新系统 + Helium
+# Update Void and the separately installed Helium browser.
 set -euo pipefail
 sudo xbps-install -Syu
-repo=${VOIDLINUX_CONFIG:-$HOME/voidlinux-config}
-if [ -f "$repo/90-helium.sh" ]; then
-	sh "$repo/90-helium.sh"
-else
-	echo "跳过 Helium：找不到 $repo/90-helium.sh" >&2
-fi
+script=$(readlink -f "$0")
+repo=$(cd "$(dirname "$script")/../../.." && pwd)
+sh "$repo/90-helium.sh"

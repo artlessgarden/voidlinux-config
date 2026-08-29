@@ -1,6 +1,7 @@
 #!/bin/sh
 # 下载/更新 Helium 到 ~/.local/opt/helium
 set -e
+dir=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
 
 if ! command -v xz >/dev/null; then
 	echo "缺少 xz，请先运行：sh 60-pkg-apps.sh"
@@ -51,7 +52,7 @@ rm -rf "$opt"
 mv "$tmp/new" "$opt"
 
 # 开箱 UI/主题（与 etc/helium/initial_preferences 同步）
-seed="$HOME/voidlinux-config/etc/helium/initial_preferences"
+seed="$dir/etc/helium/initial_preferences"
 if [ -f "$seed" ]; then
 	cp -f "$seed" "$opt/initial_preferences"
 	cp -f "$seed" "$opt/master_preferences"

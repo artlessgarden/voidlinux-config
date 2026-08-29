@@ -57,8 +57,8 @@ master, stack[9], expanded, focus_side, stack_on_left, monocle
 
 ## chip
 
-- `setChip(slot_ch, title, kind)`；`stack_on_left` 时序号与标题左右对调  
-- 无 `chip_align` 配置  
+- `setChip(slot_ch, title, kind)`；`stack_on_left` 时序号与标题左右对调
+- 无 `chip_align` 配置
 
 ---
 

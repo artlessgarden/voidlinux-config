@@ -5,22 +5,8 @@ local util = require("my.util")
 
 local M = {}
 
-local function git_root(start)
-  local dir = tostring(start or ""):gsub("/+$", "")
-  if dir == "" then dir = "/" end
-  while dir do
-    if util.is_dir(dir .. "/.git") then return dir end
-    if dir == "/" then break end
-    local parent = dir:match("^(.+)/[^/]+$")
-    if not parent or parent == dir then break end
-    dir = parent
-  end
-  return nil
-end
-
-local pwd = (os.getenv("PWD") or "."):gsub("/+$", "")
-if pwd == "" then pwd = "/" end
-M.root = git_root(pwd) or pwd
+M.root = (os.getenv("PWD") or "."):gsub("/+$", "")
+if M.root == "" then M.root = "/" end
 
 local ignored_dirs = {
   ".git",

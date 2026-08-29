@@ -19,23 +19,13 @@ end
 local function current_pid()
   if pid then return pid end
 
-  local pipe = io.popen("echo $PPID", "r")
+  local pipe = io.popen("sh -c 'echo $PPID'", "r")
   if pipe then
     pid = pipe:read("*l")
     pipe:close()
   end
   pid = pid or tostring(os.time())
   return pid
-end
-
-local function realpath(path)
-  if not path or path == "" then return nil end
-  local pipe = io.popen("realpath -m -- " .. util.shquote(path) .. " 2>/dev/null", "r")
-  if not pipe then return nil end
-  local abs = pipe:read("*l")
-  pipe:close()
-  if not abs or abs == "" then return nil end
-  return abs
 end
 
 local function alive(value)
@@ -90,13 +80,12 @@ local function release(path)
 end
 
 vis.events.subscribe(vis.events.WIN_OPEN, function(win)
-  local path = realpath(win and win.file and win.file.path)
+  local path = win and win.file and win.file.path
   if path and not held[path] then take(path) end
 end)
 
 vis.events.subscribe(vis.events.FILE_CLOSE, function(file)
-  local path = realpath(file and file.path)
-  if path then release(path) end
+  if file and file.path then release(file.path) end
 end)
 
 vis.events.subscribe(vis.events.QUIT, function()

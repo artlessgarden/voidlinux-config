@@ -1,30 +1,29 @@
-# ASUS TX Air FA401KM — Void 开箱流程
+# Run the common scripts, then only the block for this machine.
 void-installer
-# 分区/网络等见 README.md
-重启登录
-# 第一次 sudo 密码：装免密
-sudo install -o root -g root -m 440 etc/sudoers.d/xiang-nopasswd /etc/sudoers.d/xiang-nopasswd
+# Reboot and log in.
 sudo sh 10-set-hosts.sh
-# 若 void-installer / 装机时已设 Fastly+nonfree，可跳过 15（会写入磁盘并保留）
 sh 15-xbps-repos.sh
-sh 16-ignore-unused.sh
-# 忽略本机用不上的固件/FS 工具 + blacklist nouveau
 sh 20-pkg-base.sh
 sh 30-keyd.sh
 sh 40-sv-base.sh
-# 上一步含：dbus/seatd/alsa/chronyd、只留 tty1-2、关掉各服务 vlogger、加入 _seatd
-# 重新登录，让 _seatd 生效
 sh 50-link-home.sh
-ni
 sh 60-pkg-apps.sh
+sh 65-vis.sh
 sh 70-link-apps.sh
-# 含 Helium desktop/mime/策略
-sh 80-grub.sh
-sh 85-asus-hw.sh
-# 电池 80%、quiet、iwlwifi 关省电 + 掉线/唤醒重连
-sh 87-bluetooth.sh
-# PipeWire + BlueZ；连耳机自动切换默认输出
-sh 86-mouseless.sh
-# keyd F13+ 控鼠标；退 niri、登出 tty 再 ni，input+uinput 才进会话（不用 sudo）
 sh 90-helium.sh
-# 默认浏览器；数据在 ~/.config/net.imput.helium；之后用 xbg 一并更新
+
+# MSI
+sh msi/16-ignore-unused.sh
+sh msi/20-pkg-hardware.sh
+sh msi/40-host-services.sh
+sh msi/70-link-host.sh
+sh msi/80-grub.sh
+sh msi/85-power.sh
+
+# ASUS
+sh asus/16-ignore-unused.sh
+sh asus/20-pkg-hardware.sh
+sh asus/40-host-services.sh
+sh asus/70-link-host.sh
+sh asus/80-grub.sh
+sh asus/85-power.sh

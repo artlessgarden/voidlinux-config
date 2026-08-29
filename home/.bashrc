@@ -5,7 +5,7 @@
 # 非交互 shell 不加载这些配置
 [[ $- != *i* ]] && return
 # Prompt
-PS1='\[\e[1m\]\A \W\$ \[\e[0m\]'
+PS1='\n\[\e[1m\]\A \W\$ \[\e[0m\]'
 
 # 补全和 fzf
 [[ $PS1 && -f /usr/share/bash-completion/bash_completion ]] &&
@@ -31,9 +31,8 @@ shopt -s checkwinsize
 
 export EDITOR=vis
 export VISUAL=vis
-export BROWSER=helium
 
-# lf：退出后 shell 留在上次浏览的目录（桌面入口仍直接调 /usr/bin/lf）
+# Keep the shell in the directory last visited by lf.
 lfcd() {
 	cd "$(command lf -print-last-dir "$@")" || return
 }
@@ -43,41 +42,7 @@ alias ld='ls -Alh --color=auto'
 alias cx='chmod +x'
 alias gl='git clone --depth=1'
 
-# 从 TTY 启动合成器：
-# seatd + dbus-run-session；niri --session / sway 导入 Wayland 环境。
-ni() {
-	if [[ -n ${WAYLAND_DISPLAY:-} ]]; then
-		printf 'Wayland session already running.\n' >&2
-		return 1
-	fi
-	export XDG_RUNTIME_DIR="/tmp/xdg-runtime-$UID"
-	export XDG_CURRENT_DESKTOP=niri
-	export XDG_SESSION_DESKTOP=niri
-	export XDG_SESSION_TYPE=wayland
-	install -d -m 700 "$XDG_RUNTIME_DIR" || return
-	dbus-run-session niri --session
-}
-
-# Sway（自 niri 迁移试用）
-sw() {
-	if [[ -n ${WAYLAND_DISPLAY:-} ]]; then
-		printf 'Wayland session already running.\n' >&2
-		return 1
-	fi
-	export XDG_RUNTIME_DIR="/tmp/xdg-runtime-$UID"
-	export XDG_CURRENT_DESKTOP=sway
-	export XDG_SESSION_DESKTOP=sway
-	export XDG_SESSION_TYPE=wayland
-	export XCURSOR_THEME=Adwaita
-	export XCURSOR_SIZE=24
-	export GTK_IM_MODULE=fcitx
-	export QT_IM_MODULE=fcitx
-	export XMODIFIERS=@im=fcitx
-	install -d -m 700 "$XDG_RUNTIME_DIR" || return
-	dbus-run-session sway
-}
-
-# River + tri（左主/右列手风琴 WM）
+# Start River + tri from a TTY.
 rv() {
 	if [[ -n ${WAYLAND_DISPLAY:-} ]]; then
 		printf 'Wayland session already running.\n' >&2
@@ -89,14 +54,12 @@ rv() {
 	export XDG_SESSION_TYPE=wayland
 	export XCURSOR_THEME=Adwaita
 	export XCURSOR_SIZE=24
-	# 见 session.sh：Wayland 下勿设 GTK_IM_MODULE=fcitx
 	unset GTK_IM_MODULE
 	export QT_IM_MODULE=fcitx
 	export QT_IM_MODULES="wayland;fcitx"
 	export XMODIFIERS=@im=fcitx
 	export PATH="$HOME/.local/bin:$PATH"
 	install -d -m 700 "$XDG_RUNTIME_DIR" || return
-	# session.sh: wallpaper/input/idle then exec tri
 	dbus-run-session river -c "$HOME/.local/bin/tri-session"
 }
 
@@ -107,7 +70,7 @@ HISTFILESIZE=200000
 HISTCONTROL=ignoreboth:erasedups
 # 多行命令按一条记录保存；追加历史，不覆盖；保留换行。
 shopt -s cmdhist histappend lithist
-# 每次回到提示符：更新 Wayland 窗口标题（tri 收起条显示路径）+ 写入历史
+# Update tri's titlebar and append new history at every prompt.
 _tri_set_title() {
 	printf '\033]0;%s@%s:%s\033\\' "$USER" "${HOSTNAME%%.*}" "${PWD/#$HOME/~}"
 }
