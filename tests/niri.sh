@@ -10,13 +10,26 @@ grep -q '^ni() {' "$root/home/.bashrc" || fail 'ni starts Niri from a TTY'
 grep -Fq 'dbus-run-session niri --session' "$root/home/.bashrc" || fail 'Niri runs in a D-Bus session'
 grep -Fq 'ln -sfnT "$h/.config/niri" "$HOME/.config/niri"' "$root/50-link-home.sh" || fail 'Niri config is linked'
 grep -Eq '(^|[[:space:]])niri([[:space:]\\]|$)' "$root/20-pkg-base.sh" || fail 'Niri is installed'
+grep -Eq '(^|[[:space:]])alsa-utils([[:space:]\\]|$)' "$root/20-pkg-base.sh" || fail 'amixer is installed'
 grep -Eq '(^|[[:space:]])swappy([[:space:]\\]|$)' "$root/60-pkg-apps.sh" || fail 'Swappy is installed'
 grep -Fq '| swappy -f -' "$root/home/.config/niri/config.kdl" || fail 'screenshots open in Swappy'
-if grep -Fq '/home/xfn/' "$root/home/.config/niri/config.kdl"; then
-	fail 'MSI home path remains in the local Niri config'
+if grep -Eq '/home/' "$root/home/.config/niri/config.kdl"; then
+	fail 'Niri config contains a user-specific path'
 fi
+grep -Fq 'output "AU Optronics 0x0FA7 Unknown"' "$root/home/.config/niri/config.kdl" || fail 'MSI panel has an exact output rule'
+grep -Fq 'mode "2560x1600@60.003"' "$root/home/.config/niri/config.kdl" || fail 'MSI panel is fixed to 60 Hz'
+grep -Fq 'output "Tianma Microelectronics Ltd. TL140ADMP01 Unknown"' \
+	"$root/home/.config/niri/config.kdl" || fail 'ASUS panel has an exact output rule'
+grep -Fq 'mode "2560x1600@60.000"' "$root/home/.config/niri/config.kdl" || fail 'ASUS panel is fixed to 60 Hz'
+grep -Fq 'spawn-at-startup "sh" "-c" "exec swaybg -i \"$HOME/.config/niri/bg4.jpg\""' \
+	"$root/home/.config/niri/config.kdl" || fail 'wallpaper path follows HOME'
+grep -Fq 'swaylock -f -i $HOME/.config/niri/bg3.jpg' \
+	"$root/home/.config/niri/config.kdl" || fail 'lock image path follows HOME'
 if grep -Riq 'satty' "$root/20-pkg-base.sh" "$root/60-pkg-apps.sh" "$root/home/.config/niri"; then
 	fail 'Satty remains in the active setup'
+fi
+if grep -Eiq 'niri-float-sticky|bemenu|wlopm' "$root/20-pkg-base.sh"; then
+	fail 'unused Niri helpers remain in the base package list'
 fi
 
 for path in \

@@ -5,6 +5,7 @@ repo=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)
 lfrc=$repo/home/.config/lf/lfrc
 preview=$repo/home/.config/lf/preview
 archive=$repo/home/.local/bin/lf-archive
+portal=$repo/home/.config/xdg-desktop-portal/niri-portals.conf
 
 fail() {
 	printf 'not ok - %s\n' "$1" >&2
@@ -14,6 +15,13 @@ fail() {
 [ -f "$lfrc" ] || fail 'LF main configuration exists'
 [ -x "$preview" ] || fail 'LF previewer is executable'
 [ -x "$archive" ] || fail 'safe LF archive helper exists'
+grep -Fx 'org.freedesktop.impl.portal.FileChooser=termfilechooser' "$portal" >/dev/null || \
+	fail 'Niri selects the terminal file chooser portal'
+if grep -Eiq 'river|wlr' "$portal"; then
+	fail 'Niri portal config contains stale River or wlroots backends'
+fi
+[ ! -e "$repo/home/.config/xdg-desktop-portal/river-portals.conf" ] || \
+	fail 'stale River portal selector remains'
 sh -n "$preview"
 sh -n "$archive"
 
