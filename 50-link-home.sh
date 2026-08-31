@@ -1,5 +1,5 @@
 #!/bin/sh
-# Link shell, input method and common River files.
+# Link shell, input method and the common Niri configuration.
 set -eu
 dir=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
 h=$dir/home
@@ -12,5 +12,5 @@ ln -sfn /usr/share/examples/pipewire/20-pipewire-pulse.conf \
 ln -sfn "$h/.bash_profile" "$HOME/.bash_profile"
 ln -sfn "$h/.bashrc" "$HOME/.bashrc"
 ln -sfn "$h/.inputrc" "$HOME/.inputrc"
-ln -sfnT "$h/.config/river" "$HOME/.config/river"
+ln -sfnT "$h/.config/niri" "$HOME/.config/niri"
 ln -sfn "$h/.config/fcitx5/profile" "$HOME/.config/fcitx5/profile"
