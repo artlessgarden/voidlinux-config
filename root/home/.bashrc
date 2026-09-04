@@ -42,6 +42,76 @@ alias ld='ls -Alh --color=auto'
 alias cx='chmod +x'
 alias gl='git clone --depth=1'
 
+# Interactive SSH asks whether to use the fixed work bastion. Programs that
+# execute /usr/bin/ssh directly (Git, scripts and automation) are unaffected.
+_ssh_via_work_bastion() {
+	local hostname
+	hostname=$(command ssh -G work-bastion 2>/dev/null |
+		awk '$1 == "hostname" { print $2; exit }') || return
+	if [[ -z $hostname || $hostname == work-bastion ]]; then
+		printf '%s\n' \
+			'未配置 work-bastion；请先在 ~/.ssh/config 中添加跳板机。' >&2
+		return 2
+	fi
+	command ssh -J work-bastion "$@"
+}
+
+ssh() {
+	if [[ ${1:-} == work-bastion ]]; then
+		command ssh "$@"
+		return
+	fi
+	if [[ -t 0 && -t 1 ]]; then
+		local answer
+		read -r -p '通过工作跳板机连接？[Y/n] ' answer
+		case $answer in
+			n|N) command ssh "$@" ;;
+			*) _ssh_via_work_bastion "$@" ;;
+		esac
+	else
+		command ssh "$@"
+	fi
+}
+
+sshw() {
+	_ssh_via_work_bastion "$@"
+}
+
+_scp_via_work_bastion() {
+	local hostname
+	hostname=$(command ssh -G work-bastion 2>/dev/null |
+		awk '$1 == "hostname" { print $2; exit }') || return
+	if [[ -z $hostname || $hostname == work-bastion ]]; then
+		printf '%s\n' \
+			'未配置 work-bastion；请先在 ~/.ssh/config 中添加跳板机。' >&2
+		return 2
+	fi
+	command scp -o ProxyJump=work-bastion "$@"
+}
+
+scp() {
+	local argument answer
+	for argument in "$@"; do
+		if [[ $argument == work-bastion || $argument == work-bastion:* ]]; then
+			command scp "$@"
+			return
+		fi
+	done
+	if [[ -t 0 && -t 1 ]]; then
+		read -r -p '通过工作跳板机传输？[Y/n] ' answer
+		case $answer in
+			n|N) command scp "$@" ;;
+			*) _scp_via_work_bastion "$@" ;;
+		esac
+	else
+		command scp "$@"
+	fi
+}
+
+scpw() {
+	_scp_via_work_bastion "$@"
+}
+
 # Start Niri from a TTY.
 ni() {
 	if [[ -n ${WAYLAND_DISPLAY:-} || -n ${DISPLAY:-} ]]; then
