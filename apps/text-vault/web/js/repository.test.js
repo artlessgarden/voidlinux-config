@@ -55,3 +55,42 @@ test("quiet workspace changes are pending without alarming the user", () => {
   assert.equal(repository.isContentDirty(), false);
   assert.equal(repository.captureDirty().length, 1);
 });
+
+test("a newer remote object replaces a clean local object", () => {
+  const repository = createRepository([initial]);
+  const remote = {...initial, text: "remote", revision: 2, updatedAt: "2026-08-29T01:00:00.000Z"};
+
+  assert.deepEqual(repository.applyRemote([remote]), {applied: ["268t00000"], conflicts: []});
+  assert.equal(repository.get("268t00000").text, "remote");
+  assert.equal(repository.isDirty(), false);
+});
+
+test("remote changes to other objects preserve local dirty edits", () => {
+  const repository = createRepository([initial]);
+  repository.updateEntryText("268t00000", "local");
+  const remote = {...initial, id: "268t00001", text: "other", revision: 1};
+
+  repository.applyRemote([remote]);
+
+  assert.equal(repository.get("268t00000").text, "local");
+  assert.equal(repository.get("268t00001").text, "other");
+  assert.equal(repository.isDirty(), true);
+});
+
+test("same-object concurrent edits preserve remote text as a conflict copy", () => {
+  const repository = createRepository([initial]);
+  repository.updateEntryText("268t00000", "local", "2026-08-29T02:00:00.000Z");
+  const remote = {...initial, text: "remote", revision: 2, updatedAt: "2026-08-29T01:00:00.000Z"};
+
+  const result = repository.applyRemote([remote], new Date(2026, 7, 29, 3, 0));
+
+  assert.equal(result.applied.length, 0);
+  assert.equal(result.conflicts.length, 1);
+  assert.equal(repository.get("268t00000").text, "local");
+  const copy = repository.get(result.conflicts[0]);
+  assert.equal(copy.text, "remote");
+  assert.deepEqual(copy.properties.conflict, {of: "268t00000", remoteRevision: 2});
+  assert.equal(repository.captureDirty().length, 2);
+
+  assert.deepEqual(repository.applyRemote([remote]), {applied: [], conflicts: []});
+});

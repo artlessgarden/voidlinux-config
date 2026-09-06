@@ -1,4 +1,4 @@
-import {validateObject} from "./model.js";
+import {createEntry, newMemoID, validateObject} from "./model.js";
 
 export function createRepository(initialObjects = []) {
   const objects = new Map();
@@ -99,6 +99,42 @@ export function createRepository(initialObjects = []) {
     notify({type: "commit"});
   }
 
+  // Pulls never overwrite unsaved text. If both sides changed the same entry,
+  // the original keeps the local edit and a normal dirty entry preserves the
+  // remote text. Advancing baseRevision lets the next save follow the server.
+  function applyRemote(remoteObjects, now = new Date()) {
+    const applied = [];
+    const conflicts = [];
+    for (const value of remoteObjects) {
+      const remote = structuredClone(validateObject(value));
+      const current = objects.get(remote.id);
+      const baseRevision = baseRevisions.get(remote.id) ?? 0;
+      if (remote.revision <= baseRevision) continue;
+
+      if (current && sequences.get(remote.id) !== committedSequences.get(remote.id)) {
+        const id = newMemoID(objects.keys(), now);
+        const conflict = {
+          ...createEntry({id, now: now.toISOString()}),
+          text: remote.text,
+          properties: {...remote.properties, conflict: {of: remote.id, remoteRevision: remote.revision}},
+        };
+        upsert(conflict);
+        baseRevisions.set(remote.id, remote.revision);
+        conflicts.push(id);
+        continue;
+      }
+
+      objects.set(remote.id, remote);
+      sequences.set(remote.id, 0);
+      committedSequences.set(remote.id, 0);
+      baseRevisions.set(remote.id, remote.revision);
+      contentDirty.set(remote.id, false);
+      applied.push(remote.id);
+      notify({type: "remote", id: remote.id});
+    }
+    return {applied, conflicts};
+  }
+
   function subscribe(callback) {
     subscribers.add(callback);
     return () => subscribers.delete(callback);
@@ -108,7 +144,7 @@ export function createRepository(initialObjects = []) {
     for (const subscriber of subscribers) subscriber(event);
   }
 
-  return {get, upsert, remove, search, isDirty, isContentDirty, hasPendingChanges, dirtyObjects, captureDirty, markCommitted, updateEntryText, subscribe, values: () => [...objects.values()]};
+  return {get, upsert, remove, search, isDirty, isContentDirty, hasPendingChanges, dirtyObjects, captureDirty, markCommitted, applyRemote, updateEntryText, subscribe, values: () => [...objects.values()]};
 }
 
 function snippet(value, needle) {
