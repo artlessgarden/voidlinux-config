@@ -26,7 +26,11 @@ grep -q 'pipewire' "$repo/20-pkg-base.sh" || fail 'PipeWire is common'
 grep -q 'wireplumber' "$repo/20-pkg-base.sh" || fail 'WirePlumber is common'
 grep -q 'firefox' "$repo/60-pkg-apps.sh" || fail 'Firefox is installed on both hosts'
 [ -x "$repo/90-helium.sh" ] || fail 'Helium is installed on both hosts'
-grep -q 'firefox.desktop' "$repo/root/home/.config/mimeapps.list" || fail 'Firefox associations are common'
+[ ! -e "$repo/root/home/.config/mimeapps.list" ] || fail 'host application defaults are still shared'
+grep -q 'firefox.desktop' "$repo/root/home/.config/mimeapps.list.example" || fail 'fresh hosts lack default associations'
+if grep -Fq '.config/mimeapps.list" "$HOME/.config/mimeapps.list"' "$repo/70-link-apps.sh"; then
+	fail 'application defaults are still linked across hosts'
+fi
 [ -f "$repo/root/etc/tlp.d/10-laptop.conf" ] || fail 'TLP profile still has a user-specific filename'
 if grep -Rqs '10-xfn.conf' "$repo/msi" "$repo/root/etc/tlp.d"; then
 	fail 'TLP profile still uses a user-specific name'

@@ -9,6 +9,7 @@ sh 30-keyd.sh
 sh 40-sv-base.sh
 sh 45-mihomo.sh
 sh 50-link-home.sh
+sh 55-mimeapps.sh
 sh 60-pkg-apps.sh
 sh 65-vis.sh
 sh 70-link-apps.sh
