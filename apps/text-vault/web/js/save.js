@@ -15,6 +15,7 @@ export function createSaveCoordinator({
   let currentStatus = repository.isContentDirty() ? "dirty" : "clean";
   let activeSave = null;
   let timer = null;
+  let saveRequested = false;
   const subscribers = new Set();
 
   repository.subscribe(() => {
@@ -24,12 +25,21 @@ export function createSaveCoordinator({
   });
 
   function save() {
-    if (activeSave) return activeSave;
+    if (activeSave) {
+      saveRequested = true;
+      return activeSave;
+    }
     if (timer !== null) {
       clearTimer(timer);
       timer = null;
     }
-    activeSave = prepareAndSave().finally(() => { activeSave = null; });
+    activeSave = prepareAndSave().finally(() => {
+      activeSave = null;
+      if (saveRequested) {
+        saveRequested = false;
+        schedule();
+      }
+    });
     return activeSave;
   }
 

@@ -45,3 +45,16 @@ test("password command cancels without changing anything", async () => {
   assert.equal(changed, false);
   assert.equal(commands.state().stage, "idle");
 });
+
+test("password command retains confirmation state until rekey settles", async () => {
+  const pending = Promise.withResolvers();
+  const commands = createCommands({save: async () => {}, changePassword: () => pending.promise});
+  await commands.execute("/changepwd");
+  await commands.submit("a sufficiently long password");
+  await commands.submit("a sufficiently long password");
+  const changing = commands.submit("y");
+  assert.equal(commands.state().stage, "confirm");
+  pending.resolve();
+  await changing;
+  assert.equal(commands.state().stage, "idle");
+});

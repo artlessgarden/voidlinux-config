@@ -142,7 +142,10 @@ func New(cfg Config) http.Handler {
 				writeAPIError(w, http.StatusInternalServerError, "auth_failed")
 				return
 			}
-			w.WriteHeader(http.StatusNoContent)
+			// Password rotation invalidates every old session. Issue the caller a
+			// fresh cookie and CSRF token in this response, avoiding a stranded
+			// browser between rekey and a separate login request.
+			cfg.Auth.LoginCredential(w, input.Credential)
 		}))
 		protected.HandleFunc("POST /api/logout", requireCSRF(cfg.Auth, cfg.Auth.Logout))
 		mux.Handle("/api/", cfg.Auth.Require(protected))

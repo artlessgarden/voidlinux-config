@@ -38,3 +38,12 @@ test("csrf token can be handed to another in-memory API client", async () => {
   assert.equal(api.csrfToken(), "shared-token");
   await api.commit({baseGeneration: 0, objects: []});
 });
+
+test("rekey adopts the fresh server session token", async () => {
+  const api = createAPI(async path => new Response(JSON.stringify({csrfToken: path === "/api/rekey" ? "rotated" : "initial"}), {
+    status: 200, headers: {"Content-Type": "application/json"},
+  }));
+  await api.login("credential");
+  await api.rekey({schemaVersion: 1}, "new-credential");
+  assert.equal(api.csrfToken(), "rotated");
+});

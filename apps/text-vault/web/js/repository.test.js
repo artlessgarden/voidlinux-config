@@ -60,7 +60,7 @@ test("a newer remote object replaces a clean local object", () => {
   const repository = createRepository([initial]);
   const remote = {...initial, text: "remote", revision: 2, updatedAt: "2026-08-29T01:00:00.000Z"};
 
-  assert.deepEqual(repository.applyRemote([remote]), {applied: ["268t00000"], conflicts: []});
+  assert.deepEqual(repository.applyRemote([remote]), {applied: ["268t00000"], conflicts: [], renamed: []});
   assert.equal(repository.get("268t00000").text, "remote");
   assert.equal(repository.isDirty(), false);
 });
@@ -92,5 +92,42 @@ test("same-object concurrent edits preserve remote text as a conflict copy", () 
   assert.deepEqual(copy.properties.conflict, {of: "268t00000", remoteRevision: 2});
   assert.equal(repository.captureDirty().length, 2);
 
-  assert.deepEqual(repository.applyRemote([remote]), {applied: [], conflicts: []});
+  assert.deepEqual(repository.applyRemote([remote]), {applied: [], conflicts: [], renamed: []});
+});
+
+test("a remote object colliding with an unsaved memo renames the local memo", () => {
+  const local = {...initial, text: "local new", revision: 0, createdAt: "2026-08-29T00:00:00.000Z"};
+  const repository = createRepository([]);
+  repository.upsert(local);
+  const remote = {...initial, text: "remote winner", revision: 1};
+  const events = [];
+  repository.subscribe(event => events.push(event));
+
+  const result = repository.applyRemote([remote]);
+
+  assert.deepEqual(result, {applied: ["268t00000"], conflicts: [], renamed: [{from: "268t00000", to: "268t00001"}]});
+  assert.equal(repository.get("268t00000").text, "remote winner");
+  assert.equal(repository.get("268t00001").text, "local new");
+  assert.equal(repository.captureDirty().length, 1);
+  assert.equal(repository.captureDirty()[0].baseRevision, 0);
+  assert.deepEqual(events.at(-1), {type: "rename", from: "268t00000", to: "268t00001"});
+});
+
+test("conflicts remain visible until their copy is opened and acknowledged", () => {
+  const repository = createRepository([initial]);
+  repository.updateEntryText("268t00000", "local");
+  const remote = {...initial, text: "remote", revision: 2};
+  const {conflicts} = repository.applyRemote([remote], new Date(2026, 7, 29, 3, 0));
+
+  assert.equal(repository.hasConflicts(), true);
+  assert.equal(repository.acknowledgeConflict(conflicts[0]), true);
+  assert.equal(repository.hasConflicts(), false);
+  assert.equal(repository.get(conflicts[0]).text, "remote");
+});
+
+test("quarantined ciphertext keeps a persistent repository error", () => {
+  const repository = createRepository([]);
+  repository.quarantine("268t00009", new Error("bad ciphertext"));
+  assert.equal(repository.hasQuarantined(), true);
+  assert.deepEqual(repository.quarantinedIDs(), ["268t00009"]);
 });

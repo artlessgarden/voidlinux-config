@@ -56,7 +56,11 @@ export function createAPI(fetchFn = fetch) {
       return result;
     },
     logout: () => request("/api/logout", {method: "POST", csrf: true}),
-    rekey: (header, credential) => request("/api/rekey", {method: "POST", body: {header, credential}, csrf: true}),
+    async rekey(header, credential) {
+      const result = await request("/api/rekey", {method: "POST", body: {header, credential}, csrf: true});
+      csrfToken = result.csrfToken;
+      return result;
+    },
     vault: () => request("/api/vault"),
     snapshot: () => request("/api/snapshot"),
     changes: after => request(`/api/changes?after=${encodeURIComponent(String(after))}`),

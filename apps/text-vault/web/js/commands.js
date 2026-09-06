@@ -51,9 +51,12 @@ export function createCommands({save, changePassword}) {
         return {ok: true, cancelled: true};
       }
       const password = firstPassword;
-      reset();
-      await changePassword(password);
-      return {ok: true};
+      try {
+        await changePassword(password);
+        return {ok: true};
+      } finally {
+        reset();
+      }
     }
     return {ok: false, error: "没有正在执行的命令"};
   }

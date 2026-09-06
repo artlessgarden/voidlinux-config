@@ -1,8 +1,9 @@
 import van from "../vendor/van-1.6.1.js";
 import {APIError, createAPI} from "./api.js";
 import {createCommands} from "./commands.js";
-import {createVault, decryptObject, deriveServerCredential, rewrapVault, unlockVault} from "./crypto.js";
-import {createEntry, formatMemoTime, validateObject} from "./model.js";
+import {createVault, deriveServerCredential, rewrapVault, unlockVault} from "./crypto.js";
+import {decryptSnapshot} from "./load.js";
+import {createEntry, formatMemoTime} from "./model.js";
 import {createRepository} from "./repository.js";
 import {createSaveCoordinator} from "./save.js";
 import {createSyncCoordinator} from "./sync.js";
@@ -12,6 +13,7 @@ const {button, div, form, h1, input, label, main, p, section, span, textarea} = 
 const root = document.querySelector("#app");
 const api = createAPI();
 const tabSession = createTabSession();
+window.addEventListener("unload", () => tabSession.close(), {once: true});
 
 initialize();
 
@@ -88,14 +90,9 @@ function renderUnlock(header) {
 }
 
 async function openVault(key, snapshot) {
-  const decrypted = [];
-  for (const encrypted of Object.values(snapshot.objects ?? {})) {
-    const metadata = {id: encrypted.id, kind: encrypted.kind, revision: encrypted.revision};
-    const object = validateObject(await decryptObject(key, metadata, encrypted.envelope));
-    if (object.kind === "entry") decrypted.push(object);
-  }
-
-  const repository = createRepository(decrypted);
+  const loaded = await decryptSnapshot(key, snapshot);
+  const repository = createRepository(loaded.objects.filter(object => object.kind === "entry"));
+  for (const failure of loaded.failures) repository.quarantine(failure.id, failure.error);
   let saver;
   let sync;
   saver = createSaveCoordinator({
@@ -146,15 +143,19 @@ function renderApplication({repository, saver, sync, key}) {
     changePassword: async password => {
       const rotated = await rewrapVault(password, key);
       await api.rekey(rotated.header, rotated.credential);
-      await api.login(rotated.credential);
       tabSession.offer({key, csrfToken: api.csrfToken()});
     },
   });
 
   repository.subscribe(event => {
+    if (event.type === "rename" && selectedID === event.from) {
+      selectedID = event.to;
+      renderEditor();
+    }
     renderResults();
     if (event.type === "remote" && event.id === selectedID) renderEditor();
     renderInfo();
+    renderStatus();
   });
   saver.subscribe(renderStatus);
   sync.subscribe(state => {
@@ -178,6 +179,9 @@ function renderApplication({repository, saver, sync, key}) {
     handleLocation();
   });
   window.addEventListener("focus", () => { void sync.pull().catch(() => {}); });
+  window.addEventListener("blur", () => {
+    if (repository.hasPendingChanges()) void saver.save().catch(() => {});
+  });
   document.addEventListener("visibilitychange", () => {
     if (document.visibilityState === "hidden" && repository.hasPendingChanges()) void saver.save().catch(() => {});
   });
@@ -248,6 +252,7 @@ function renderApplication({repository, saver, sync, key}) {
       await openEntry(item.id);
       return;
     }
+    if (commands.search(commandInput.value) !== null) return;
     createNewEntry(query);
   }
 
@@ -260,7 +265,7 @@ function renderApplication({repository, saver, sync, key}) {
       if (commands.state().stage === "idle") restoreSearchInput();
       else configureCommandInput();
     } catch {
-      setMessage("修改失败，原主密码仍然有效");
+      setMessage("修改状态不确定；刷新后请先尝试新密码");
       restoreSearchInput();
     }
   }
@@ -301,6 +306,7 @@ function renderApplication({repository, saver, sync, key}) {
     try { await sync.pull(); } catch {}
     if (!repository.get(id)) return;
     selectedID = id;
+    if (repository.acknowledgeConflict(id)) saver.schedule();
     showContent();
     renderEditor();
     editor.focus();
@@ -362,7 +368,7 @@ function renderApplication({repository, saver, sync, key}) {
   function renderStatus() {
     const saveState = saver.status();
     const syncState = sync.status();
-    const state = saveState === "failed" || saveState === "conflict" || syncState === "failed" || syncState === "conflict"
+    const state = repository.hasQuarantined() || repository.hasConflicts() || saveState === "failed" || saveState === "conflict" || syncState === "failed" || syncState === "conflict"
       ? "failed"
       : saveState === "dirty" || saveState === "saving" ? "dirty" : "clean";
     const label = state === "clean" ? "已保存" : state === "dirty" ? "尚未保存" : "同步失败";

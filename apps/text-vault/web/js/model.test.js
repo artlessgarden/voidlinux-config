@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import {createEntry, formatMemoTime, newMemoID, validateObject} from "./model.js";
+import {createEntry, formatMemoTime, newMemoID, nextMemoID, validateObject} from "./model.js";
 
 test("createEntry returns a schema-versioned untitled text object", () => {
   const entry = createEntry({id: "268t00000", now: "2026-08-29T00:00:00.000Z"});
@@ -26,6 +26,10 @@ test("memo ids use time and increment inside the same minute", () => {
 
 test("memo id formats its embedded local minute", () => {
   assert.equal(formatMemoTime("2696d070z"), "2026-09-06 13:07");
+});
+
+test("next memo id keeps an existing memo's minute prefix", () => {
+  assert.equal(nextMemoID(["268t00000"], "268t00000"), "268t00001");
 });
 
 test("entry ids must use the nine-character memo format", () => {

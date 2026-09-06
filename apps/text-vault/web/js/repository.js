@@ -1,4 +1,4 @@
-import {createEntry, newMemoID, validateObject} from "./model.js";
+import {createEntry, newMemoID, nextMemoID, validateObject} from "./model.js";
 
 export function createRepository(initialObjects = []) {
   const objects = new Map();
@@ -6,6 +6,7 @@ export function createRepository(initialObjects = []) {
   const committedSequences = new Map();
   const baseRevisions = new Map();
   const contentDirty = new Map();
+  const quarantined = new Map();
   const subscribers = new Set();
 
   for (const value of initialObjects) {
@@ -105,6 +106,7 @@ export function createRepository(initialObjects = []) {
   function applyRemote(remoteObjects, now = new Date()) {
     const applied = [];
     const conflicts = [];
+    const renamed = [];
     for (const value of remoteObjects) {
       const remote = structuredClone(validateObject(value));
       const current = objects.get(remote.id);
@@ -112,6 +114,20 @@ export function createRepository(initialObjects = []) {
       if (remote.revision <= baseRevision) continue;
 
       if (current && sequences.get(remote.id) !== committedSequences.get(remote.id)) {
+        // Two tabs may allocate the same memo sequence from the same snapshot.
+        // An object that has never reached revision 1 is an ID collision, not
+        // a content edit conflict: move the local draft and adopt the winner.
+        if (baseRevision === 0 && current.revision === 0) {
+          const id = nextMemoID(objects.keys(), current.id);
+          const local = {...current, id};
+          discardTracking(remote.id);
+          installRemote(remote);
+          upsert(local);
+          notify({type: "rename", from: remote.id, to: id});
+          applied.push(remote.id);
+          renamed.push({from: remote.id, to: id});
+          continue;
+        }
         const id = newMemoID(objects.keys(), now);
         const conflict = {
           ...createEntry({id, now: now.toISOString()}),
@@ -124,15 +140,47 @@ export function createRepository(initialObjects = []) {
         continue;
       }
 
-      objects.set(remote.id, remote);
-      sequences.set(remote.id, 0);
-      committedSequences.set(remote.id, 0);
-      baseRevisions.set(remote.id, remote.revision);
-      contentDirty.set(remote.id, false);
+      installRemote(remote);
       applied.push(remote.id);
       notify({type: "remote", id: remote.id});
     }
-    return {applied, conflicts};
+    return {applied, conflicts, renamed};
+  }
+
+  function installRemote(remote) {
+    objects.set(remote.id, remote);
+    sequences.set(remote.id, 0);
+    committedSequences.set(remote.id, 0);
+    baseRevisions.set(remote.id, remote.revision);
+    contentDirty.set(remote.id, false);
+  }
+
+  function discardTracking(id) {
+    objects.delete(id);
+    sequences.delete(id);
+    committedSequences.delete(id);
+    baseRevisions.delete(id);
+    contentDirty.delete(id);
+  }
+
+  function hasConflicts() {
+    return [...objects.values()].some(object => object.kind === "entry" && object.properties?.conflict);
+  }
+
+  // Opening a conflict copy is the explicit acknowledgement. Its text stays
+  // as a normal entry; only the system marker is removed and saved.
+  function acknowledgeConflict(id) {
+    const object = objects.get(id);
+    if (!object?.properties?.conflict) return false;
+    const properties = {...object.properties};
+    delete properties.conflict;
+    upsert({...object, properties});
+    return true;
+  }
+
+  function quarantine(id, error) {
+    quarantined.set(id, error instanceof Error ? error.message : String(error));
+    notify({type: "quarantine", id});
   }
 
   function subscribe(callback) {
@@ -144,7 +192,14 @@ export function createRepository(initialObjects = []) {
     for (const subscriber of subscribers) subscriber(event);
   }
 
-  return {get, upsert, remove, search, isDirty, isContentDirty, hasPendingChanges, dirtyObjects, captureDirty, markCommitted, applyRemote, updateEntryText, subscribe, values: () => [...objects.values()]};
+  return {
+    get, upsert, remove, search, isDirty, isContentDirty, hasPendingChanges,
+    dirtyObjects, captureDirty, markCommitted, applyRemote, updateEntryText,
+    hasConflicts, acknowledgeConflict, quarantine,
+    hasQuarantined: () => quarantined.size > 0,
+    quarantinedIDs: () => [...quarantined.keys()],
+    subscribe, values: () => [...objects.values()],
+  };
 }
 
 function snippet(value, needle) {

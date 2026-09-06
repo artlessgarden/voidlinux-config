@@ -102,3 +102,33 @@ test("save pulls before capturing and publishes its generation", async () => {
   await saver.save();
   assert.deepEqual(events, ["pull", "commit:1", "generation:2"]);
 });
+
+test("debounce firing during a slow save schedules the newer edit", async () => {
+  const repository = seededRepository();
+  const key = await crypto.subtle.generateKey({name: "AES-GCM", length: 256}, false, ["encrypt", "decrypt"]);
+  const firstCommit = Promise.withResolvers();
+  const timers = [];
+  let commits = 0;
+  const saver = createSaveCoordinator({
+    repository, key, generation: 1,
+    setTimer: callback => { timers.push(callback); return timers.length; }, clearTimer: () => {},
+    api: {commit: request => {
+      commits += 1;
+      if (commits === 1) return firstCommit.promise;
+      return Promise.resolve({manifest: {generation: 3, objects: {"268t00000": {kind: "entry", revision: 3}}}});
+    }},
+  });
+
+  repository.updateEntryText("268t00000", "first");
+  const firstSave = saver.save();
+  repository.updateEntryText("268t00000", "second");
+  saver.schedule();
+  const joinedSave = timers[0]();
+  firstCommit.resolve({manifest: {generation: 2, objects: {"268t00000": {kind: "entry", revision: 2}}}});
+  await Promise.all([firstSave, joinedSave]);
+
+  assert.equal(timers.length, 2);
+  await timers[1]();
+  assert.equal(commits, 2);
+  assert.equal(saver.status(), "clean");
+});

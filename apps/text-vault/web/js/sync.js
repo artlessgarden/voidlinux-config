@@ -31,13 +31,25 @@ export function createSyncCoordinator({
     setStatus("syncing");
     try {
       const response = await api.changes(currentGeneration);
-      const decrypted = await Promise.all(Object.values(response.objects ?? {}).map(async encrypted => {
+      const encryptedObjects = Object.values(response.objects ?? {});
+      const settled = await Promise.allSettled(encryptedObjects.map(async encrypted => {
         const metadata = {id: encrypted.id, kind: encrypted.kind, revision: encrypted.revision};
         return validateObject(await decrypt(key, metadata, encrypted.envelope));
       }));
+      const decrypted = [];
+      const failed = [];
+      settled.forEach((item, index) => {
+        if (item.status === "fulfilled") decrypted.push(item.value);
+        else {
+          const id = encryptedObjects[index].id;
+          failed.push(id);
+          repository.quarantine(id, item.reason);
+        }
+      });
       const result = repository.applyRemote(decrypted);
+      if (failed.length) result.failed = failed;
       setGeneration(response.generation);
-      setStatus(result.conflicts.length ? "conflict" : "idle");
+      setStatus(repository.hasQuarantined() ? "failed" : repository.hasConflicts() ? "conflict" : "idle");
       return result;
     } catch (error) {
       setStatus("failed");

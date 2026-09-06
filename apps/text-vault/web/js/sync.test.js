@@ -23,7 +23,7 @@ test("pull decrypts changes, merges them, and advances generation", async () => 
     onGeneration: value => generations.push(value),
   });
 
-  assert.deepEqual(await sync.pull(), {applied: ["268t00000"], conflicts: []});
+  assert.deepEqual(await sync.pull(), {applied: ["268t00000"], conflicts: [], renamed: []});
   assert.equal(repository.get("268t00000").text, "remote");
   assert.equal(sync.generation(), 3);
   assert.deepEqual(generations, [3]);
@@ -60,4 +60,23 @@ test("start polls and stop cancels the timer", () => {
   assert.equal(scheduled[0].delay, 2000);
   sync.stop();
   assert.deepEqual(cleared, [17]);
+});
+
+test("one bad ciphertext is quarantined while valid changes still merge", async () => {
+  const repository = createRepository([]);
+  const encrypted = id => ({id, kind: "entry", revision: 1, envelope: {ciphertext: id}});
+  const sync = createSyncCoordinator({
+    repository, key: {}, generation: 0,
+    api: {changes: async () => ({generation: 1, objects: {good: encrypted("268t00000"), bad: encrypted("268t00001")}})},
+    decrypt: async (_key, metadata) => {
+      if (metadata.id === "268t00001") throw new Error("corrupt");
+      return {...entry, id: metadata.id, revision: metadata.revision};
+    },
+  });
+
+  const result = await sync.pull();
+  assert.equal(repository.get("268t00000").text, "remote");
+  assert.deepEqual(result.failed, ["268t00001"]);
+  assert.equal(sync.generation(), 1);
+  assert.equal(sync.status(), "failed");
 });

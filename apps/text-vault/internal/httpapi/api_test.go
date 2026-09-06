@@ -176,7 +176,7 @@ func TestRekeyRotatesServerAuthentication(t *testing.T) {
 	rekeyRequest.Header.Set("X-CSRF-Token", setup.Header().Get("X-CSRF-Token"))
 	rekeyRequest.AddCookie(setup.Result().Cookies()[0])
 	h.ServeHTTP(rekey, rekeyRequest)
-	if rekey.Code != http.StatusNoContent {
+	if rekey.Code != http.StatusOK || rekey.Header().Get("X-CSRF-Token") == "" || len(rekey.Result().Cookies()) == 0 {
 		t.Fatalf("rekey = %d %s", rekey.Code, rekey.Body.String())
 	}
 
