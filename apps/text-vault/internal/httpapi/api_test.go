@@ -60,7 +60,7 @@ func TestProtectedVaultSnapshotAndCommit(t *testing.T) {
 	cookie := login.Result().Cookies()[0]
 	csrf := login.Header().Get("X-CSRF-Token")
 
-	commitRequest := httptest.NewRequest(http.MethodPost, "/api/commit", strings.NewReader(`{"baseGeneration":0,"objects":[{"id":"entry_1234567890","kind":"entry","revision":1,"envelope":{"ciphertext":"AA=="}}]}`))
+	commitRequest := httptest.NewRequest(http.MethodPost, "/api/commit", strings.NewReader(`{"baseGeneration":0,"objects":[{"id":"268t00000","kind":"entry","revision":1,"envelope":{"ciphertext":"AA=="}}]}`))
 	commitRequest.AddCookie(cookie)
 	commitRequest.Header.Set("X-CSRF-Token", csrf)
 	commitRequest.Header.Set("Content-Type", "application/json")
@@ -81,7 +81,7 @@ func TestProtectedVaultSnapshotAndCommit(t *testing.T) {
 	if err := json.NewDecoder(snapshotResponse.Body).Decode(&snapshot); err != nil {
 		t.Fatal(err)
 	}
-	if snapshot.Manifest.Generation != 1 || snapshot.Objects["entry_1234567890"].Revision != 1 {
+	if snapshot.Manifest.Generation != 1 || snapshot.Objects["268t00000"].Revision != 1 {
 		t.Fatalf("snapshot = %#v", snapshot)
 	}
 }

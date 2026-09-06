@@ -44,6 +44,7 @@ INSERT OR IGNORE INTO schema_migrations(version, applied_at) VALUES (1, unixepoc
 INSERT OR IGNORE INTO metadata(key, value) VALUES ('generation', '0');
 `
 
+var memoIDPattern = regexp.MustCompile(`^[0-9a-z]{9}$`)
 var objectIDPattern = regexp.MustCompile(`^[A-Za-z0-9_-]{16,80}$`)
 
 var allowedKinds = map[string]bool{
@@ -340,7 +341,11 @@ func readGeneration(ctx context.Context, q rowQuerier) (uint64, error) {
 func validateObjects(objects []CipherObject) error {
 	seen := make(map[string]bool, len(objects))
 	for _, object := range objects {
-		if !objectIDPattern.MatchString(object.ID) {
+		validID := objectIDPattern.MatchString(object.ID)
+		if object.Kind == "entry" {
+			validID = memoIDPattern.MatchString(object.ID)
+		}
+		if !validID {
 			return fmt.Errorf("invalid object id %q", object.ID)
 		}
 		if !allowedKinds[object.Kind] {

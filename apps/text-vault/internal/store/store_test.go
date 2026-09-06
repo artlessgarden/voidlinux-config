@@ -8,6 +8,17 @@ import (
 	"testing"
 )
 
+func TestEntryIDsUseMemoFormat(t *testing.T) {
+	valid := []CipherObject{{ID: "2696d0700", Kind: "entry", Revision: 1, Envelope: json.RawMessage(`{"ciphertext":"AA=="}`)}}
+	if err := validateObjects(valid); err != nil {
+		t.Fatalf("valid memo id: %v", err)
+	}
+	invalid := []CipherObject{{ID: "entry_1234567890", Kind: "entry", Revision: 1, Envelope: json.RawMessage(`{"ciphertext":"AA=="}`)}}
+	if err := validateObjects(invalid); err == nil {
+		t.Fatal("legacy entry id accepted")
+	}
+}
+
 func TestCommitPublishesBatchAndRejectsStaleBase(t *testing.T) {
 	ctx := context.Background()
 	path := filepath.Join(t.TempDir(), "text-vault.db")
@@ -20,21 +31,21 @@ func TestCommitPublishesBatchAndRejectsStaleBase(t *testing.T) {
 	first, err := s.Commit(ctx, CommitRequest{
 		BaseGeneration: 0,
 		Objects: []CipherObject{
-			{ID: "entry_1234567890", Kind: "entry", Revision: 1, Envelope: json.RawMessage(`{"ciphertext":"AA=="}`)},
+			{ID: "268t00000", Kind: "entry", Revision: 1, Envelope: json.RawMessage(`{"ciphertext":"AA=="}`)},
 			{ID: "workspace_main_01", Kind: "workspace", Revision: 1, Envelope: json.RawMessage(`{"ciphertext":"AQ=="}`)},
 		},
 	})
 	if err != nil {
 		t.Fatal(err)
 	}
-	if first.Generation != 1 || first.Objects["entry_1234567890"].Revision != 1 {
+	if first.Generation != 1 || first.Objects["268t00000"].Revision != 1 {
 		t.Fatalf("manifest = %#v", first)
 	}
 
 	_, err = s.Commit(ctx, CommitRequest{
 		BaseGeneration: 0,
 		Objects: []CipherObject{
-			{ID: "entry_stale_0001", Kind: "entry", Revision: 1, Envelope: json.RawMessage(`{"ciphertext":"Ag=="}`)},
+			{ID: "268t00001", Kind: "entry", Revision: 1, Envelope: json.RawMessage(`{"ciphertext":"Ag=="}`)},
 		},
 	})
 	if !errors.Is(err, ErrConflict) {
@@ -48,7 +59,7 @@ func TestCommitPublishesBatchAndRejectsStaleBase(t *testing.T) {
 	if snapshot.Manifest.Generation != 1 || len(snapshot.Objects) != 2 {
 		t.Fatalf("snapshot = %#v", snapshot)
 	}
-	if _, exists := snapshot.Objects["entry_stale_0001"]; exists {
+	if _, exists := snapshot.Objects["268t00001"]; exists {
 		t.Fatal("stale batch became visible")
 	}
 }
@@ -62,8 +73,8 @@ func TestCommitRollsBackWholeBatchOnInvalidRevision(t *testing.T) {
 	t.Cleanup(func() { _ = s.Close() })
 
 	_, err = s.Commit(ctx, CommitRequest{BaseGeneration: 0, Objects: []CipherObject{
-		{ID: "entry_valid_00001", Kind: "entry", Revision: 1, Envelope: json.RawMessage(`{"ciphertext":"AA=="}`)},
-		{ID: "entry_invalid_001", Kind: "entry", Revision: 2, Envelope: json.RawMessage(`{"ciphertext":"AQ=="}`)},
+		{ID: "268t00002", Kind: "entry", Revision: 1, Envelope: json.RawMessage(`{"ciphertext":"AA=="}`)},
+		{ID: "268t00003", Kind: "entry", Revision: 2, Envelope: json.RawMessage(`{"ciphertext":"AQ=="}`)},
 	}})
 	if !errors.Is(err, ErrConflict) {
 		t.Fatalf("commit error = %v", err)
@@ -119,7 +130,7 @@ func TestBackupCreatesAConsistentReopenableDatabase(t *testing.T) {
 	}
 	t.Cleanup(func() { _ = s.Close() })
 	if _, err := s.Commit(ctx, CommitRequest{BaseGeneration: 0, Objects: []CipherObject{
-		{ID: "entry_backup_0001", Kind: "entry", Revision: 1, Envelope: json.RawMessage(`{"ciphertext":"AA=="}`)},
+		{ID: "268t00004", Kind: "entry", Revision: 1, Envelope: json.RawMessage(`{"ciphertext":"AA=="}`)},
 	}}); err != nil {
 		t.Fatal(err)
 	}
@@ -137,7 +148,7 @@ func TestBackupCreatesAConsistentReopenableDatabase(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if snapshot.Manifest.Generation != 1 || snapshot.Objects["entry_backup_0001"].Revision != 1 {
+	if snapshot.Manifest.Generation != 1 || snapshot.Objects["268t00004"].Revision != 1 {
 		t.Fatalf("backup snapshot = %#v", snapshot)
 	}
 }
