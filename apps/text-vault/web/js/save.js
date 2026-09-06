@@ -1,9 +1,20 @@
 import {encryptObject} from "./crypto.js";
 
-export function createSaveCoordinator({repository, api, key, generation = 0}) {
+export function createSaveCoordinator({
+  repository,
+  api,
+  key,
+  generation = 0,
+  delayMs = 1000,
+  beforeSave = null,
+  onGeneration = () => {},
+  setTimer = setTimeout,
+  clearTimer = clearTimeout,
+}) {
   let currentGeneration = generation;
   let currentStatus = repository.isContentDirty() ? "dirty" : "clean";
   let activeSave = null;
+  let timer = null;
   const subscribers = new Set();
 
   repository.subscribe(() => {
@@ -14,16 +25,32 @@ export function createSaveCoordinator({repository, api, key, generation = 0}) {
 
   function save() {
     if (activeSave) return activeSave;
-    // captureDirty includes quiet workspace changes. The status shown to the
-    // user is computed separately from content dirtiness below.
+    if (timer !== null) {
+      clearTimer(timer);
+      timer = null;
+    }
+    activeSave = prepareAndSave().finally(() => { activeSave = null; });
+    return activeSave;
+  }
+
+  function schedule() {
+    if (timer !== null) clearTimer(timer);
+    timer = setTimer(() => {
+      timer = null;
+      return save().catch(() => {});
+    }, delayMs);
+  }
+
+  async function prepareAndSave() {
+    if (beforeSave) await beforeSave();
+    // Capture happens after pulling so the upload uses the current server base.
     const captured = repository.captureDirty();
     if (captured.length === 0) {
       setStatus("clean");
-      return Promise.resolve({generation: currentGeneration});
+      return {generation: currentGeneration};
     }
     setStatus("saving");
-    activeSave = perform(captured).finally(() => { activeSave = null; });
-    return activeSave;
+    return perform(captured);
   }
 
   async function perform(captured) {
@@ -36,6 +63,7 @@ export function createSaveCoordinator({repository, api, key, generation = 0}) {
       }));
       const response = await api.commit({baseGeneration: currentGeneration, objects});
       currentGeneration = response.manifest.generation;
+      onGeneration(currentGeneration);
       const revisions = Object.fromEntries(Object.entries(response.manifest.objects).map(([id, ref]) => [id, ref.revision]));
       repository.markCommitted(captured, revisions);
       setStatus(repository.isContentDirty() ? "dirty" : "clean");
@@ -56,5 +84,9 @@ export function createSaveCoordinator({repository, api, key, generation = 0}) {
     return () => subscribers.delete(callback);
   }
 
-  return {save, status: () => currentStatus, generation: () => currentGeneration, subscribe};
+  function setGeneration(value) {
+    if (Number.isSafeInteger(value) && value >= currentGeneration) currentGeneration = value;
+  }
+
+  return {save, schedule, status: () => currentStatus, generation: () => currentGeneration, setGeneration, subscribe};
 }

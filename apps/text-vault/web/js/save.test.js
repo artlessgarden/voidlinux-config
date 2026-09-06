@@ -59,3 +59,46 @@ test("quiet workspace changes save without changing the clean status", async () 
   assert.equal(submitted.objects.length, 1);
   assert.equal(saver.status(), "clean");
 });
+
+test("schedule debounces edits and uses the same save path", async () => {
+  const repository = seededRepository();
+  repository.updateEntryText("268t00000", "scheduled");
+  const key = await crypto.subtle.generateKey({name: "AES-GCM", length: 256}, false, ["encrypt", "decrypt"]);
+  const timers = [];
+  let commits = 0;
+  const saver = createSaveCoordinator({
+    repository, key, generation: 1, delayMs: 1000,
+    setTimer: callback => { timers.push(callback); return timers.length; },
+    clearTimer: () => {},
+    api: {commit: async () => {
+      commits += 1;
+      return {manifest: {generation: 2, objects: {"268t00000": {kind: "entry", revision: 2}}}};
+    }},
+  });
+
+  saver.schedule();
+  saver.schedule();
+  assert.equal(commits, 0);
+  await timers.at(-1)();
+  assert.equal(commits, 1);
+  assert.equal(saver.status(), "clean");
+});
+
+test("save pulls before capturing and publishes its generation", async () => {
+  const repository = seededRepository();
+  repository.updateEntryText("268t00000", "local");
+  const key = await crypto.subtle.generateKey({name: "AES-GCM", length: 256}, false, ["encrypt", "decrypt"]);
+  const events = [];
+  const saver = createSaveCoordinator({
+    repository, key, generation: 1,
+    beforeSave: async () => { events.push("pull"); },
+    onGeneration: generation => events.push(`generation:${generation}`),
+    api: {commit: async request => {
+      events.push(`commit:${request.baseGeneration}`);
+      return {manifest: {generation: 2, objects: {"268t00000": {kind: "entry", revision: 2}}}};
+    }},
+  });
+
+  await saver.save();
+  assert.deepEqual(events, ["pull", "commit:1", "generation:2"]);
+});
