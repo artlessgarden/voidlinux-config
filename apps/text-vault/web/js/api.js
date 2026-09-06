@@ -40,6 +40,11 @@ export function createAPI(fetchFn = fetch) {
   }
 
   return {
+    csrfToken: () => csrfToken,
+    setCSRFToken(value) {
+      if (typeof value !== "string") throw new TypeError("invalid csrf token");
+      csrfToken = value;
+    },
     async login(credential) {
       const result = await request("/api/login", {method: "POST", body: {credential}});
       csrfToken = result.csrfToken;

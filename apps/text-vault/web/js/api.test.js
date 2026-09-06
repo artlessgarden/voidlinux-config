@@ -30,3 +30,11 @@ test("changes encodes the generation cursor", async () => {
   assert.deepEqual(await api.changes(7), {generation: 12, objects: {}});
   assert.deepEqual(paths, ["/api/changes?after=7"]);
 });
+
+test("csrf token can be handed to another in-memory API client", async () => {
+  const api = createAPI(async () => new Response(null, {status: 204}));
+  assert.equal(api.csrfToken(), "");
+  api.setCSRFToken("shared-token");
+  assert.equal(api.csrfToken(), "shared-token");
+  await api.commit({baseGeneration: 0, objects: []});
+});
