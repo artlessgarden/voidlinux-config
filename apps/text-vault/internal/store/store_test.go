@@ -64,6 +64,40 @@ func TestCommitPublishesBatchAndRejectsStaleBase(t *testing.T) {
 	}
 }
 
+func TestChangesReturnsLatestObjectsAfterGeneration(t *testing.T) {
+	ctx := context.Background()
+	s, err := Open(filepath.Join(t.TempDir(), "text-vault.db"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { _ = s.Close() })
+
+	first := CipherObject{ID: "268t00000", Kind: "entry", Revision: 1, Envelope: json.RawMessage(`{"value":"first"}`)}
+	second := CipherObject{ID: "268t00001", Kind: "entry", Revision: 1, Envelope: json.RawMessage(`{"value":"second"}`)}
+	if _, err := s.Commit(ctx, CommitRequest{BaseGeneration: 0, Objects: []CipherObject{first}}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := s.Commit(ctx, CommitRequest{BaseGeneration: 1, Objects: []CipherObject{second}}); err != nil {
+		t.Fatal(err)
+	}
+	first.Revision = 2
+	first.Envelope = json.RawMessage(`{"value":"newest"}`)
+	if _, err := s.Commit(ctx, CommitRequest{BaseGeneration: 2, Objects: []CipherObject{first}}); err != nil {
+		t.Fatal(err)
+	}
+
+	changes, err := s.Changes(ctx, 1)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if changes.Generation != 3 || len(changes.Objects) != 2 {
+		t.Fatalf("changes = %#v", changes)
+	}
+	if changes.Objects["268t00000"].Revision != 2 || string(changes.Objects["268t00000"].Envelope) != `{"value":"newest"}` {
+		t.Fatalf("first object = %#v", changes.Objects["268t00000"])
+	}
+}
+
 func TestCommitRollsBackWholeBatchOnInvalidRevision(t *testing.T) {
 	ctx := context.Background()
 	s, err := Open(filepath.Join(t.TempDir(), "text-vault.db"))

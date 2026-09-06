@@ -33,6 +33,11 @@ type Snapshot struct {
 	Objects  map[string]CipherObject `json:"objects"`
 }
 
+type Changes struct {
+	Generation uint64                  `json:"generation"`
+	Objects    map[string]CipherObject `json:"objects"`
+}
+
 type CommitRequest struct {
 	BaseGeneration uint64         `json:"baseGeneration"`
 	Objects        []CipherObject `json:"objects"`

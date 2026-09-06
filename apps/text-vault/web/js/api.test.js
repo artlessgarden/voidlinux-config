@@ -19,3 +19,14 @@ test("setup and login send only a derived credential to authentication endpoints
     {path: "/api/rekey", body: {header: {schemaVersion: 1}, credential: "new-derived-credential"}},
   ]);
 });
+
+test("changes encodes the generation cursor", async () => {
+  const paths = [];
+  const api = createAPI(async path => {
+    paths.push(path);
+    return new Response(JSON.stringify({generation: 12, objects: {}}), {status: 200, headers: {"Content-Type": "application/json"}});
+  });
+
+  assert.deepEqual(await api.changes(7), {generation: 12, objects: {}});
+  assert.deepEqual(paths, ["/api/changes?after=7"]);
+});

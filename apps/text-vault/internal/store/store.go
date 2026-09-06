@@ -152,6 +152,54 @@ func (s *Store) Snapshot(ctx context.Context) (Snapshot, error) {
 	}, nil
 }
 
+// Changes returns the newest encrypted version of every object changed after
+// the supplied cursor. A single read transaction keeps the cursor and rows
+// consistent while commits continue in other requests.
+func (s *Store) Changes(ctx context.Context, after uint64) (Changes, error) {
+	tx, err := s.db.BeginTx(ctx, &sql.TxOptions{ReadOnly: true})
+	if err != nil {
+		return Changes{}, fmt.Errorf("begin changes: %w", err)
+	}
+	defer func() { _ = tx.Rollback() }()
+
+	generation, err := readGeneration(ctx, tx)
+	if err != nil {
+		return Changes{}, err
+	}
+	rows, err := tx.QueryContext(ctx, `
+		SELECT version.id, version.kind, version.revision, version.envelope
+		FROM object_versions AS version
+		JOIN (
+			SELECT id, MAX(generation) AS generation
+			FROM object_versions
+			WHERE generation > ?
+			GROUP BY id
+		) AS newest ON newest.id = version.id AND newest.generation = version.generation
+		ORDER BY version.id`, after)
+	if err != nil {
+		return Changes{}, fmt.Errorf("query changes: %w", err)
+	}
+	defer rows.Close()
+
+	objects := make(map[string]CipherObject)
+	for rows.Next() {
+		var object CipherObject
+		var revision int64
+		if err := rows.Scan(&object.ID, &object.Kind, &revision, &object.Envelope); err != nil {
+			return Changes{}, fmt.Errorf("scan change: %w", err)
+		}
+		object.Revision = uint64(revision)
+		objects[object.ID] = object
+	}
+	if err := rows.Err(); err != nil {
+		return Changes{}, fmt.Errorf("iterate changes: %w", err)
+	}
+	if err := tx.Commit(); err != nil {
+		return Changes{}, fmt.Errorf("finish changes: %w", err)
+	}
+	return Changes{Generation: generation, Objects: objects}, nil
+}
+
 func (s *Store) Commit(ctx context.Context, request CommitRequest) (Manifest, error) {
 	if err := validateObjects(request.Objects); err != nil {
 		return Manifest{}, err

@@ -84,6 +84,29 @@ func TestProtectedVaultSnapshotAndCommit(t *testing.T) {
 	if snapshot.Manifest.Generation != 1 || snapshot.Objects["268t00000"].Revision != 1 {
 		t.Fatalf("snapshot = %#v", snapshot)
 	}
+
+	changesRequest := httptest.NewRequest(http.MethodGet, "/api/changes?after=0", nil)
+	changesRequest.AddCookie(cookie)
+	changesResponse := httptest.NewRecorder()
+	h.ServeHTTP(changesResponse, changesRequest)
+	if changesResponse.Code != http.StatusOK {
+		t.Fatalf("changes = %d %s", changesResponse.Code, changesResponse.Body.String())
+	}
+	var changes store.Changes
+	if err := json.NewDecoder(changesResponse.Body).Decode(&changes); err != nil {
+		t.Fatal(err)
+	}
+	if changes.Generation != 1 || changes.Objects["268t00000"].Revision != 1 {
+		t.Fatalf("changes = %#v", changes)
+	}
+
+	invalidRequest := httptest.NewRequest(http.MethodGet, "/api/changes?after=nope", nil)
+	invalidRequest.AddCookie(cookie)
+	invalidResponse := httptest.NewRecorder()
+	h.ServeHTTP(invalidResponse, invalidRequest)
+	if invalidResponse.Code != http.StatusBadRequest {
+		t.Fatalf("invalid changes = %d %s", invalidResponse.Code, invalidResponse.Body.String())
+	}
 }
 
 func newTestAPI(t *testing.T) http.Handler {

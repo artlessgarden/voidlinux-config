@@ -54,6 +54,7 @@ export function createAPI(fetchFn = fetch) {
     rekey: (header, credential) => request("/api/rekey", {method: "POST", body: {header, credential}, csrf: true}),
     vault: () => request("/api/vault"),
     snapshot: () => request("/api/snapshot"),
+    changes: after => request(`/api/changes?after=${encodeURIComponent(String(after))}`),
     commit: value => request("/api/commit", {method: "POST", body: value, csrf: true}),
   };
 }

@@ -7,6 +7,7 @@ import (
 	"io/fs"
 	"net/http"
 	"path"
+	"strconv"
 	"strings"
 
 	"github.com/xfn/text-vault/internal/auth"
@@ -84,6 +85,19 @@ func New(cfg Config) http.Handler {
 				return
 			}
 			writeJSON(w, http.StatusOK, snapshot)
+		})
+		protected.HandleFunc("GET /api/changes", func(w http.ResponseWriter, r *http.Request) {
+			after, err := strconv.ParseUint(r.URL.Query().Get("after"), 10, 64)
+			if err != nil {
+				writeAPIError(w, http.StatusBadRequest, "invalid_generation")
+				return
+			}
+			changes, err := cfg.Store.Changes(r.Context(), after)
+			if err != nil {
+				writeAPIError(w, http.StatusInternalServerError, "store_failed")
+				return
+			}
+			writeJSON(w, http.StatusOK, changes)
 		})
 		protected.HandleFunc("POST /api/commit", requireCSRF(cfg.Auth, func(w http.ResponseWriter, r *http.Request) {
 			if !isJSON(r) {
