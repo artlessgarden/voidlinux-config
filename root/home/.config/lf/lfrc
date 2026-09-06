@@ -17,6 +17,9 @@ set scrolloff 3
 set mouse
 set period 1
 
+# Escape clears selections in normal mode without changing its other modes.
+nmap <esc> unselect
+
 # Keep download folders ordered with the newest files first.
 setlocal ~/Downloads sortby time
 setlocal ~/Downloads reverse

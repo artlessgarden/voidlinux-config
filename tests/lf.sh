@@ -89,6 +89,10 @@ printf 'ok - LF previews text and archives selections without deleting input\n'
 
 grep -Fq 'gio trash -- $fx' "$lfrc" || fail 'D does not use the standard trash'
 grep -Fxq 'map D trash' "$lfrc" || fail 'D is not mapped to trash'
+grep -Fxq 'nmap <esc> unselect' "$lfrc" || fail 'Escape does not clear selections in normal mode'
+if grep -Eq '^map <esc>([[:space:]]|$)' "$lfrc"; then
+	fail 'Escape selection clearing overrides visual mode'
+fi
 grep -Fq "printf '%s\\n' \$fx | wl-copy" "$lfrc" || fail 'full paths cannot be copied'
 grep -Fq 'basename -- "$path"' "$lfrc" || fail 'file names cannot be copied'
 if grep -Eq '^map y([[:space:]]|$)' "$lfrc"; then
