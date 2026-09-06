@@ -293,7 +293,7 @@ function renderApplication({repository, saver, sync, key}) {
 
   function createNewEntry(text) {
     const now = new Date().toISOString();
-    const entry = {...createEntry({existingIDs: repository.values(), now}), text, updatedAt: now};
+    const entry = {...createEntry({existingIDs: repository.knownIDs(), now}), text, updatedAt: now};
     repository.upsert(entry);
     selectedID = entry.id;
     saver.schedule();

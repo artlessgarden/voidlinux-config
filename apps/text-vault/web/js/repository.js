@@ -111,6 +111,7 @@ export function createRepository(initialObjects = []) {
       const remote = structuredClone(validateObject(value));
       const current = objects.get(remote.id);
       const baseRevision = baseRevisions.get(remote.id) ?? 0;
+      if (quarantined.delete(remote.id)) notify({type: "recovered", id: remote.id});
       if (remote.revision <= baseRevision) continue;
 
       if (current && sequences.get(remote.id) !== committedSequences.get(remote.id)) {
@@ -118,7 +119,7 @@ export function createRepository(initialObjects = []) {
         // An object that has never reached revision 1 is an ID collision, not
         // a content edit conflict: move the local draft and adopt the winner.
         if (baseRevision === 0 && current.revision === 0) {
-          const id = nextMemoID(objects.keys(), current.id);
+          const id = nextMemoID(knownIDs(), current.id);
           const local = {...current, id};
           discardTracking(remote.id);
           installRemote(remote);
@@ -128,7 +129,7 @@ export function createRepository(initialObjects = []) {
           renamed.push({from: remote.id, to: id});
           continue;
         }
-        const id = newMemoID(objects.keys(), now);
+        const id = newMemoID(knownIDs(), now);
         const conflict = {
           ...createEntry({id, now: now.toISOString()}),
           text: remote.text,
@@ -183,6 +184,10 @@ export function createRepository(initialObjects = []) {
     notify({type: "quarantine", id});
   }
 
+  function knownIDs() {
+    return [...new Set([...objects.keys(), ...quarantined.keys()])];
+  }
+
   function subscribe(callback) {
     subscribers.add(callback);
     return () => subscribers.delete(callback);
@@ -198,6 +203,7 @@ export function createRepository(initialObjects = []) {
     hasConflicts, acknowledgeConflict, quarantine,
     hasQuarantined: () => quarantined.size > 0,
     quarantinedIDs: () => [...quarantined.keys()],
+    knownIDs,
     subscribe, values: () => [...objects.values()],
   };
 }

@@ -32,6 +32,10 @@ test("next memo id keeps an existing memo's minute prefix", () => {
   assert.equal(nextMemoID(["268t00000"], "268t00000"), "268t00001");
 });
 
+test("memo allocation skips IDs reserved by quarantined ciphertext", () => {
+  assert.equal(newMemoID(["2696d0700"], new Date(2026, 8, 6, 13, 7)), "2696d0701");
+});
+
 test("entry ids must use the nine-character memo format", () => {
   const entry = createEntry({id: "not-a-memo-id", now: "2026-08-29T00:00:00.000Z"});
   assert.throws(() => validateObject(entry), /invalid object/);

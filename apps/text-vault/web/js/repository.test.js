@@ -130,4 +130,16 @@ test("quarantined ciphertext keeps a persistent repository error", () => {
   repository.quarantine("268t00009", new Error("bad ciphertext"));
   assert.equal(repository.hasQuarantined(), true);
   assert.deepEqual(repository.quarantinedIDs(), ["268t00009"]);
+  assert.deepEqual(repository.knownIDs(), ["268t00009"]);
+});
+
+test("a later healthy revision clears quarantine", () => {
+  const repository = createRepository([]);
+  repository.quarantine("268t00009", new Error("bad ciphertext"));
+  const recovered = {...initial, id: "268t00009", revision: 2, text: "recovered"};
+
+  repository.applyRemote([recovered]);
+
+  assert.equal(repository.hasQuarantined(), false);
+  assert.equal(repository.get("268t00009").text, "recovered");
 });
