@@ -10,7 +10,7 @@ export default defineConfig({
     baseURL: "http://127.0.0.1:18081",
     trace: "retain-on-failure",
     screenshot: "only-on-failure",
-    launchOptions: {executablePath: "/usr/bin/chromium"},
+    launchOptions: {executablePath: "/usr/bin/google-chrome-stable"},
   },
   projects: [{name: "chromium", use: {browserName: "chromium"}}],
   webServer: {

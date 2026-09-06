@@ -1,5 +1,6 @@
 const REQUEST = "text-vault:session-request";
 const RESPONSE = "text-vault:session-response";
+const ANNOUNCE = "text-vault:session-announce";
 
 export function createTabSession({
   channel = new BroadcastChannel("text-vault:session:v1"),
@@ -11,12 +12,18 @@ export function createTabSession({
   let offeredSession = null;
   let closed = false;
   const pending = new Map();
+  const subscribers = new Set();
 
   // Session material exists only in live same-origin tabs. BroadcastChannel
   // performs structured cloning, including CryptoKey, without storage APIs.
   const receive = event => {
     const message = event.data;
     if (!message || typeof message !== "object") return;
+    if (message.type === ANNOUNCE && validSession(message.session)) {
+      offeredSession = message.session;
+      for (const subscriber of subscribers) subscriber(message.session);
+      return;
+    }
     if (message.type === REQUEST && offeredSession) {
       channel.postMessage({type: RESPONSE, requestID: message.requestID, session: offeredSession});
       return;
@@ -33,6 +40,7 @@ export function createTabSession({
   function offer(session) {
     if (!validSession(session)) throw new TypeError("invalid tab session");
     offeredSession = session;
+    channel.postMessage({type: ANNOUNCE, session});
   }
 
   function request() {
@@ -58,10 +66,16 @@ export function createTabSession({
       waiter.resolve(null);
     }
     pending.clear();
+    subscribers.clear();
     channel.close();
   }
 
-  return {offer, request, close};
+  function subscribe(callback) {
+    subscribers.add(callback);
+    return () => subscribers.delete(callback);
+  }
+
+  return {offer, request, close, subscribe};
 }
 
 function validSession(value) {

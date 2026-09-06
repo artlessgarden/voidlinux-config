@@ -50,8 +50,8 @@ export function formatMemoTime(id) {
   return `${year}-${pad2(month)}-${pad2(day)} ${pad2(hour)}:${id.slice(5, 7)}`;
 }
 
-// Temporary non-entry IDs keep the existing workspace readable until the UI
-// replacement removes workspace objects entirely.
+// Non-entry data/view objects keep opaque random IDs; only human-facing text
+// entries use the chronological memo convention.
 export function newID(prefix) {
   const random = crypto.getRandomValues(new Uint8Array(16));
   const suffix = Array.from(random, value => value.toString(16).padStart(2, "0")).join("");

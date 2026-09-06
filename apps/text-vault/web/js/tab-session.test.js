@@ -47,3 +47,18 @@ test("closing an unlocked tab stops sharing its session", async () => {
   assert.equal(await requester.request(), null);
   requester.close();
 });
+
+test("new session material is announced to already unlocked peers", async () => {
+  const bus = new Set();
+  const first = createTabSession({channel: new FakeChannel(bus)});
+  const second = createTabSession({channel: new FakeChannel(bus)});
+  const updates = [];
+  second.subscribe(session => updates.push(session.csrfToken));
+
+  first.offer({key: {}, csrfToken: "rotated"});
+  await new Promise(resolve => queueMicrotask(resolve));
+
+  assert.deepEqual(updates, ["rotated"]);
+  first.close();
+  second.close();
+});

@@ -1,228 +1,414 @@
 import van from "../vendor/van-1.6.1.js";
-import {createAPI, APIError} from "./api.js";
+import {APIError, createAPI} from "./api.js";
+import {createCommands} from "./commands.js";
 import {createVault, decryptObject, deriveServerCredential, rewrapVault, unlockVault} from "./crypto.js";
-import {createEntry, validateObject} from "./model.js";
+import {createEntry, formatMemoTime, validateObject} from "./model.js";
 import {createRepository} from "./repository.js";
 import {createSaveCoordinator} from "./save.js";
-import {createWorkspace} from "./workspace.js";
+import {createSyncCoordinator} from "./sync.js";
+import {createTabSession} from "./tab-session.js";
 
-const {button, dialog, div, form, h1, h2, input, label, main, p, section, span, textarea} = van.tags;
+const {button, div, form, h1, input, label, main, p, section, span, textarea} = van.tags;
 const root = document.querySelector("#app");
 const api = createAPI();
+const tabSession = createTabSession();
 
 initialize();
 
 async function initialize() {
+  let header;
   try {
-    renderUnlock(await api.vault());
+    header = await api.vault();
   } catch (cause) {
-    if (cause instanceof APIError && cause.status === 404) renderSetup();
-    else mount(authShell("无法连接", "暂时无法读取保险库。", button({type: "button", class: "primary", onclick: initialize}, "重试")));
+    if (cause instanceof APIError && cause.status === 404) {
+      renderSetup();
+      return;
+    }
+    renderAuthMessage("无法连接", "暂时无法读取保险库。", initialize);
+    return;
   }
+
+  // A live unlocked tab gets the first chance to supply its in-memory key.
+  // Nothing secret is persisted when that tab disappears.
+  const shared = await tabSession.request();
+  if (shared) {
+    api.setCSRFToken(shared.csrfToken);
+    try {
+      await openVault(shared.key, await api.snapshot());
+      return;
+    } catch {}
+  }
+  renderUnlock(header);
 }
 
 function renderSetup() {
-  const error = van.state("");
   const password = input({type: "password", autocomplete: "new-password", minlength: 16, required: true});
   const repeated = input({type: "password", autocomplete: "new-password", minlength: 16, required: true});
-  const submit = button({type: "submit", class: "primary"}, "创建保险库");
-  mount(authShell("创建保险库", "主密码只在这个浏览器中用于解密，服务器不会收到它。", form({onsubmit: async event => {
+  const error = p({class: "auth-error", role: "alert"});
+  const submit = button({type: "submit"}, "创建保险库");
+  mountAuth("创建保险库", "主密码只在当前浏览器中解密数据。", form({onsubmit: async event => {
     event.preventDefault();
-    if (password.value !== repeated.value) { error.val = "两次主密码不一致"; return; }
+    if (password.value !== repeated.value) {
+      error.textContent = "两次主密码不一致";
+      return;
+    }
     submit.disabled = true;
-    error.val = "正在生成密钥…";
+    error.textContent = "正在生成密钥…";
     try {
       const created = await createVault(password.value);
       await api.setup(created.header, created.credential);
-      await openWorkspace(created.key, {manifest: {generation: 0, objects: {}}, objects: {}});
+      await openVault(created.key, {manifest: {generation: 0}, objects: {}});
     } catch (cause) {
-      error.val = cause?.message || "创建失败";
+      error.textContent = cause?.message || "创建失败";
       submit.disabled = false;
     }
-  }}, label({class: "field"}, span("新主密码"), password), label({class: "field"}, span("重复主密码"), repeated), p({class: "form-error", role: "alert"}, error), submit)));
+  }}, label("新主密码", password), label("重复主密码", repeated), error, submit));
   password.focus();
 }
 
 function renderUnlock(header) {
-  const error = van.state("");
   const password = input({type: "password", autocomplete: "current-password", required: true});
-  const submit = button({type: "submit", class: "primary"}, "解锁");
-  mount(authShell("解锁保险库", "明文仅存在于当前页面内存。", form({onsubmit: async event => {
+  const error = p({class: "auth-error", role: "alert"});
+  const submit = button({type: "submit"}, "解锁");
+  mountAuth("解锁保险库", "明文只存在于已解锁页面的内存中。", form({onsubmit: async event => {
     event.preventDefault();
     submit.disabled = true;
-    error.val = "正在解锁…";
+    error.textContent = "正在解锁…";
     try {
       const credential = await deriveServerCredential(password.value, header);
       await api.login(credential);
+      const key = await unlockVault(password.value, header);
+      await openVault(key, await api.snapshot());
     } catch (cause) {
-      error.val = cause?.status === 429 ? "尝试过多，请稍后再试" : "主密码不正确";
-      submit.disabled = false;
-      return;
-    }
-    try {
-      await openWorkspace(await unlockVault(password.value, header), await api.snapshot());
-    } catch {
-      error.val = "保险库数据无法解密，请先保留数据库备份";
+      error.textContent = cause?.status === 429 ? "尝试过多，请稍后再试" : "主密码不正确或数据无法解密";
       submit.disabled = false;
     }
-  }}, label({class: "field"}, span("主密码"), password), p({class: "form-error", role: "alert"}, error), submit)));
+  }}, label("主密码", password), error, submit));
   password.focus();
 }
 
-async function openWorkspace(key, snapshot) {
+async function openVault(key, snapshot) {
   const decrypted = [];
   for (const encrypted of Object.values(snapshot.objects ?? {})) {
     const metadata = {id: encrypted.id, kind: encrypted.kind, revision: encrypted.revision};
-    decrypted.push(validateObject(await decryptObject(key, metadata, encrypted.envelope)));
+    const object = validateObject(await decryptObject(key, metadata, encrypted.envelope));
+    if (object.kind === "entry") decrypted.push(object);
   }
+
   const repository = createRepository(decrypted);
-  let workspaceObject = decrypted.find(object => object.kind === "workspace");
-  const workspace = createWorkspace(workspaceObject?.state);
-  if (!workspaceObject) {
-    workspaceObject = {schemaVersion: 1, id: "workspace_main_01", kind: "workspace", revision: 0, state: workspace.durable()};
-    repository.upsert(workspaceObject, {quiet: true});
-  }
-  const saver = createSaveCoordinator({repository, api, key, generation: snapshot.manifest?.generation ?? 0});
-  renderApplication({repository, workspace, saver, workspaceID: workspaceObject.id, key});
+  let saver;
+  let sync;
+  saver = createSaveCoordinator({
+    repository, api, key, generation: snapshot.manifest?.generation ?? 0,
+    beforeSave: () => sync.pull(),
+    onGeneration: generation => sync.setGeneration(generation),
+  });
+  sync = createSyncCoordinator({
+    repository, api, key, generation: snapshot.manifest?.generation ?? 0,
+    onGeneration: generation => saver.setGeneration(generation),
+  });
+
+  tabSession.offer({key, csrfToken: api.csrfToken()});
+  tabSession.subscribe(session => api.setCSRFToken(session.csrfToken));
+  renderApplication({repository, saver, sync, key});
+  sync.start();
 }
 
-function renderApplication({repository, workspace, saver, workspaceID, key}) {
-  const repositoryTick = van.state(0);
-  const workspaceState = van.state(workspace.state());
-  const saveState = van.state(saver.status());
-  const message = van.state("");
-  const selectedText = van.state("");
-  const updateSelectedText = event => {
-    const editor = event.currentTarget;
-    selectedText.val = editor.value.slice(editor.selectionStart, editor.selectionEnd).trim();
-  };
-  const content = textarea({class: "editor", "aria-label": "条目内容", spellcheck: false, oninput: event => {
-    const id = workspace.state().selectedEntryId;
-    if (id) repository.updateEntryText(id, event.target.value);
-    updateSelectedText(event);
-  }, onselect: updateSelectedText, onkeyup: updateSelectedText, onpointerup: updateSelectedText});
-  const newPassword = input({type: "password", autocomplete: "new-password", minlength: 16, required: true});
-  const repeatedPassword = input({type: "password", autocomplete: "new-password", minlength: 16, required: true});
-  const passwordError = van.state("");
-  const passwordDialog = dialog({class: "password-dialog"}, form({onsubmit: async event => {
-    event.preventDefault();
-    if (newPassword.value !== repeatedPassword.value) { passwordError.val = "两次主密码不一致"; return; }
-    const submit = event.submitter;
-    submit.disabled = true;
-    passwordError.val = "正在更新…";
-    try {
-      const rotated = await rewrapVault(newPassword.value, key);
+function renderApplication({repository, saver, sync, key}) {
+  let query = readQuery();
+  let selectedID = "";
+  let selectedIndex = 0;
+  let mobilePane = "list";
+  let currentItems = [];
+  let message = "";
+
+  const status = div({class: "sync-status", "data-state": "clean", role: "status", "aria-label": "已保存", title: "已保存"});
+  const results = div({class: "results", role: "listbox", "aria-label": "搜索结果"});
+  const editor = textarea({class: "editor", "aria-label": "条目内容", spellcheck: false, disabled: true, placeholder: "选择条目，或新建一条"});
+  const selectionSearch = button({type: "button", class: "selection-search", hidden: true, onpointerdown: event => event.preventDefault(), onclick: () => {
+    const text = selectedText(editor);
+    if (text) window.open(queryURL(text), "_blank", "noopener");
+  }}, "在新标签搜索");
+  const commandInput = input({type: "search", class: "command-input", role: "searchbox", "aria-label": "搜索条目", autocomplete: "off", autocapitalize: "off", spellcheck: false, placeholder: "搜索 IP、域名、客户……", value: query});
+  const back = button({type: "button", class: "back", "aria-label": "返回结果", onclick: showList}, "←");
+  const info = span({class: "entry-info"});
+  const footerInfo = section({class: "footer-info"}, back, info);
+  const shell = main({class: "app-shell", "data-pane": mobilePane}, status,
+    div({class: "work-area"}, section({class: "list-pane"}, results), section({class: "content-pane"}, editor, selectionSearch)),
+    section({class: "footer-search"},
+      form({class: "search-form", onsubmit: event => { event.preventDefault(); void activateCurrent(); }}, commandInput,
+        button({type: "button", "aria-label": "新建条目", onclick: () => createNewEntry("")}, "+"),
+        button({type: "button", "aria-label": "在新标签页打开查询", onclick: () => window.open(queryURL(query), "_blank", "noopener")}, "↗")),
+      footerInfo));
+
+  const commands = createCommands({
+    save: () => saver.save(),
+    changePassword: async password => {
+      const rotated = await rewrapVault(password, key);
       await api.rekey(rotated.header, rotated.credential);
       await api.login(rotated.credential);
-      newPassword.value = "";
-      repeatedPassword.value = "";
-      passwordDialog.close();
-      message.val = "主密码已修改";
-    } catch (cause) {
-      passwordError.val = cause?.message || "修改失败，原主密码仍然有效";
-    } finally {
-      submit.disabled = false;
-    }
-  }}, h2("修改主密码"), p({class: "dialog-copy"}, "条目不会重新加密，只安全地更换数据密钥的密码包装。"), label({class: "field"}, span("新的主密码"), newPassword), label({class: "field"}, span("重复新的主密码"), repeatedPassword), p({class: "form-error", role: "alert"}, passwordError), div({class: "dialog-actions"}, button({type: "button", onclick: () => passwordDialog.close()}, "取消"), button({type: "submit", class: "primary"}, "确认修改"))));
-
-  const syncEditor = () => {
-    const selected = workspace.state().selectedEntryId;
-    const object = selected ? repository.get(selected) : null;
-    content.disabled = !object;
-    content.placeholder = object ? "直接输入内容" : "从左侧选择条目，或新建一条";
-    if (content.dataset.objectId !== (selected ?? "")) {
-      content.value = object?.text ?? "";
-      selectedText.val = "";
-    }
-    content.dataset.objectId = selected ?? "";
-  };
-
-  workspace.subscribe(state => {
-    workspaceState.val = state;
-    repository.upsert({...repository.get(workspaceID), state: workspace.durable()}, {quiet: true});
-    syncEditor();
+      tabSession.offer({key, csrfToken: api.csrfToken()});
+    },
   });
-  repository.subscribe(() => { repositoryTick.val++; });
-  saver.subscribe(status => { saveState.val = status; });
 
-  const searchBox = input({type: "search", class: "search-input", "aria-label": "搜索条目", autocomplete: "off", autocapitalize: "off", spellcheck: false, placeholder: "搜索 IP、域名、客户……", value: () => activeTab(workspaceState.val).query, oninput: event => workspace.setQuery(event.target.value)});
-  const newEntry = () => {
-    const entry = createEntry();
-    repository.upsert(entry);
-    workspace.selectEntry(entry.id);
-    queueMicrotask(() => content.focus());
-  };
-  const resultList = () => {
-    repositoryTick.val;
-    const current = activeTab(workspaceState.val);
-    const results = repository.search(current.query);
-    return div({class: "results", role: "listbox", "aria-label": "搜索结果"}, results.length === 0 ? p({class: "empty"}, "没有匹配条目") : results.map(result => button({type: "button", class: `result-row${result.id === current.selectedEntryId ? " selected" : ""}`, role: "option", "aria-selected": result.id === current.selectedEntryId, "aria-label": result.snippet, onclick: () => workspace.selectEntry(result.id)}, span({class: "result-text"}, result.snippet), span({class: "result-time"}, shortDate(result.updatedAt)))));
-  };
-  const tabs = () => {
-    const state = workspaceState.val;
-    return div({class: "tabs-track"}, state.tabs.map(tab => div({class: `tab${tab.id === state.activeTabId ? " active" : ""}`}, button({type: "button", class: "tab-select", onclick: () => workspace.selectTab(tab.id), title: tab.query || "全部条目"}, tab.query || "全部条目"), state.tabs.length > 1 ? button({type: "button", class: "tab-close", "aria-label": `关闭标签 ${tab.query || "全部条目"}`, title: "关闭标签", onclick: event => { event.stopPropagation(); workspace.closeTab(tab.id); }}, "×") : null)));
-  };
-  const searchSelection = () => {
-    const query = selectedText.val;
-    if (!query) return;
-    workspace.openSearchTab(query);
-    selectedText.val = "";
-    queueMicrotask(() => searchBox.focus());
-  };
-  const doSave = async () => {
-    message.val = "";
-    try { await saver.save(); }
-    catch (cause) { message.val = cause?.name === "ConflictError" ? "服务器已有新版本，本地内容未被覆盖。" : "保存失败，本地内容仍在当前页面内存中。"; }
-  };
+  repository.subscribe(event => {
+    renderResults();
+    if (event.type === "remote" && event.id === selectedID) renderEditor();
+    renderInfo();
+  });
+  saver.subscribe(renderStatus);
+  sync.subscribe(state => {
+    renderStatus();
+    if ((state === "idle" || state === "conflict") && repository.hasPendingChanges()) saver.schedule();
+  });
+
+  editor.addEventListener("input", () => {
+    if (!selectedID) return;
+    repository.updateEntryText(selectedID, editor.value);
+    saver.schedule();
+  });
+  for (const name of ["select", "keyup", "pointerup"]) editor.addEventListener(name, renderSelectionAction);
+  commandInput.addEventListener("input", handleInput);
+  commandInput.addEventListener("keydown", handleKeys);
+
+  window.addEventListener("hashchange", handleLocation);
+  window.addEventListener("popstate", event => {
+    mobilePane = event.state?.textVaultPane === "content" ? "content" : "list";
+    shell.dataset.pane = mobilePane;
+    handleLocation();
+  });
+  window.addEventListener("focus", () => { void sync.pull().catch(() => {}); });
+  document.addEventListener("visibilitychange", () => {
+    if (document.visibilityState === "hidden" && repository.hasPendingChanges()) void saver.save().catch(() => {});
+  });
   window.addEventListener("beforeunload", event => {
-    if (repository.isContentDirty()) { event.preventDefault(); event.returnValue = ""; }
+    if (!repository.hasPendingChanges()) return;
+    event.preventDefault();
+    event.returnValue = "";
   });
-  const resizeFromPointer = event => {
-    const area = event.currentTarget.parentElement;
-    const bounds = area.getBoundingClientRect();
-    const move = pointer => workspace.setSplitRatio((pointer.clientX - bounds.left) / bounds.width);
-    const stop = () => {
-      window.removeEventListener("pointermove", move);
-      window.removeEventListener("pointerup", stop);
-      document.body.classList.remove("resizing");
-    };
-    document.body.classList.add("resizing");
-    window.addEventListener("pointermove", move);
-    window.addEventListener("pointerup", stop, {once: true});
-    move(event);
-  };
 
-  mount(main({class: "app-shell"},
-    section({class: "topbar"}, button({type: "button", class: "mobile-back", onclick: () => workspace.showList(), "aria-label": "返回结果"}, "返回"), div({class: "search-wrap"}, searchBox), div({class: "top-actions"}, span({class: () => `save-state ${saveState.val}`}, () => statusLabel(saveState.val)), button({type: "button", class: "more-button", "aria-label": "更多", onclick: () => passwordDialog.showModal()}, "•••"), button({type: "button", class: "save-button", onclick: doSave, disabled: () => saveState.val === "saving"}, "保存"))),
-    div({class: "work-area", style: () => `--list-ratio:${workspaceState.val.splitRatio}`},
-      section({class: () => `list-pane ${workspaceState.val.mobilePane === "list" ? "mobile-active" : ""}`}, div({class: "list-tools"}, button({type: "button", class: "new-button", onclick: newEntry, "aria-label": "新建条目"}, "＋ 新建"), span({class: "result-count"}, () => `${repository.search(activeTab(workspaceState.val).query).length} 条`)), van.derive(resultList)),
-      div({class: "divider", role: "separator", tabindex: "0", "aria-label": "调整列表宽度", "aria-orientation": "vertical", "aria-valuemin": "25", "aria-valuemax": "60", "aria-valuenow": () => String(Math.round(workspaceState.val.splitRatio * 100)), onpointerdown: resizeFromPointer, onkeydown: event => {
-        if (event.key === "ArrowLeft" || event.key === "ArrowRight") {
-          event.preventDefault();
-          workspace.setSplitRatio(workspace.state().splitRatio + (event.key === "ArrowLeft" ? -0.02 : 0.02));
-        }
-      }}),
-      section({class: () => `content-pane ${workspaceState.val.mobilePane === "content" ? "mobile-active" : ""}`}, div({class: "editor-meta"}, span(() => workspaceState.val.selectedEntryId ? "纯文本条目" : "未选择条目"), span({class: "global-message", role: "status"}, message)), content, button({type: "button", class: "selection-search", hidden: () => !selectedText.val, "aria-label": () => `在新标签搜索 ${selectedText.val}`, title: "在新标签搜索", onpointerdown: event => event.preventDefault(), onclick: searchSelection}, () => `搜索“${selectionLabel(selectedText.val)}”`))),
-    section({class: "tabbar", "aria-label": "查询标签"}, van.derive(tabs), button({type: "button", class: "pin-button", "aria-label": "固定当前搜索", onclick: () => workspace.pinCurrent(), title: "固定当前搜索"}, pinIcon())), passwordDialog));
-  syncEditor();
-  searchBox.focus();
+  root.replaceChildren(shell);
+  renderResults();
+  renderEditor();
+  renderStatus();
+  commandInput.focus();
+
+  function handleInput() {
+    if (commands.state().stage !== "idle") return;
+    if (!commandInput.value.startsWith("/")) {
+      query = commandInput.value;
+      writeQuery(query);
+    }
+    selectedIndex = 0;
+    renderResults();
+  }
+
+  function handleKeys(event) {
+    if (event.key === "Escape") {
+      if (commands.state().stage !== "idle") {
+        commands.cancel();
+        restoreSearchInput();
+      } else if (mobilePane === "content") showList();
+      return;
+    }
+    if (commands.state().stage !== "idle") {
+      if (event.key === "Enter") {
+        event.preventDefault();
+        void submitCommandValue();
+      }
+      return;
+    }
+    if (event.key === "ArrowDown" || event.key === "ArrowUp") {
+      event.preventDefault();
+      if (!currentItems.length) return;
+      const direction = event.key === "ArrowDown" ? 1 : -1;
+      selectedIndex = (selectedIndex + direction + currentItems.length) % currentItems.length;
+      renderResults();
+      results.querySelector('[aria-selected="true"]')?.scrollIntoView({block: "nearest"});
+    }
+    if (event.key === "Enter" && event.ctrlKey) {
+      event.preventDefault();
+      window.open(queryURL(query), "_blank", "noopener");
+    }
+  }
+
+  async function activateCurrent() {
+    const item = currentItems[selectedIndex];
+    if (item?.command) {
+      try {
+        await commands.execute(item.name);
+        if (commands.state().stage === "idle") restoreSearchInput();
+        else configureCommandInput();
+      } catch {
+        setMessage("命令执行失败");
+      }
+      return;
+    }
+    if (item) {
+      await openEntry(item.id);
+      return;
+    }
+    createNewEntry(query);
+  }
+
+  async function submitCommandValue() {
+    const value = commandInput.value;
+    commandInput.value = "";
+    try {
+      const result = await commands.submit(value);
+      if (!result.ok) setMessage(result.error);
+      if (commands.state().stage === "idle") restoreSearchInput();
+      else configureCommandInput();
+    } catch {
+      setMessage("修改失败，原主密码仍然有效");
+      restoreSearchInput();
+    }
+  }
+
+  function configureCommandInput() {
+    const state = commands.state();
+    commandInput.type = state.inputType;
+    commandInput.setAttribute("aria-label", "命令输入");
+    commandInput.placeholder = state.prompt;
+    commandInput.autocomplete = state.inputType === "password" ? "new-password" : "off";
+    commandInput.value = "";
+    renderResults();
+    commandInput.focus();
+  }
+
+  function restoreSearchInput() {
+    commandInput.type = "search";
+    commandInput.setAttribute("aria-label", "搜索条目");
+    commandInput.placeholder = "搜索 IP、域名、客户……";
+    commandInput.autocomplete = "off";
+    commandInput.value = query;
+    renderResults();
+    commandInput.focus();
+  }
+
+  function createNewEntry(text) {
+    const now = new Date().toISOString();
+    const entry = {...createEntry({existingIDs: repository.values(), now}), text, updatedAt: now};
+    repository.upsert(entry);
+    selectedID = entry.id;
+    saver.schedule();
+    showContent();
+    renderEditor();
+    editor.focus();
+  }
+
+  async function openEntry(id) {
+    try { await sync.pull(); } catch {}
+    if (!repository.get(id)) return;
+    selectedID = id;
+    showContent();
+    renderEditor();
+    editor.focus();
+  }
+
+  function showContent() {
+    mobilePane = "content";
+    shell.dataset.pane = mobilePane;
+    if (matchMedia("(max-width: 719px)").matches && history.state?.textVaultPane !== "content") {
+      history.pushState({...history.state, textVaultPane: "content"}, "", location.href);
+    }
+    renderInfo();
+  }
+
+  function showList() {
+    mobilePane = "list";
+    shell.dataset.pane = mobilePane;
+    if (history.state?.textVaultPane === "content") history.back();
+    queueMicrotask(() => commandInput.focus());
+  }
+
+  function renderResults() {
+    const matches = commands.state().stage === "idle" ? commands.search(commandInput.value) : [];
+    currentItems = matches === null ? repository.search(query) : matches.map(command => ({...command, command: true}));
+    selectedIndex = Math.max(0, Math.min(selectedIndex, currentItems.length - 1));
+    results.replaceChildren(...(currentItems.length ? currentItems.map((item, index) => {
+      const active = index === selectedIndex;
+      return button({type: "button", class: `result${active ? " selected" : ""}`, role: "option", "aria-selected": String(active), "aria-label": item.command ? `${item.name} ${item.description}` : item.snippet, onclick: () => {
+        selectedIndex = index;
+        if (item.command) void activateCurrent();
+        else void openEntry(item.id);
+      }}, span({class: "result-main"}, item.command ? item.name : item.snippet), span({class: "result-detail"}, item.command ? item.description : shortDate(item.updatedAt)));
+    }) : [p({class: "empty"}, query ? "没有匹配条目，回车新建" : "回车或 + 新建条目")]));
+  }
+
+  function renderEditor() {
+    const object = selectedID ? repository.get(selectedID) : null;
+    editor.disabled = !object;
+    editor.value = object?.text ?? "";
+    editor.dataset.objectId = object?.id ?? "";
+    renderInfo();
+  }
+
+  function renderInfo() {
+    const object = selectedID ? repository.get(selectedID) : null;
+    info.textContent = message || (object ? `${formatMemoTime(object.id)}  ${object.id}` : "未选择条目");
+  }
+
+  function setMessage(value) {
+    message = value;
+    renderInfo();
+    setTimeout(() => { if (message === value) { message = ""; renderInfo(); } }, 3000);
+  }
+
+  function renderSelectionAction() {
+    selectionSearch.hidden = !selectedText(editor);
+  }
+
+  function renderStatus() {
+    const saveState = saver.status();
+    const syncState = sync.status();
+    const state = saveState === "failed" || saveState === "conflict" || syncState === "failed" || syncState === "conflict"
+      ? "failed"
+      : saveState === "dirty" || saveState === "saving" ? "dirty" : "clean";
+    const label = state === "clean" ? "已保存" : state === "dirty" ? "尚未保存" : "同步失败";
+    status.dataset.state = state;
+    status.setAttribute("aria-label", label);
+    status.title = label;
+  }
+
+  function handleLocation() {
+    const next = readQuery();
+    if (next === query || commands.state().stage !== "idle") return;
+    query = next;
+    commandInput.value = query;
+    selectedIndex = 0;
+    renderResults();
+  }
 }
 
-function authShell(title, subtitle, body) {
-  return main({class: "auth-shell"}, section({class: "auth-paper"}, div({class: "brand-mark", "aria-hidden": "true"}, "T"), h1(title), p({class: "auth-subtitle"}, subtitle), body));
+function mountAuth(title, copy, body) {
+  root.replaceChildren(main({class: "auth-shell"}, section({class: "auth-box"}, h1(title), p(copy), body)));
 }
-function activeTab(state) { return state.tabs.find(tab => tab.id === state.activeTabId) ?? state.tabs[0]; }
-function statusLabel(status) { return ({clean: "已保存", dirty: "未保存", saving: "保存中…", failed: "保存失败", conflict: "版本冲突"})[status] ?? "未保存"; }
-function shortDate(value) { const date = new Date(value); return Number.isNaN(date.valueOf()) ? "" : new Intl.DateTimeFormat("zh-CN", {month: "2-digit", day: "2-digit"}).format(date); }
-function selectionLabel(value) { return value.length > 18 ? `${value.slice(0, 18)}…` : value; }
-function pinIcon() {
-  const namespace = "http://www.w3.org/2000/svg";
-  const svg = document.createElementNS(namespace, "svg");
-  svg.setAttribute("viewBox", "0 0 24 24");
-  svg.setAttribute("aria-hidden", "true");
-  const path = document.createElementNS(namespace, "path");
-  path.setAttribute("d", "M9 3h6v6l3 3v2H6v-2l3-3V3Zm3 11v7");
-  svg.append(path);
-  return svg;
+
+function renderAuthMessage(title, copy, retry) {
+  mountAuth(title, copy, button({type: "button", onclick: retry}, "重试"));
 }
-function mount(node) { root.replaceChildren(); van.add(root, node); }
+
+function readQuery() {
+  return new URLSearchParams(location.hash.slice(1)).get("q") ?? "";
+}
+
+function writeQuery(query) {
+  const url = queryURL(query);
+  history.replaceState(history.state, "", url);
+}
+
+function queryURL(query) {
+  const url = new URL(location.href);
+  url.hash = query ? new URLSearchParams({q: query}).toString() : "";
+  return url.href;
+}
+
+function selectedText(editor) {
+  return editor.value.slice(editor.selectionStart, editor.selectionEnd).trim();
+}
+
+function shortDate(value) {
+  const date = new Date(value);
+  return Number.isNaN(date.valueOf()) ? "" : new Intl.DateTimeFormat("zh-CN", {month: "2-digit", day: "2-digit"}).format(date);
+}
