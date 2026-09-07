@@ -36,6 +36,8 @@ has 'DOMAIN-SUFFIX,chatgpt.com,DIRECT'
 has 'DOMAIN-SUFFIX,openai.com,DIRECT'
 has 'DOMAIN-SUFFIX,oaistatic.com,DIRECT'
 has 'DOMAIN-SUFFIX,oaiusercontent.com,DIRECT'
+has 'DOMAIN-SUFFIX,tunnel.ikuai8.com,DIRECT'
+has 'DOMAIN-SUFFIX,icc.ikuai8.com,DIRECT'
 has 'AND,((OR,((PROCESS-NAME,firefox),(PROCESS-NAME,chrome),(PROCESS-NAME,Telegram))),(GEOSITE,category-ads-all)),REJECT'
 has 'SUB-RULE,(PROCESS-NAME,firefox),work-app'
 has 'SUB-RULE,(PROCESS-NAME,chrome),work-app'
@@ -47,9 +49,13 @@ has 'GEOIP,cn,国内,no-resolve'
 has 'MATCH,香港'
 
 openai_line=$(grep -n 'DOMAIN-SUFFIX,chatgpt.com,DIRECT' "$config" | cut -d: -f1)
+ikuai_tunnel_line=$(grep -n 'DOMAIN-SUFFIX,tunnel.ikuai8.com,DIRECT' "$config" | cut -d: -f1)
+ikuai_cloud_line=$(grep -n 'DOMAIN-SUFFIX,icc.ikuai8.com,DIRECT' "$config" | cut -d: -f1)
 ad_line=$(grep -n 'GEOSITE,category-ads-all' "$config" | cut -d: -f1)
 firefox_line=$(grep -n 'SUB-RULE,(PROCESS-NAME,firefox)' "$config" | cut -d: -f1)
 [ "$openai_line" -lt "$ad_line" ] || fail 'OpenAI direct rules must run before ad blocking'
+[ "$ikuai_tunnel_line" -lt "$ad_line" ] || fail 'iKuai tunnel direct rule must run before ad blocking'
+[ "$ikuai_cloud_line" -lt "$ad_line" ] || fail 'iKuai cloud route must run before generic China routing'
 [ "$ad_line" -lt "$firefox_line" ] || fail 'ad blocking must run before work-app split routing'
 
 if grep -Fq 'proxy-providers:' "$config" || grep -Fq 'MARZBAN_SUBSCRIPTION_URL' "$config"; then
