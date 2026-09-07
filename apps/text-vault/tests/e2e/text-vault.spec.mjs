@@ -14,6 +14,8 @@ test("setup, add, edit, and live URL search use vim modes", async ({page}) => {
 
   const bottom = page.getByRole("textbox", {name: "输入"});
   await expect(bottom).toBeVisible();
+  await expect(page.locator("body")).toHaveCSS("background-color", "rgb(246, 244, 239)");
+  await expect(bottom).toHaveCSS("background-color", "rgb(238, 235, 228)");
   await page.keyboard.press("o");
   await bottom.fill("客户A 1.2.3.4\n宝塔");
   await expect(page.locator(".sync-status")).toHaveAttribute("data-state", "editing");

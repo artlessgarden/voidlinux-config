@@ -1,13 +1,13 @@
 :root {
-  color-scheme: dark;
-  --background: #161514;
-  --surface: #1d1c1a;
-  --hover: #252320;
-  --text: #e8e3dc;
-  --muted: #918b83;
-  --line: #383530;
+  color-scheme: light;
+  --background: #f6f4ef;
+  --surface: #eeebe4;
+  --hover: #e5e1d8;
+  --text: #292724;
+  --muted: #726d66;
+  --line: #d3cec4;
   --editing: #3b8757;
-  --saving: #77716a;
+  --saving: #a39d93;
   --failed: #b33a36;
   font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
   background: var(--background);
