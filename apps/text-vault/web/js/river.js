@@ -1,6 +1,7 @@
 import van from "../vendor/van-1.6.1.js";
 import {runQuery} from "./core/query.js";
 import {rewrapVault} from "./crypto.js";
+import {actionForKey} from "./features/vim-keymap.js";
 import {createModes} from "./modes.js";
 import {createEntry} from "./model.js";
 
@@ -13,13 +14,6 @@ export function nextIndex(index, length, direction) {
 
 export function selectedSearchText(value) {
   return String(value ?? "").trim();
-}
-
-export function modeForKey({key, ctrlKey = false, metaKey = false, isComposing = false, targetTag = ""}) {
-  if (isComposing) return null;
-  if ((ctrlKey || metaKey) && key === "Enter") return "search-selection";
-  if (["INPUT", "TEXTAREA", "SELECT"].includes(String(targetTag).toUpperCase())) return null;
-  return ({j: "next", k: "previous", i: "edit", Enter: "edit", o: "add", "/": "search", ":": "command"})[key] ?? null;
 }
 
 export function renderRiverApplication({root, repository, saver, sync, key, api, tabSession}) {
@@ -91,19 +85,19 @@ export function renderRiverApplication({root, repository, saver, sync, key, api,
 
   function onDocumentKeydown(event) {
     if (passwordDialog.open || modes.state().name !== "normal") return;
-    const action = modeForKey({key: event.key, ctrlKey: event.ctrlKey, metaKey: event.metaKey, isComposing: event.isComposing, targetTag: event.target?.tagName});
+    const action = actionForKey(keyEvent(event), "normal");
     if (!action) return;
-    if (action === "search-selection") {
+    if (action.type === "selection/search") {
       const text = selectedSearchText(window.getSelection()?.toString());
       if (text) window.open(queryURL(text), "_blank", "noopener");
       return;
     }
     event.preventDefault();
-    if (action === "next" || action === "previous") moveSelection(action === "next" ? 1 : -1);
-    if (action === "edit") enterEdit();
-    if (action === "add") enterBottom("add");
-    if (action === "search") enterBottom("search");
-    if (action === "command") enterBottom("command");
+    if (action.type === "selection/move") moveSelection(action.offset);
+    if (action.type === "entry/edit-start") enterEdit();
+    if (action.type === "entry/add-start") enterBottom("add");
+    if (action.type === "input/search-start") enterBottom("search");
+    if (action.type === "input/command-start") enterBottom("command");
   }
 
   function moveSelection(direction) {
@@ -153,30 +147,27 @@ export function renderRiverApplication({root, repository, saver, sync, key, api,
 
 
   function onBottomKeydown(event) {
-    if (event.isComposing) return;
-    if (event.key === "Escape") {
+    const action = actionForKey(keyEvent(event), modes.state().name);
+    if (!action) return;
+    if (action.type === "draft/submit" || action.type === "input/close") {
       event.preventDefault();
       void commitEscape();
       return;
     }
-    if (event.key === "Enter" && !event.shiftKey && modes.state().name === "add") {
+    if (action.type === "command/execute") {
       event.preventDefault();
-      void commitEscape();
-      return;
-    }
-    if (event.key === "Enter" && modes.state().name === "command") {
-      event.preventDefault();
-      const action = modes.executeCommand(bottom.value);
-      if (action.type === "change-password") openPasswordDialog();
-      else setMessage(action.message);
+      const command = modes.executeCommand(bottom.value);
+      if (command.type === "change-password") openPasswordDialog();
+      else setMessage(command.message);
       render();
       return;
     }
-    if (event.key === "Enter" && modes.state().name === "search") event.preventDefault();
+    if (action.type === "input/block-newline") event.preventDefault();
   }
 
   function onEditorKeydown(event) {
-    if (event.isComposing || (event.key !== "Escape" && (event.key !== "Enter" || event.shiftKey))) return;
+    const action = actionForKey(keyEvent(event), modes.state().name);
+    if (action?.type !== "draft/submit") return;
     event.preventDefault();
     void commitEscape();
   }
@@ -306,4 +297,15 @@ function queryURL(query) {
   const url = new URL(location.href);
   url.hash = query ? new URLSearchParams({q: query}).toString() : "";
   return url.href;
+}
+
+function keyEvent(event) {
+  return {
+    key: event.key,
+    shiftKey: event.shiftKey,
+    ctrlKey: event.ctrlKey,
+    metaKey: event.metaKey,
+    isComposing: event.isComposing,
+    targetTag: event.target?.tagName,
+  };
 }
