@@ -13,13 +13,12 @@ const initial = {
   revision: 1,
 };
 
-test("unsaved edits immediately change search results", () => {
+test("unsaved edits immediately become dirty repository objects", () => {
   const repository = createRepository([initial]);
-  assert.equal(repository.search("1.2.3.4").length, 0);
 
   repository.updateEntryText("268t00000", "客户A 1.2.3.4", "2026-08-29T01:00:00.000Z");
 
-  assert.equal(repository.search("1.2.3.4")[0].id, "268t00000");
+  assert.equal(repository.get("268t00000").text, "客户A 1.2.3.4");
   assert.equal(repository.isDirty(), true);
   assert.equal(repository.dirtyObjects().length, 1);
 });
@@ -34,33 +33,6 @@ test("typing during save remains dirty after older snapshot commits", () => {
 
   assert.equal(repository.get("268t00000").text, "second");
   assert.equal(repository.isDirty(), true);
-});
-
-test("empty query returns newest entries first and search is case insensitive", () => {
-  const repository = createRepository([
-    initial,
-    {...initial, id: "268t00001", text: "Example.COM", updatedAt: "2026-08-29T03:00:00.000Z"},
-  ]);
-  assert.equal(repository.search("")[0].id, "268t00001");
-  assert.equal(repository.search("example.com")[0].id, "268t00001");
-});
-
-test("river query returns full entries in creation order and editing does not reorder them", () => {
-  const laterCreated = {
-    ...initial,
-    id: "268t00001",
-    text: "Example.COM later",
-    createdAt: "2026-08-29T02:00:00.000Z",
-    updatedAt: "2026-08-29T02:00:00.000Z",
-  };
-  const repository = createRepository([laterCreated, initial]);
-
-  assert.deepEqual(repository.queryEntries("").map(entry => entry.id), ["268t00000", "268t00001"]);
-  assert.equal(repository.queryEntries("EXAMPLE.com")[0].text, "Example.COM later");
-
-  repository.updateEntryText("268t00000", "edited newest", "2026-08-29T03:00:00.000Z");
-
-  assert.deepEqual(repository.queryEntries("").map(entry => entry.id), ["268t00000", "268t00001"]);
 });
 
 test("quiet workspace changes are pending without alarming the user", () => {

@@ -1,4 +1,5 @@
 import van from "../vendor/van-1.6.1.js";
+import {runQuery} from "./core/query.js";
 import {rewrapVault} from "./crypto.js";
 import {createModes} from "./modes.js";
 import {createEntry} from "./model.js";
@@ -56,7 +57,7 @@ export function renderRiverApplication({root, repository, saver, sync, key, api,
 
   function render() {
     const state = modes.state();
-    entries = repository.queryEntries(state.query);
+    entries = runQuery({type: "full-text", text: state.query, orderBy: "createdAt", direction: "asc"}, repository.values());
     if (!entries.some(entry => entry.id === selectedID)) selectedID = entries[0]?.id ?? "";
     river.replaceChildren(...entries.map(entry => renderEntry(entry, state)));
     shell.dataset.mode = state.name;

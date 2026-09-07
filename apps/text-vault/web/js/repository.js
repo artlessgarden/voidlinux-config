@@ -51,23 +51,6 @@ export function createRepository(initialObjects = []) {
     return true;
   }
 
-  function search(query) {
-    const needle = String(query ?? "").trim().toLocaleLowerCase();
-    return [...objects.values()]
-      .filter(object => object.kind === "entry" && (!needle || object.text.toLocaleLowerCase().includes(needle)))
-      .sort((left, right) => right.updatedAt.localeCompare(left.updatedAt))
-      .map(object => ({id: object.id, updatedAt: object.updatedAt, snippet: snippet(object.text, needle)}));
-  }
-
-  // River views need the complete entries in stable creation order. Updating
-  // an entry never changes its physical position in the stream.
-  function queryEntries(query) {
-    const needle = String(query ?? "").trim().toLocaleLowerCase();
-    return [...objects.values()]
-      .filter(object => object.kind === "entry" && (!needle || object.text.toLocaleLowerCase().includes(needle)))
-      .sort((left, right) => left.createdAt.localeCompare(right.createdAt) || left.id.localeCompare(right.id));
-  }
-
   function isDirty() {
     return isContentDirty();
   }
@@ -207,7 +190,7 @@ export function createRepository(initialObjects = []) {
   }
 
   return {
-    get, upsert, remove, search, queryEntries, isDirty, isContentDirty, hasPendingChanges,
+    get, upsert, remove, isDirty, isContentDirty, hasPendingChanges,
     dirtyObjects, captureDirty, markCommitted, applyRemote, updateEntryText,
     hasConflicts, acknowledgeConflict, quarantine,
     hasQuarantined: () => quarantined.size > 0,
@@ -215,13 +198,4 @@ export function createRepository(initialObjects = []) {
     knownIDs,
     subscribe, values: () => [...objects.values()],
   };
-}
-
-function snippet(value, needle) {
-  const compact = value.replace(/\s+/g, " ").trim();
-  if (!compact) return "空白条目";
-  if (!needle) return compact.slice(0, 120);
-  const index = compact.toLocaleLowerCase().indexOf(needle);
-  const start = Math.max(0, index - 30);
-  return `${start > 0 ? "…" : ""}${compact.slice(start, start + 120)}${start + 120 < compact.length ? "…" : ""}`;
 }
