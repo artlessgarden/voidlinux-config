@@ -89,6 +89,23 @@ test("destroy releases repository and service subscriptions", () => {
   assert.equal(notifications, 0);
 });
 
+test("editing a draft avoids redraw notifications while live search publishes them", async () => {
+  const {workspace} = setup([first]);
+  let notifications = 0;
+  workspace.subscribe(() => { notifications += 1; });
+  await workspace.dispatch({type: "entry/edit-start"});
+  notifications = 0;
+
+  await workspace.dispatch({type: "draft/change", text: "连续输入"});
+  assert.equal(notifications, 0);
+
+  await workspace.dispatch({type: "input/close"});
+  await workspace.dispatch({type: "input/search-start"});
+  notifications = 0;
+  await workspace.dispatch({type: "draft/change", text: "/客户"});
+  assert.equal(notifications, 1);
+});
+
 function setup(objects, {openPassword = () => {}} = {}) {
   const repository = createRepository(objects);
   const saver = service("clean", async () => ({generation: 1}));

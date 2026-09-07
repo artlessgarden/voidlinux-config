@@ -48,13 +48,20 @@ export function createWorkspace({
 
   async function dispatch(action) {
     if (destroyed || !action || typeof action.type !== "string") return;
+    let publish = true;
     if (action.type === "selection/move") moveSelection(action.offset);
     else if (action.type === "selection/set") select(action.id);
     else if (action.type === "entry/edit-start") startEdit();
     else if (action.type === "entry/add-start") modes.enterAdd();
     else if (action.type === "input/search-start") modes.enterSearch();
     else if (action.type === "input/command-start") modes.enterCommand();
-    else if (action.type === "draft/change") modes.setDraft(action.text);
+    else if (action.type === "draft/change") {
+      const liveQuery = modes.state().name === "search";
+      modes.setDraft(action.text);
+      // The active textarea already displays ordinary draft input. Publishing
+      // only live-search drafts avoids rebuilding and refocusing it per key.
+      publish = liveQuery;
+    }
     else if (action.type === "query/change") setQuery(action.text);
     else if (action.type === "draft/submit" || action.type === "input/close") await submitDraft();
     else if (action.type === "command/execute") await executeCommand();
@@ -63,7 +70,7 @@ export function createWorkspace({
       try { await sync.pull(); } catch {}
     }
     normalizeSelection();
-    notify();
+    if (publish) notify();
   }
 
   function moveSelection(offset) {

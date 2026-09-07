@@ -7,6 +7,7 @@ test("query location reads and writes only the q fragment", () => {
   const query = createQueryLocation(browser);
 
   assert.equal(query.read(), "Example COM");
+  assert.equal(query.url("new tab"), "https://vault.test/path?keep=yes#q=new+tab");
   query.write("客户 A");
   assert.equal(browser.replaced.href, "https://vault.test/path?keep=yes#q=%E5%AE%A2%E6%88%B7+A");
   assert.deepEqual(browser.replaced.state, {pane: "keep"});

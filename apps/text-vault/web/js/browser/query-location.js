@@ -13,9 +13,13 @@ export function createQueryLocation({location, history, addEventListener, remove
   }
 
   function write(query) {
-    const url = new URL(location.href);
-    url.hash = query ? new URLSearchParams({q: String(query)}).toString() : "";
-    history.replaceState(history.state, "", url);
+    history.replaceState(history.state, "", url(query));
+  }
+
+  function url(query) {
+    const next = new URL(location.href);
+    next.hash = query ? new URLSearchParams({q: String(query)}).toString() : "";
+    return next.href;
   }
 
   function subscribe(callback) {
@@ -28,5 +32,5 @@ export function createQueryLocation({location, history, addEventListener, remove
     subscribers.clear();
   }
 
-  return {read, write, subscribe, destroy};
+  return {read, write, url, subscribe, destroy};
 }
