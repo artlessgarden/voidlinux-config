@@ -73,9 +73,9 @@ rules:
   - DOMAIN-SUFFIX,openai.com,DIRECT
   - DOMAIN-SUFFIX,oaistatic.com,DIRECT
   - DOMAIN-SUFFIX,oaiusercontent.com,DIRECT
-  # Keep iKuai control and tunnel traffic on one local source address.
-  - DOMAIN-SUFFIX,tunnel.ikuai8.com,DIRECT
-  - DOMAIN-SUFFIX,icc.ikuai8.com,DIRECT
+  # Keep iKuai control and tunnel traffic on one Hong Kong source address.
+  - DOMAIN-SUFFIX,tunnel.ikuai8.com,香港
+  - DOMAIN-SUFFIX,icc.ikuai8.com,香港
   - AND,((OR,((PROCESS-NAME,firefox),(PROCESS-NAME,chrome),(PROCESS-NAME,Telegram))),(GEOSITE,category-ads-all)),REJECT
   - SUB-RULE,(PROCESS-NAME,firefox),work-app
   - SUB-RULE,(PROCESS-NAME,chrome),work-app
