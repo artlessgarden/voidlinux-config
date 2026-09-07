@@ -158,6 +158,11 @@ export function renderRiverApplication({root, repository, saver, sync, key, api,
       void commitEscape();
       return;
     }
+    if (event.key === "Enter" && !event.shiftKey && modes.state().name === "add") {
+      event.preventDefault();
+      void commitEscape();
+      return;
+    }
     if (event.key === "Enter" && modes.state().name === "command") {
       event.preventDefault();
       const action = modes.executeCommand(bottom.value);
@@ -170,7 +175,7 @@ export function renderRiverApplication({root, repository, saver, sync, key, api,
   }
 
   function onEditorKeydown(event) {
-    if (event.isComposing || event.key !== "Escape") return;
+    if (event.isComposing || (event.key !== "Escape" && (event.key !== "Enter" || event.shiftKey))) return;
     event.preventDefault();
     void commitEscape();
   }

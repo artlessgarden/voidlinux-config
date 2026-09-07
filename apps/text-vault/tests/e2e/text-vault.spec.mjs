@@ -17,11 +17,13 @@ test("setup, add, edit, and live URL search use vim modes", async ({page}) => {
   await expect(page.locator("body")).toHaveCSS("background-color", "rgb(246, 244, 239)");
   await expect(bottom).toHaveCSS("background-color", "rgb(238, 235, 228)");
   await page.keyboard.press("o");
-  await bottom.fill("客户A 1.2.3.4\n宝塔");
+  await bottom.fill("客户A 1.2.3.4");
+  await bottom.press("Shift+Enter");
+  await bottom.pressSequentially("宝塔");
   await expect(page.locator(".sync-status")).toHaveAttribute("data-state", "editing");
-  await bottom.press("Escape");
+  await bottom.press("Enter");
   await expect(page.locator(".sync-status")).toHaveAttribute("data-state", "clean", {timeout: 5000});
-  await expect(page.getByRole("listitem")).toContainText("客户A 1.2.3.4");
+  await expect(page.getByRole("listitem")).toContainText("客户A 1.2.3.4\n宝塔");
 
   await page.keyboard.press("o");
   await bottom.fill("客户B example.com");
@@ -37,7 +39,7 @@ test("setup, add, edit, and live URL search use vim modes", async ({page}) => {
   await page.locator(".river").click({position: {x: 3, y: 3}});
   await expect(editor).toBeVisible();
   await expect(page.locator(".sync-status")).toHaveAttribute("data-state", "editing");
-  await editor.press("Escape");
+  await editor.press("Enter");
   await expect(page.locator(".sync-status")).toHaveAttribute("data-state", "clean", {timeout: 5000});
 
   await page.keyboard.press("/");
