@@ -45,6 +45,24 @@ test("empty query returns newest entries first and search is case insensitive", 
   assert.equal(repository.search("example.com")[0].id, "268t00001");
 });
 
+test("river query returns full entries in creation order and editing does not reorder them", () => {
+  const laterCreated = {
+    ...initial,
+    id: "268t00001",
+    text: "Example.COM later",
+    createdAt: "2026-08-29T02:00:00.000Z",
+    updatedAt: "2026-08-29T02:00:00.000Z",
+  };
+  const repository = createRepository([laterCreated, initial]);
+
+  assert.deepEqual(repository.queryEntries("").map(entry => entry.id), ["268t00000", "268t00001"]);
+  assert.equal(repository.queryEntries("EXAMPLE.com")[0].text, "Example.COM later");
+
+  repository.updateEntryText("268t00000", "edited newest", "2026-08-29T03:00:00.000Z");
+
+  assert.deepEqual(repository.queryEntries("").map(entry => entry.id), ["268t00000", "268t00001"]);
+});
+
 test("quiet workspace changes are pending without alarming the user", () => {
   const workspace = {schemaVersion: 1, id: "workspace_main_01", kind: "workspace", revision: 1, state: {schemaVersion: 1, tabs: []}};
   const repository = createRepository([workspace]);

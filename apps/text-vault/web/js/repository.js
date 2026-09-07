@@ -59,6 +59,15 @@ export function createRepository(initialObjects = []) {
       .map(object => ({id: object.id, updatedAt: object.updatedAt, snippet: snippet(object.text, needle)}));
   }
 
+  // River views need the complete entries in stable creation order. Updating
+  // an entry never changes its physical position in the stream.
+  function queryEntries(query) {
+    const needle = String(query ?? "").trim().toLocaleLowerCase();
+    return [...objects.values()]
+      .filter(object => object.kind === "entry" && (!needle || object.text.toLocaleLowerCase().includes(needle)))
+      .sort((left, right) => left.createdAt.localeCompare(right.createdAt) || left.id.localeCompare(right.id));
+  }
+
   function isDirty() {
     return isContentDirty();
   }
@@ -198,7 +207,7 @@ export function createRepository(initialObjects = []) {
   }
 
   return {
-    get, upsert, remove, search, isDirty, isContentDirty, hasPendingChanges,
+    get, upsert, remove, search, queryEntries, isDirty, isContentDirty, hasPendingChanges,
     dirtyObjects, captureDirty, markCommitted, applyRemote, updateEntryText,
     hasConflicts, acknowledgeConflict, quarantine,
     hasQuarantined: () => quarantined.size > 0,
