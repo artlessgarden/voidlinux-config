@@ -3,6 +3,7 @@ import {APIError, createAPI} from "./api.js";
 import {createWorkspace} from "./application/workspace.js";
 import {createQueryLocation} from "./browser/query-location.js";
 import {createVault, deriveServerCredential, unlockVault} from "./crypto.js";
+import {checkEnvironment} from "./environment.js";
 import {createPasswordFeature} from "./features/change-password.js";
 import {actionForKey} from "./features/vim-keymap.js";
 import {decryptSnapshot} from "./load.js";
@@ -15,10 +16,19 @@ import {createRiverView} from "./views/river.js";
 
 const {button, form, h1, input, label, main, p, section} = van.tags;
 const root = document.querySelector("#app");
-const api = createAPI();
-const tabSession = createTabSession();
+const environment = checkEnvironment(window);
+let api;
+let tabSession;
 
-initialize();
+// Validate before API or tab-session work: insecure HTTP origins may not even
+// expose the random/crypto primitives those adapters depend on.
+if (!environment.ok) {
+  renderAuthMessage("需要安全连接", environment.message);
+} else {
+  api = createAPI();
+  tabSession = createTabSession();
+  initialize();
+}
 
 async function initialize() {
   let header;
@@ -163,9 +173,11 @@ async function openVault(key, snapshot) {
 }
 
 function mountAuth(title, copy, body) {
-  root.replaceChildren(main({class: "auth-shell"}, section({class: "auth-box"}, h1(title), p(copy), body)));
+  const children = [h1(title), p(copy)];
+  if (body) children.push(body);
+  root.replaceChildren(main({class: "auth-shell"}, section({class: "auth-box"}, children)));
 }
 
 function renderAuthMessage(title, copy, retry) {
-  mountAuth(title, copy, button({type: "button", onclick: retry}, "重试"));
+  mountAuth(title, copy, retry && button({type: "button", onclick: retry}, "重试"));
 }

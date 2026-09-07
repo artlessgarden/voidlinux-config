@@ -102,4 +102,26 @@ VanJS 已固定在 `web/vendor`；生产二进制不访问 CDN，也不需要 No
 
 SQLite 保存加密对象、认证凭据散列、版本、类型、更新时间和加密参数。条目正文、主密码、搜索词和数据密钥明文不会写入数据库。
 
-代码仍保持“数据 → 查询 → 视图”的边界。`entry` 是当前数据，全文匹配是当前查询，河流是当前视图；以后可以沿同一边界加入 TSV、附件引用和专用查看器。
+代码保持“数据 → 查询 → 工作区 → 视图”的单向流动：
+
+```text
+加密 API ↔ repository / save / sync
+                    ↓
+            runQuery(QuerySpec, objects)
+                    ↓
+          workspace.snapshot() / dispatch(Action)
+                    ↓
+          view registry → river renderer
+```
+
+- `repository.js` 只保存当前内存对象，不决定搜索和展示。
+- `core/query.js` 是无 DOM 的纯查询函数；当前只认识全文 `QuerySpec`。
+- `application/workspace.js` 是应用核心：组合查询、选择、编辑状态和保存动作，并向外提供不可变快照。
+- `features/` 把 Vim 按键和改密等独立能力转换成语义动作或小接口。
+- `browser/` 封装 URL 等浏览器状态；它们不进入查询核心。
+- `views/registry.js` 按视图声明选择可信渲染器；`views/river.js` 只画快照并派发动作，不接触数据库、加密或同步。
+- `app.js` 是唯一的装配入口，负责把上述模块连接起来。
+
+以后新增查询时，先扩充 `QuerySpec` 和 `runQuery()` 的测试；新增地图、表格等视图时，实现一个接收同类 context、返回清理函数的渲染器，再登记进 registry。用户保存的视图声明可以成为普通数据，但实际执行的渲染器仍来自受信任代码，因此不需要让数据任意执行 JavaScript。
+
+代码注释主要标明模块边界、数据流向和不明显的状态转换；基础语法不逐行解释。这样既能直接读实现，也能在删除某项功能时沿清楚的接口把它完整拔掉。

@@ -5,6 +5,17 @@ test.describe.configure({mode: "serial"});
 const firstPassword = "daily-vault-passphrase";
 const secondPassword = "new-daily-vault-passphrase";
 
+test("an insecure context shows guidance instead of crashing", async ({page}) => {
+  const runtimeErrors = captureRuntimeErrors(page);
+  await page.addInitScript(() => {
+    Object.defineProperty(window, "isSecureContext", {configurable: true, value: false});
+  });
+  await page.goto("/");
+  await expect(page.getByRole("heading", {name: "需要安全连接"})).toBeVisible();
+  await expect(page.getByText("Text Vault 需要 HTTPS 或 localhost 才能使用浏览器加密。")).toBeVisible();
+  expect(runtimeErrors).toEqual([]);
+});
+
 test("setup, add, edit, and live URL search use vim modes", async ({page}) => {
   const runtimeErrors = captureRuntimeErrors(page, new Set(["GET /api/vault 404"]));
   await page.goto("/");
