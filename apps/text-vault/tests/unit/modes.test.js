@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import {createModes} from "./modes.js";
+import {createModes} from "../../web/js/modes.js";
 
 test("edit escape emits only changed text and returns to normal", () => {
   const modes = createModes();

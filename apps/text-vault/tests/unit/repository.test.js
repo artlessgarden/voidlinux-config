@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import {createRepository} from "./repository.js";
+import {createRepository} from "../../web/js/repository.js";
 
 const initial = {
   schemaVersion: 1,

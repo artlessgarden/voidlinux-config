@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import {validatePasswordChange} from "./change-password.js";
+import {validatePasswordChange} from "../../../web/js/features/change-password.js";
 
 test("password feature validates its private form values", () => {
   assert.equal(validatePasswordChange("short", "short"), "主密码至少 16 个字符");

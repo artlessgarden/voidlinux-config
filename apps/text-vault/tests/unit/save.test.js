@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import {createRepository} from "./repository.js";
-import {createSaveCoordinator} from "./save.js";
+import {createRepository} from "../../web/js/repository.js";
+import {createSaveCoordinator} from "../../web/js/save.js";
 
 function seededRepository() {
   return createRepository([{

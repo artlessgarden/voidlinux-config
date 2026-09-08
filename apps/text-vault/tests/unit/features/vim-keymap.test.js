@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import {actionForKey} from "./vim-keymap.js";
+import {actionForKey} from "../../../web/js/features/vim-keymap.js";
 
 test("normal mode translates navigation and mode keys into actions", () => {
   assert.deepEqual(key("j"), {type: "selection/move", offset: 1});

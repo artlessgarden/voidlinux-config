@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import {createViewRegistry} from "./registry.js";
+import {createViewRegistry} from "../../../web/js/views/registry.js";
 
 test("registry mounts a renderer and cleans it before replacement", () => {
   const events = [];

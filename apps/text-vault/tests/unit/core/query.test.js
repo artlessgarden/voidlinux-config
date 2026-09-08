@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import {runQuery} from "./query.js";
+import {runQuery} from "../../../web/js/core/query.js";
 
 const early = entry({id: "268t00000", text: "客户A Example.COM", createdAt: "2026-08-29T00:00:00.000Z"});
 const later = entry({id: "268t00001", text: "客户B", createdAt: "2026-08-29T02:00:00.000Z"});

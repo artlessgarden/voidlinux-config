@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import {createQueryLocation} from "./query-location.js";
+import {createQueryLocation} from "../../../web/js/browser/query-location.js";
 
 test("query location reads and writes only the q fragment", () => {
   const browser = fakeBrowser("https://vault.test/path?keep=yes#q=Example%20COM");

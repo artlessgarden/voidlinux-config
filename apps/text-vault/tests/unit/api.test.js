@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import {createAPI} from "./api.js";
+import {createAPI} from "../../web/js/api.js";
 
 test("setup and login send only a derived credential to authentication endpoints", async () => {
   const requests = [];

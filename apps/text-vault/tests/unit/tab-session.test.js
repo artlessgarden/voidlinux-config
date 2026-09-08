@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import {createTabSession} from "./tab-session.js";
+import {createTabSession} from "../../web/js/tab-session.js";
 
 class FakeChannel {
   constructor(bus) {

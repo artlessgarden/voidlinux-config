@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import {createRepository} from "../repository.js";
-import {createWorkspace} from "./workspace.js";
+import {createRepository} from "../../../web/js/repository.js";
+import {createWorkspace} from "../../../web/js/application/workspace.js";
 
 const first = entry("268t00000", "客户A", "2026-08-29T00:00:00.000Z");
 const second = entry("268t00001", "客户B example.com", "2026-08-29T01:00:00.000Z");

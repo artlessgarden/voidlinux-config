@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import {createRepository} from "./repository.js";
-import {createSyncCoordinator} from "./sync.js";
+import {createRepository} from "../../web/js/repository.js";
+import {createSyncCoordinator} from "../../web/js/sync.js";
 
 const entry = {
   schemaVersion: 1, id: "268t00000", kind: "entry", text: "remote", properties: {},

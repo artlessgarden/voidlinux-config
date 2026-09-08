@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import {createEntry, formatMemoTime, newMemoID, nextMemoID, validateObject} from "./model.js";
+import {createEntry, formatMemoTime, newMemoID, nextMemoID, validateObject} from "../../web/js/model.js";
 
 test("createEntry returns a schema-versioned untitled text object", () => {
   const entry = createEntry({id: "268t00000", now: "2026-08-29T00:00:00.000Z"});

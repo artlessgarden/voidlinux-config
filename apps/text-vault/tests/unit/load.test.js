@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import {decryptSnapshot} from "./load.js";
+import {decryptSnapshot} from "../../web/js/load.js";
 
 test("snapshot loading isolates one bad object", async () => {
   const snapshot = {objects: {

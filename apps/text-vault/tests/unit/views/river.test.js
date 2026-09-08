@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import {selectedSearchText} from "./river.js";
+import {selectedSearchText} from "../../../web/js/views/river.js";
 
 test("river normalizes a browser selection before opening a query", () => {
   assert.equal(selectedSearchText("  server.example.com\n"), "server.example.com");

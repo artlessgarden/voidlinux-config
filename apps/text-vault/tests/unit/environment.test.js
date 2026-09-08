@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import {checkEnvironment} from "./environment.js";
+import {checkEnvironment} from "../../web/js/environment.js";
 
 const guidance = "Text Vault 需要 HTTPS 或 localhost 才能使用浏览器加密。";
 

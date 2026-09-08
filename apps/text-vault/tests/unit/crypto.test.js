@@ -8,7 +8,7 @@ import {
   unlockVault,
   encryptObject,
   decryptObject,
-} from "./crypto.js";
+} from "../../web/js/crypto.js";
 
 test("correct password decrypts an object", async () => {
   const {header, key} = await createVault("a long unique passphrase");
