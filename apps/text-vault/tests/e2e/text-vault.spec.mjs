@@ -23,7 +23,7 @@ test("setup, add, edit outside-click save, search, and selection search", async 
   await page.getByRole("button", {name: "创建保险库"}).click();
 
   const search = page.getByRole("textbox", {name: "搜索"});
-  await expect(page.getByRole("button", {name: "搜索，上滑新增，左滑清空"})).toBeVisible();
+  await expect(page.getByRole("button", {name: "搜索，打开时点击清空，上滑新增"})).toBeVisible();
   await expect(search).toBeHidden();
   await expect(page.locator("body")).toHaveCSS("background-color", "rgb(41, 45, 43)");
   await expect(page.locator("body")).toHaveCSS("background-image", /animal-tile\.svg/);
@@ -48,8 +48,9 @@ test("setup, add, edit outside-click save, search, and selection search", async 
 
   const firstEntry = page.getByText("客户A 1.2.3.4", {exact: false});
   const displayedHeight = await firstEntry.evaluate(node => node.getBoundingClientRect().height);
-  await firstEntry.click();
+  await firstEntry.click({position: {x: 2, y: 5}});
   await expect.poll(async () => Math.abs((await editor.boundingBox()).height - displayedHeight)).toBeLessThan(0.1);
+  await expect.poll(() => editor.evaluate(node => node.selectionStart)).toBeLessThan(3);
   await editor.fill("客户A 1.2.3.4 已修改");
   await page.locator(".river-entry:not(.reminder-entry) .entry-text").filter({hasText: "客户B example.com"}).click();
   await expect(editor).toHaveCount(0);
@@ -60,6 +61,8 @@ test("setup, add, edit outside-click save, search, and selection search", async 
 
   await page.keyboard.press("/");
   await search.fill("客户B EXAMPLE.com");
+  await expect.poll(async () => (await page.locator(".search-control").boundingBox()).width).toBeGreaterThan(350);
+  await expect(search).toHaveCSS("border-top-width", "0px");
   await expect(page.getByRole("listitem")).toHaveCount(1);
   await expect(page.getByRole("listitem")).toContainText("客户B example.com");
   await expect(page.locator(".agenda-future")).toHaveCount(0);
@@ -67,13 +70,13 @@ test("setup, add, edit outside-click save, search, and selection search", async 
   await expect(page.locator(".date-heading")).toHaveCount(0);
   await search.fill("客户B EXAMPLE.com");
   await page.locator(".date-heading").click();
-  await expect(search).toBeHidden();
-  await expect(page.locator(".search-control")).toHaveAttribute("data-has-query", "true");
-  await expect(page.locator(".search-control")).toHaveCSS("height", "48px");
+  await expect(search).toBeVisible();
+  await expect.poll(async () => (await page.locator(".search-control").boundingBox()).height).toBeLessThanOrEqual(50);
   await page.keyboard.press("/");
   await expect(search).toHaveValue("客户B EXAMPLE.com");
   await page.keyboard.press("Escape");
-  await expect(page.locator(".search-control")).toHaveAttribute("data-has-query", "true");
+  await expect(search).toBeVisible();
+  await expect(page.locator(".search-control")).toHaveAttribute("data-clear-armed", "true");
   await page.keyboard.press("Escape");
   await expect(search).toHaveValue("");
   await expect(page).not.toHaveURL(/#q=/);
@@ -143,7 +146,7 @@ test("mobile uses the same river and default controls", async ({browser}) => {
   await page.getByLabel("主密码").fill(firstPassword);
   await page.getByRole("button", {name: "解锁"}).click();
   await expect(page.getByRole("list", {name: "条目河流"})).toBeVisible();
-  const trigger = page.getByRole("button", {name: "搜索，上滑新增，左滑清空"});
+  const trigger = page.getByRole("button", {name: "搜索，打开时点击清空，上滑新增"});
   await expect(trigger).toBeVisible();
   await page.locator(".entry-text").first().evaluate(node => {
     const range = document.createRange();
@@ -159,7 +162,8 @@ test("mobile uses the same river and default controls", async ({browser}) => {
   await expect(mobileSearch).toBeFocused();
   await mobileSearch.fill("客户");
   await mobileSearch.press("Escape");
-  await expect(page.locator(".search-control")).toHaveAttribute("data-has-query", "true");
+  await expect(mobileSearch).toBeVisible();
+  await expect(page.locator(".search-control")).toHaveAttribute("data-clear-armed", "true");
   const mobileEntries = page.locator(".river-entry:not(.reminder-entry) .entry-text");
   await mobileEntries.first().click();
   await expect(page.getByRole("textbox", {name: "编辑条目"})).toBeVisible();
@@ -170,10 +174,8 @@ test("mobile uses the same river and default controls", async ({browser}) => {
   await otherMobileEntry.click();
   await expect(page.getByRole("textbox", {name: "编辑条目"})).toBeVisible();
   await page.locator(".sync-status").click();
-  await trigger.dispatchEvent("pointerdown", {pointerId: 1, clientX: 60, clientY: 40});
-  await trigger.dispatchEvent("pointerup", {pointerId: 1, clientX: 10, clientY: 40});
-  await expect(page.locator(".search-control")).toHaveAttribute("data-has-query", "false");
-  await page.waitForTimeout(450);
+  await trigger.click();
+  await expect(mobileSearch).toBeHidden();
   await trigger.dispatchEvent("pointerdown", {pointerId: 2, clientX: 40, clientY: 60});
   await trigger.dispatchEvent("pointerup", {pointerId: 2, clientX: 40, clientY: 10});
   await expect(page.getByRole("textbox", {name: "编辑条目"})).toBeVisible();

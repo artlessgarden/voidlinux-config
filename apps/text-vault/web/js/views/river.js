@@ -14,13 +14,14 @@ export function createRiverView({root, repository, saver, sync, queryLocation, n
   let gesture = null;
   let gestureHandled = false;
   let ignoreEntryClick = false;
+  let searchEscapeArmed = false;
   let destroyed = false;
 
   const status = div({class: "sync-status", "data-state": "clean", role: "status", "aria-label": "已保存"});
   const river = div({class: "river", role: "list", "aria-label": "条目河流"});
   const search = textarea({class: "search-input", rows: 1, spellcheck: false, autocomplete: "off", "aria-label": "搜索", placeholder: "搜索"});
-  const searchTrigger = button({type: "button", class: "search-trigger", "aria-label": "搜索，上滑新增，左滑清空"});
-  const searchControl = div({class: "search-control", "data-open": "false", "data-has-query": String(Boolean(query.trim()))}, searchTrigger, search);
+  const searchTrigger = button({type: "button", class: "search-trigger", "aria-label": "搜索，打开时点击清空，上滑新增"});
+  const searchControl = div({class: "search-control", "data-open": String(Boolean(query.trim())), "data-clear-armed": "false"}, searchTrigger, search);
   const selectionSearch = button({type: "button", class: "selection-search", hidden: true, "aria-label": "在新标签搜索选中文字"});
   const shell = div({class: "river-shell"}, status, river, searchControl, selectionSearch);
 
@@ -48,6 +49,7 @@ export function createRiverView({root, repository, saver, sync, queryLocation, n
 
   root.replaceChildren(shell);
   search.value = query;
+  updateSearchSpace();
   renderEntries();
   renderStatus();
 
@@ -68,7 +70,7 @@ export function createRiverView({root, repository, saver, sync, queryLocation, n
       // does not move the river. New entries have no rendered height to inherit.
       if (!editing.initialHeight) grow(editor);
       editor.focus();
-      const start = caret?.start ?? editor.value.length;
+      const start = caret?.start ?? editing.initialCaret ?? editor.value.length;
       editor.setSelectionRange(start, caret?.end ?? start);
     });
   }
@@ -108,7 +110,7 @@ export function createRiverView({root, repository, saver, sync, queryLocation, n
     return row(entry.id, div({class: "entry-text", onclick: event => {
       if (!window.getSelection()?.isCollapsed) return;
       if (ignoreEntryClick) return;
-      startEdit(entry, event.currentTarget);
+      startEdit(entry, event.currentTarget, textOffsetAtPoint(event.currentTarget, event.clientX, event.clientY));
     }}, cleanText(entry.text) || " "));
   }
 
@@ -141,9 +143,9 @@ export function createRiverView({root, repository, saver, sync, queryLocation, n
     return div(attributes, span({class: "entry-marker", "aria-hidden": "true"}), body);
   }
 
-  function startEdit(entry, source) {
+  function startEdit(entry, source, initialCaret) {
     if (editing) return;
-    editing = {id: entry.id, draft: entry.text, original: entry.text, isNew: false, initialHeight: source?.getBoundingClientRect().height || 0};
+    editing = {id: entry.id, draft: entry.text, original: entry.text, isNew: false, initialHeight: source?.getBoundingClientRect().height || 0, initialCaret};
     beginEditing();
   }
 
@@ -157,7 +159,7 @@ export function createRiverView({root, repository, saver, sync, queryLocation, n
   function beginEditing() {
     search.disabled = true;
     searchTrigger.disabled = true;
-    hideSearch();
+    if (!query.trim()) hideSearch();
     hideSelectionSearch();
     renderEntries();
     renderStatus();
@@ -187,7 +189,7 @@ export function createRiverView({root, repository, saver, sync, queryLocation, n
   }
 
   function onDocumentClick(event) {
-    if (searchControl.dataset.open === "true" && !searchControl.contains(event.target)) hideSearch();
+    if (!searchControl.contains(event.target)) resetSearchEscape();
     const editor = river.querySelector(".entry-editor");
     if (!editing || !editor || editor.contains(event.target)) return;
 
@@ -210,9 +212,9 @@ export function createRiverView({root, repository, saver, sync, queryLocation, n
 
   function onDocumentKeydown(event) {
     if (event.isComposing || event.altKey) return;
-    if (event.key === "Escape" && !editing && searchControl.dataset.open === "false" && query.trim()) {
+    if (event.key === "Escape" && !editing && query.trim()) {
       event.preventDefault();
-      clearSearch();
+      handleSearchEscape();
       return;
     }
     if ((event.ctrlKey || event.metaKey) && event.key === "Enter" && selectedText) {
@@ -234,13 +236,16 @@ export function createRiverView({root, repository, saver, sync, queryLocation, n
     if (event.key !== "Escape") return;
     event.preventDefault();
     event.stopPropagation();
-    hideSearch();
+    if (query.trim()) handleSearchEscape();
+    else clearSearch();
   }
 
   function showSearch() {
     if (editing) return;
     search.style.height = "48px";
     searchControl.dataset.open = "true";
+    resetSearchEscape();
+    updateSearchSpace();
     queueMicrotask(() => {
       search.focus();
       search.setSelectionRange(search.value.length, search.value.length);
@@ -252,12 +257,13 @@ export function createRiverView({root, repository, saver, sync, queryLocation, n
       query = "";
       search.value = "";
       queryLocation.write("");
-      searchControl.dataset.hasQuery = "false";
       renderEntries();
     }
     searchControl.dataset.open = "false";
+    resetSearchEscape();
     search.blur();
     search.style.height = "";
+    updateSearchSpace();
   }
 
   function onTriggerClick(event) {
@@ -266,7 +272,8 @@ export function createRiverView({root, repository, saver, sync, queryLocation, n
       gestureHandled = false;
       return;
     }
-    showSearch();
+    if (searchControl.dataset.open === "true") clearSearch();
+    else showSearch();
   }
 
   function onTriggerPointerDown(event) {
@@ -283,9 +290,6 @@ export function createRiverView({root, repository, saver, sync, queryLocation, n
     if (dy < -32 && Math.abs(dy) > Math.abs(dx)) {
       markGestureHandled();
       startAdd();
-    } else if (dx < -32 && Math.abs(dx) > Math.abs(dy) && query.trim()) {
-      markGestureHandled();
-      clearSearch();
     }
   }
 
@@ -295,7 +299,10 @@ export function createRiverView({root, repository, saver, sync, queryLocation, n
   }
 
   function onSearchTransitionEnd(event) {
-    if (event.propertyName === "width" && searchControl.dataset.open === "true") grow(search);
+    if (event.propertyName === "width" && searchControl.dataset.open === "true") {
+      grow(search);
+      updateSearchSpace();
+    }
   }
 
   function cancelGesture() {
@@ -308,26 +315,45 @@ export function createRiverView({root, repository, saver, sync, queryLocation, n
     search.value = "";
     search.style.height = "";
     searchControl.dataset.open = "false";
-    searchControl.dataset.hasQuery = "false";
+    resetSearchEscape();
     queryLocation.write("");
     renderEntries();
+    updateSearchSpace();
+  }
+
+  function handleSearchEscape() {
+    if (searchEscapeArmed) return clearSearch();
+    searchEscapeArmed = true;
+    searchControl.dataset.clearArmed = "true";
+  }
+
+  function resetSearchEscape() {
+    searchEscapeArmed = false;
+    searchControl.dataset.clearArmed = "false";
+  }
+
+  function updateSearchSpace() {
+    queueMicrotask(() => shell.style.setProperty("--search-height", `${searchControl.getBoundingClientRect().height || 48}px`));
   }
 
   function onSearch() {
     if (editing) return;
     query = search.value;
-    searchControl.dataset.hasQuery = String(Boolean(query.trim()));
+    resetSearchEscape();
     queryLocation.write(query);
     renderEntries();
     grow(search);
+    updateSearchSpace();
   }
 
   function onLocationChange(value) {
     if (editing) return;
     query = value;
     search.value = value;
-    searchControl.dataset.hasQuery = String(Boolean(query.trim()));
+    searchControl.dataset.open = String(Boolean(query.trim()));
+    resetSearchEscape();
     renderEntries();
+    updateSearchSpace();
   }
 
   function onSelectionChange() {
@@ -416,4 +442,18 @@ function cleanText(text) {
 function grow(element) {
   element.style.height = "auto";
   element.style.height = `${element.scrollHeight}px`;
+}
+
+// Resolve the click before replacing display text with its textarea. Safari
+// exposes the Range form while Chromium exposes CaretPosition.
+function textOffsetAtPoint(element, x, y) {
+  const position = document.caretPositionFromPoint?.(x, y);
+  const legacy = !position && document.caretRangeFromPoint?.(x, y);
+  const node = position?.offsetNode ?? legacy?.startContainer;
+  const offset = position?.offset ?? legacy?.startOffset;
+  if (!node || offset === undefined || !element.contains(node)) return element.textContent.length;
+  const range = document.createRange();
+  range.selectNodeContents(element);
+  range.setEnd(node, offset);
+  return range.toString().length;
 }
