@@ -6,10 +6,11 @@
 #
 # GRUB_CMDLINE_LINUX_DEFAULT
 #   gpiolib_acpi.run_edge_events_on_boot=0：避开本机 ACPI GPIO 启动噪音。
+#   module_blacklist=nouveau：本机只使用 AMD 核显，不加载 NVIDIA 驱动。
 
 GRUB_DEFAULT=0
 GRUB_TIMEOUT=0
 GRUB_DISTRIBUTOR="Void"
-GRUB_CMDLINE_LINUX_DEFAULT="loglevel=4 gpiolib_acpi.run_edge_events_on_boot=0"
+GRUB_CMDLINE_LINUX_DEFAULT="loglevel=4 gpiolib_acpi.run_edge_events_on_boot=0 module_blacklist=nouveau"
 GRUB_DISABLE_RECOVERY=true
 GRUB_DISABLE_SUBMENU=true

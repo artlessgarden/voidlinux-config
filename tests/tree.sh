@@ -19,8 +19,10 @@ common_files="$repo/20-pkg-base.sh $repo/40-sv-base.sh $repo/50-link-home.sh $re
 if grep -Eiq 'intel|amd|sof|tlp|iwlwifi|efibootmgr|nameserver|foot|neovim|emacs' $common_files; then
 	fail 'common setup contains host hardware or rejected software'
 fi
-if grep -Riq 'nouveau' "$repo/asus"; then
-	fail 'ASUS still disables the NVIDIA Nouveau driver'
+grep -Fq 'module_blacklist=nouveau' "$repo/root/etc/default/grub.asus" ||
+	fail 'ASUS does not disable its unused NVIDIA GPU driver'
+if grep -Riq 'nouveau' $common_files "$repo/msi"; then
+	fail 'ASUS-specific NVIDIA policy leaks into shared or MSI configuration'
 fi
 grep -q 'pipewire' "$repo/20-pkg-base.sh" || fail 'PipeWire is common'
 grep -q 'wireplumber' "$repo/20-pkg-base.sh" || fail 'WirePlumber is common'
