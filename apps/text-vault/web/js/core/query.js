@@ -5,9 +5,11 @@ export function runQuery(spec, objects) {
   validateQuery(spec);
   if (!Array.isArray(objects)) throw new TypeError("objects must be an array");
 
-  const needle = spec.text.trim().toLocaleLowerCase();
+  // Spaces combine ordinary full-text terms. Keeping this rule here makes
+  // every future view share the same AND-search meaning.
+  const needles = spec.text.trim().toLocaleLowerCase().split(/\s+/u).filter(Boolean);
   return objects
-    .filter(object => object.kind === "entry" && (!needle || object.text.toLocaleLowerCase().includes(needle)))
+    .filter(object => object.kind === "entry" && needles.every(needle => object.text.toLocaleLowerCase().includes(needle)))
     .toSorted((left, right) => left.createdAt.localeCompare(right.createdAt) || left.id.localeCompare(right.id));
 }
 

@@ -19,10 +19,10 @@ export function createRiverView({root, repository, saver, sync, queryLocation, n
   const status = div({class: "sync-status", "data-state": "clean", role: "status", "aria-label": "已保存"});
   const river = div({class: "river", role: "list", "aria-label": "条目河流"});
   const search = textarea({class: "search-input", rows: 1, spellcheck: false, autocomplete: "off", "aria-label": "搜索", placeholder: "搜索"});
-  const searchPanel = div({class: "search-panel", hidden: true}, search);
   const searchTrigger = button({type: "button", class: "search-trigger", "aria-label": "搜索，长按新增"});
+  const searchControl = div({class: "search-control", "data-open": "false"}, searchTrigger, search);
   const selectionSearch = button({type: "button", class: "selection-search", hidden: true, "aria-label": "在新标签搜索选中文字"}, "↗");
-  const shell = div({class: "river-shell"}, status, river, searchPanel, searchTrigger, selectionSearch);
+  const shell = div({class: "river-shell"}, status, river, searchControl, selectionSearch);
 
   const cleanups = [
     repository.subscribe(renderEntries),
@@ -81,11 +81,22 @@ export function createRiverView({root, repository, saver, sync, queryLocation, n
       rows.push(...day.entries.map(renderEntry));
       if (day.date === today && editing?.isNew) rows.push(renderEditorRow("new"));
     }
-    rows.push(div({class: "agenda-future"},
-      div({class: "date-heading future-heading"}, div({class: "date-main"}, "未来")),
-      ...agenda.reminders.map(reminder => div({class: "river-entry reminder-entry"},
-        span({class: "reminder-date"}, reminder.date),
-        div({class: "entry-text reminder-text"}, reminder.entry.text || " ")))));
+    // Future references use the same date-and-entry grammar as the river.
+    // A query already contains those entries, so its result does not repeat them.
+    if (!query.trim() && agenda.reminders.length) {
+      const futureRows = [];
+      let lastDate = "";
+      for (const reminder of agenda.reminders) {
+        if (reminder.date !== lastDate) {
+          futureRows.push(renderDateHeading(reminder.date, false));
+          lastDate = reminder.date;
+        }
+        futureRows.push(row(null, div({class: "entry-text reminder-text"}, reminder.entry.text || " "), "reminder-entry"));
+      }
+      rows.push(div({class: "agenda-future"},
+        div({class: "date-heading future-heading"}, div({class: "date-main"}, "未来")),
+        ...futureRows));
+    }
     return rows;
   }
 
@@ -108,8 +119,10 @@ export function createRiverView({root, repository, saver, sync, queryLocation, n
     return row(id, editor);
   }
 
-  function row(id, body) {
-    return div({class: "river-entry", role: "listitem", "data-entry-id": id}, body);
+  function row(id, body, extraClass = "") {
+    const attributes = {class: `river-entry ${extraClass}`.trim(), role: "listitem"};
+    if (id) attributes["data-entry-id"] = id;
+    return div(attributes, span({class: "entry-marker", "aria-hidden": "true"}), body);
   }
 
   function startEdit(entry) {
@@ -158,6 +171,7 @@ export function createRiverView({root, repository, saver, sync, queryLocation, n
   }
 
   function onDocumentPointerDown(event) {
+    if (searchControl.dataset.open === "true" && !searchControl.contains(event.target)) hideSearch();
     const editor = river.querySelector(".entry-editor");
     if (!editing || !editor || editor.contains(event.target)) return;
 
@@ -195,7 +209,7 @@ export function createRiverView({root, repository, saver, sync, queryLocation, n
 
   function showSearch() {
     if (editing) return;
-    searchPanel.hidden = false;
+    searchControl.dataset.open = "true";
     queueMicrotask(() => {
       search.focus();
       search.setSelectionRange(search.value.length, search.value.length);
@@ -204,7 +218,8 @@ export function createRiverView({root, repository, saver, sync, queryLocation, n
   }
 
   function hideSearch() {
-    searchPanel.hidden = true;
+    searchControl.dataset.open = "false";
+    search.blur();
   }
 
   function onTriggerClick(event) {

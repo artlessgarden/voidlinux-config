@@ -24,7 +24,7 @@ test("setup, add, edit outside-click save, search, and selection search", async 
 
   const search = page.getByRole("textbox", {name: "搜索"});
   await expect(search).toBeHidden();
-  await expect(page.locator("body")).toHaveCSS("background-color", "rgb(239, 238, 233)");
+  await expect(page.locator("body")).toHaveCSS("background-color", "rgb(184, 187, 178)");
   await expect(page.locator(".date-heading:not(.future-heading) .date-main").last()).toHaveText("9月8日");
   await page.keyboard.press("/");
   await expect(search).toBeFocused();
@@ -51,10 +51,14 @@ test("setup, add, edit outside-click save, search, and selection search", async 
   await expect(page.locator(".sync-status")).toHaveAttribute("data-state", "clean", {timeout: 5000});
 
   await page.keyboard.press("/");
-  await search.fill("EXAMPLE.com");
+  await search.fill("客户B EXAMPLE.com");
   await expect(page.getByRole("listitem")).toHaveCount(1);
   await expect(page.getByRole("listitem")).toContainText("客户B example.com");
-  await expect(page).toHaveURL(/#q=EXAMPLE%2Ecom|#q=EXAMPLE.com/);
+  await expect(page.locator(".agenda-future")).toHaveCount(0);
+  await page.locator(".date-heading").click();
+  await expect(search).toBeHidden();
+  await page.keyboard.press("/");
+  await expect(search).toHaveValue("客户B EXAMPLE.com");
 
   await search.fill("");
   await page.getByText("客户A 1.2.3.4 已修改").evaluate(node => {
@@ -81,12 +85,13 @@ test("default river groups today and previews future date markers", async ({page
   await page.getByRole("button", {name: "解锁"}).click();
 
   await expect(page.locator(".date-main").first()).toHaveText("9月8日");
-  await expect(page.locator(".agenda-future")).toContainText("2026-12-31");
+  await expect(page.locator(".agenda-future .date-main")).toContainText(["未来", "12月31日"]);
   await expect(page.locator(".agenda-future")).toContainText("客户B example.com @12-31");
 
   await page.keyboard.press("/");
   await page.getByRole("textbox", {name: "搜索"}).fill("客户B");
   await expect(page).toHaveURL(/#q=/);
+  await expect(page.locator(".agenda-future")).toHaveCount(0);
 });
 
 test("a second tab unlocks and receives incremental changes", async ({browser}) => {
@@ -101,7 +106,7 @@ test("a second tab unlocks and receives incremental changes", async ({browser}) 
   await second.goto("/");
   await expect(second.getByRole("list", {name: "条目河流"})).toBeVisible();
   await expect(second.getByLabel("主密码", {exact: true})).toHaveCount(0);
-  await expect(second.getByRole("listitem")).toHaveCount(2);
+  await expect(second.locator(".river-entry:not(.reminder-entry)")).toHaveCount(2);
 
   await first.locator(".river-entry:not(.reminder-entry) .entry-text").filter({hasText: "客户B example.com"}).click();
   await first.getByRole("textbox", {name: "编辑条目"}).fill("客户B example.com 已同步");
@@ -127,7 +132,7 @@ test("mobile uses the same river and default controls", async ({browser}) => {
   await trigger.dispatchEvent("pointerup", {clientX: 20, clientY: 20});
   await expect(page.getByRole("textbox", {name: "编辑条目"})).toBeVisible();
   await page.locator(".sync-status").click();
-  await expect(page.getByRole("listitem")).toHaveCount(2);
+  await expect(page.locator(".river-entry:not(.reminder-entry)")).toHaveCount(2);
   await context.close();
 });
 

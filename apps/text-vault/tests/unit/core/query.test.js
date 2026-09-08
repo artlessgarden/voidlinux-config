@@ -12,9 +12,13 @@ test("full-text query returns complete entries in stable creation order", () => 
 
   const all = runQuery(fullText(""), objects);
   const matching = runQuery(fullText("EXAMPLE.com"), objects);
+  const combined = runQuery(fullText("客户A example"), objects);
+  const incomplete = runQuery(fullText("客户B example"), objects);
 
   assert.deepEqual(all.map(object => object.id), ["268t00000", "268t00001"]);
   assert.equal(matching[0].text, "客户A Example.COM");
+  assert.deepEqual(combined.map(object => object.id), ["268t00000"]);
+  assert.deepEqual(incomplete, []);
   assert.deepEqual(objects, before);
 });
 
