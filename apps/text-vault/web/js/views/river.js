@@ -1,4 +1,5 @@
 import van from "../../vendor/van-1.6.1.js";
+import {buildAgenda} from "../core/agenda.js";
 import {runQuery} from "../core/query.js";
 import {createEntry} from "../model.js";
 
@@ -6,7 +7,7 @@ const {button, div, span, textarea} = van.tags;
 
 // The river owns unfinished UI state. Durable text enters the repository only
 // when a click outside the editor commits the single active draft.
-export function createRiverView({root, repository, saver, sync, queryLocation, now = () => new Date()}) {
+export function createRiverView({root, repository, saver, sync, queryLocation, view = "river", now = () => new Date()}) {
   let query = queryLocation.read();
   let editing = null;
   let selectedText = "";
@@ -17,7 +18,7 @@ export function createRiverView({root, repository, saver, sync, queryLocation, n
   const search = textarea({class: "search-input", rows: 1, spellcheck: false, autocomplete: "off", "aria-label": "搜索", placeholder: "搜索"});
   const add = button({type: "button", class: "add-button", "aria-label": "新增", onclick: startAdd}, "+");
   const selectionSearch = button({type: "button", class: "selection-search", hidden: true, "aria-label": "在新标签搜索选中文字"}, "↗");
-  const shell = div({class: "river-shell"}, status, river, div({class: "bottom-bar"}, search, add), selectionSearch);
+  const shell = div({class: `river-shell ${view === "agenda" ? "agenda-view" : ""}`}, status, river, div({class: "bottom-bar"}, search, add), selectionSearch);
 
   const cleanups = [
     repository.subscribe(renderEntries),
@@ -46,8 +47,8 @@ export function createRiverView({root, repository, saver, sync, queryLocation, n
     if (destroyed) return;
     const oldEditor = river.querySelector(".entry-editor");
     const caret = oldEditor && {start: oldEditor.selectionStart, end: oldEditor.selectionEnd};
-    const rows = entries().map(renderEntry);
-    if (editing?.isNew) rows.push(renderEditorRow("new"));
+    const rows = view === "agenda" ? renderAgenda(entries()) : entries().map(renderEntry);
+    if (editing?.isNew && view !== "agenda") rows.push(renderEditorRow("new"));
     river.replaceChildren(...rows);
     if (editing) queueMicrotask(() => {
       const editor = river.querySelector(".entry-editor");
@@ -57,6 +58,22 @@ export function createRiverView({root, repository, saver, sync, queryLocation, n
       const start = caret?.start ?? editor.value.length;
       editor.setSelectionRange(start, caret?.end ?? start);
     });
+  }
+
+  function renderAgenda(filteredEntries) {
+    const agenda = buildAgenda(filteredEntries, now());
+    const rows = [];
+    for (const day of agenda.days) {
+      rows.push(div({class: "date-heading"}, day.date));
+      rows.push(...day.entries.map(renderEntry));
+      if (day.date === todayKey() && editing?.isNew) rows.push(renderEditorRow("new"));
+    }
+    rows.push(div({class: "agenda-future"},
+      div({class: "date-heading future-heading"}, "未来"),
+      ...agenda.reminders.map(reminder => div({class: "reminder-entry"},
+        span({class: "reminder-date"}, reminder.date),
+        div({class: "entry-text reminder-text"}, reminder.entry.text || " ")))));
+    return rows;
   }
 
   function renderEntry(entry) {
@@ -180,6 +197,11 @@ export function createRiverView({root, repository, saver, sync, queryLocation, n
     if (!editing && !repository.hasPendingChanges()) return;
     event.preventDefault();
     event.returnValue = "";
+  }
+
+  function todayKey() {
+    const value = now();
+    return `${value.getFullYear()}-${String(value.getMonth() + 1).padStart(2, "0")}-${String(value.getDate()).padStart(2, "0")}`;
   }
 
   function destroy() {

@@ -32,6 +32,15 @@ test("query location publishes hash changes and removes its listener", () => {
   assert.deepEqual(values, ["second"]);
 });
 
+test("query changes preserve the selected view", () => {
+  const browser = fakeBrowser("https://vault.test/#view=agenda&q=old");
+  const query = createQueryLocation(browser);
+
+  query.write("new");
+  assert.equal(browser.replaced.href, "https://vault.test/#view=agenda&q=new");
+  assert.equal(query.url("other"), "https://vault.test/#view=agenda&q=other");
+});
+
 function fakeBrowser(href) {
   let listener = null;
   const location = {href, hash: new URL(href).hash};

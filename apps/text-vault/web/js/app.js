@@ -138,6 +138,7 @@ async function openVault(key, snapshot) {
     saver,
     sync,
     queryLocation,
+    view: new URLSearchParams(window.location.hash.slice(1)).get("view") === "agenda" ? "agenda" : "river",
   });
   sync.start();
 

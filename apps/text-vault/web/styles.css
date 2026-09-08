@@ -50,6 +50,12 @@ button:focus-visible, input:focus-visible, textarea:focus-visible { outline: 1px
 .add-button { border-left: 1px solid var(--line); font-size: 24px; color: var(--muted); }
 .search-input:disabled, .add-button:disabled { opacity: .45; }
 .selection-search { position: fixed; z-index: 3; width: 34px; height: 34px; border: 1px solid var(--line); background: var(--surface); }
+.date-heading { margin: 24px 10px 6px 32px; color: var(--muted); font-size: 13px; }
+.date-heading:first-child { margin-top: 0; }
+.agenda-future { min-height: 45vh; padding-top: 20px; border-top: 1px solid var(--line); margin-top: 28px; }
+.future-heading { margin-top: 0; }
+.reminder-entry { display: grid; grid-template-columns: 92px minmax(0, 1fr); gap: 12px; padding: 8px 10px 8px 32px; line-height: 1.65; }
+.reminder-date { color: var(--muted); }
 
 .auth-shell { min-height: 100dvh; display: grid; place-items: center; padding: 20px; background: var(--background); font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
 .auth-box { width: min(390px, 100%); border: 1px solid var(--line); padding: 26px; background: var(--surface); }

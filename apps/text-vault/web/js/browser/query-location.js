@@ -18,7 +18,10 @@ export function createQueryLocation({location, history, addEventListener, remove
 
   function url(query) {
     const next = new URL(location.href);
-    next.hash = query ? new URLSearchParams({q: String(query)}).toString() : "";
+    const parameters = new URLSearchParams(next.hash.slice(1));
+    if (query) parameters.set("q", String(query));
+    else parameters.delete("q");
+    next.hash = parameters.toString();
     return next.href;
   }
 
