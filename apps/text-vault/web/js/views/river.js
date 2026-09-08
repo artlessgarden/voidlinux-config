@@ -32,7 +32,7 @@ export function createRiverView({root, repository, saver, sync, queryLocation, n
   ];
   search.addEventListener("input", onSearch);
   search.addEventListener("keydown", onSearchKeydown);
-  document.addEventListener("pointerdown", onDocumentPointerDown, true);
+  document.addEventListener("click", onDocumentClick, true);
   document.addEventListener("keydown", onDocumentKeydown);
   document.addEventListener("selectionchange", onSelectionChange);
   window.addEventListener("focus", onWindowFocus);
@@ -186,7 +186,7 @@ export function createRiverView({root, repository, saver, sync, queryLocation, n
     if (changed) try { await saver.save(); } catch {}
   }
 
-  function onDocumentPointerDown(event) {
+  function onDocumentClick(event) {
     if (searchControl.dataset.open === "true" && !searchControl.contains(event.target)) hideSearch();
     const editor = river.querySelector(".entry-editor");
     if (!editing || !editor || editor.contains(event.target)) return;
@@ -210,7 +210,7 @@ export function createRiverView({root, repository, saver, sync, queryLocation, n
 
   function onDocumentKeydown(event) {
     if (event.isComposing || event.altKey) return;
-    if ((event.ctrlKey || event.metaKey) && event.key === "Escape" && !editing) {
+    if (event.key === "Escape" && !editing && searchControl.dataset.open === "false" && query.trim()) {
       event.preventDefault();
       clearSearch();
       return;
@@ -233,6 +233,7 @@ export function createRiverView({root, repository, saver, sync, queryLocation, n
   function onSearchKeydown(event) {
     if (event.key !== "Escape") return;
     event.preventDefault();
+    event.stopPropagation();
     hideSearch();
   }
 
@@ -379,7 +380,7 @@ export function createRiverView({root, repository, saver, sync, queryLocation, n
     if (destroyed) return;
     destroyed = true;
     for (const cleanup of cleanups) cleanup();
-    document.removeEventListener("pointerdown", onDocumentPointerDown, true);
+    document.removeEventListener("click", onDocumentClick, true);
     document.removeEventListener("keydown", onDocumentKeydown);
     document.removeEventListener("selectionchange", onSelectionChange);
     window.removeEventListener("focus", onWindowFocus);
@@ -395,8 +396,10 @@ function renderDateHeading(key, today) {
   const [year, month, day] = key.split("-").map(Number);
   const weekday = ["周日", "周一", "周二", "周三", "周四", "周五", "周六"][new Date(year, month - 1, day).getDay()];
   return div({class: `date-heading${today ? " today" : ""}`},
-    div({class: "date-year"}, `${year} ·`),
+    div({class: "date-year"}, year),
+    div({class: "date-dot", "aria-hidden": "true"}, "·"),
     div({class: "date-main"}, `${month}月${day}日`),
+    div({class: "date-dot", "aria-hidden": "true"}, "·"),
     div({class: "date-meta"}, weekday));
 }
 
