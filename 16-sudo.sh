@@ -11,7 +11,8 @@ case "$user" in
 esac
 
 sudoers_dir=${SUDOERS_DIR:-/etc/sudoers.d}
-rule=$sudoers_dir/10-$user-nopasswd
+rule=$sudoers_dir/zz-$user-nopasswd
+old_rule=$sudoers_dir/10-$user-nopasswd
 tmp=$(mktemp)
 trap 'rm -f "$tmp"' EXIT HUP INT TERM
 
@@ -19,4 +20,5 @@ printf '%s ALL=(ALL:ALL) NOPASSWD: ALL\n' "$user" >"$tmp"
 chmod 440 "$tmp"
 sudo visudo -cf "$tmp"
 sudo install -o root -g root -m 440 "$tmp" "$rule"
+sudo rm -f "$old_rule"
 printf '%s\n' "Passwordless sudo enabled for $user."
