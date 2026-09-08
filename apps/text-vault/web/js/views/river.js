@@ -14,14 +14,13 @@ export function createRiverView({root, repository, saver, sync, queryLocation, n
   let gesture = null;
   let gestureHandled = false;
   let ignoreEntryClick = false;
-  let searchEscapeArmed = false;
   let destroyed = false;
 
   const status = div({class: "sync-status", "data-state": "clean", role: "status", "aria-label": "已保存"});
   const river = div({class: "river", role: "list", "aria-label": "条目河流"});
   const search = textarea({class: "search-input", rows: 1, spellcheck: false, autocomplete: "off", "aria-label": "搜索", placeholder: "搜索"});
   const searchTrigger = button({type: "button", class: "search-trigger", "aria-label": "搜索，打开时点击清空，上滑新增"});
-  const searchControl = div({class: "search-control", "data-open": String(Boolean(query.trim())), "data-clear-armed": "false"}, searchTrigger, search);
+  const searchControl = div({class: "search-control", "data-open": String(Boolean(query.trim()))}, searchTrigger, search);
   const selectionSearch = button({type: "button", class: "selection-search", hidden: true, "aria-label": "在新标签搜索选中文字"});
   const shell = div({class: "river-shell"}, status, river, searchControl, selectionSearch);
 
@@ -96,10 +95,10 @@ export function createRiverView({root, repository, saver, sync, queryLocation, n
           futureRows.push(renderDateHeading(reminder.date, false));
           lastDate = reminder.date;
         }
-        futureRows.push(row(null, div({class: "entry-text reminder-text"}, reminder.entry.text || " "), "reminder-entry"));
+        futureRows.push(row(null, div({class: "entry-text reminder-text", tabindex: 0}, reminder.entry.text || " "), "reminder-entry"));
       }
       rows.push(div({class: "agenda-future"},
-        div({class: "date-heading future-heading"}, div({class: "date-main"}, "未来...")),
+        div({class: "future-heading", role: "separator", "aria-label": "未来"}),
         ...futureRows));
     }
     return rows;
@@ -131,6 +130,7 @@ export function createRiverView({root, repository, saver, sync, queryLocation, n
         }
         if (event.key !== "Escape") return;
         event.preventDefault();
+        event.stopPropagation();
         void commitEdit();
       },
     });
@@ -189,7 +189,6 @@ export function createRiverView({root, repository, saver, sync, queryLocation, n
   }
 
   function onDocumentClick(event) {
-    if (!searchControl.contains(event.target)) resetSearchEscape();
     const editor = river.querySelector(".entry-editor");
     if (!editing || !editor || editor.contains(event.target)) return;
 
@@ -214,7 +213,7 @@ export function createRiverView({root, repository, saver, sync, queryLocation, n
     if (event.isComposing || event.altKey) return;
     if (event.key === "Escape" && !editing && query.trim()) {
       event.preventDefault();
-      handleSearchEscape();
+      clearSearch();
       return;
     }
     if ((event.ctrlKey || event.metaKey) && event.key === "Enter" && selectedText) {
@@ -236,15 +235,16 @@ export function createRiverView({root, repository, saver, sync, queryLocation, n
     if (event.key !== "Escape") return;
     event.preventDefault();
     event.stopPropagation();
-    if (query.trim()) handleSearchEscape();
-    else clearSearch();
+    // Escape leaves one focus layer at a time. A populated query remains
+    // visible after blur; the following document-level Escape clears it.
+    if (query.trim()) search.blur();
+    else hideSearch();
   }
 
   function showSearch() {
     if (editing) return;
     search.style.height = "48px";
     searchControl.dataset.open = "true";
-    resetSearchEscape();
     updateSearchSpace();
     queueMicrotask(() => {
       search.focus();
@@ -260,7 +260,6 @@ export function createRiverView({root, repository, saver, sync, queryLocation, n
       renderEntries();
     }
     searchControl.dataset.open = "false";
-    resetSearchEscape();
     search.blur();
     search.style.height = "";
     updateSearchSpace();
@@ -315,21 +314,9 @@ export function createRiverView({root, repository, saver, sync, queryLocation, n
     search.value = "";
     search.style.height = "";
     searchControl.dataset.open = "false";
-    resetSearchEscape();
     queryLocation.write("");
     renderEntries();
     updateSearchSpace();
-  }
-
-  function handleSearchEscape() {
-    if (searchEscapeArmed) return clearSearch();
-    searchEscapeArmed = true;
-    searchControl.dataset.clearArmed = "true";
-  }
-
-  function resetSearchEscape() {
-    searchEscapeArmed = false;
-    searchControl.dataset.clearArmed = "false";
   }
 
   function updateSearchSpace() {
@@ -339,7 +326,6 @@ export function createRiverView({root, repository, saver, sync, queryLocation, n
   function onSearch() {
     if (editing) return;
     query = search.value;
-    resetSearchEscape();
     queryLocation.write(query);
     renderEntries();
     grow(search);
@@ -351,7 +337,6 @@ export function createRiverView({root, repository, saver, sync, queryLocation, n
     query = value;
     search.value = value;
     searchControl.dataset.open = String(Boolean(query.trim()));
-    resetSearchEscape();
     renderEntries();
     updateSearchSpace();
   }

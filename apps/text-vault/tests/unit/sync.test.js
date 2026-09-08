@@ -33,10 +33,12 @@ test("overlapping pulls share one request and failures remain retryable", async 
   const repository = createRepository([]);
   const pending = Promise.withResolvers();
   let calls = 0;
+  const statuses = [];
   const sync = createSyncCoordinator({
     repository, key: {}, generation: 0, decrypt: async () => entry,
     api: {changes: () => { calls += 1; return pending.promise; }},
   });
+  sync.subscribe(status => statuses.push(status));
 
   const first = sync.pull();
   const second = sync.pull();
@@ -45,6 +47,7 @@ test("overlapping pulls share one request and failures remain retryable", async 
   await assert.rejects(first, /offline/);
   await assert.rejects(() => sync.pull(), /offline/);
   assert.equal(calls, 2);
+  assert.deepEqual(statuses, ["syncing", "failed", "failed"]);
 });
 
 test("start polls and stop cancels the timer", () => {

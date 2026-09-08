@@ -28,7 +28,9 @@ export function createSyncCoordinator({
   }
 
   async function performPull() {
-    setStatus("syncing");
+    // Keep a failed connection visibly failed while a background retry runs.
+    // A successful pull below is the only event that clears the red status.
+    if (currentStatus !== "failed") setStatus("syncing");
     try {
       const response = await api.changes(currentGeneration);
       const encryptedObjects = Object.values(response.objects ?? {});

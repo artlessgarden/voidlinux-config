@@ -72,11 +72,14 @@ test("setup, add, edit outside-click save, search, and selection search", async 
   await page.locator(".date-heading").click();
   await expect(search).toBeVisible();
   await expect.poll(async () => (await page.locator(".search-control").boundingBox()).height).toBeLessThanOrEqual(50);
+  await page.getByText("客户B example.com", {exact: false}).click();
+  await page.getByRole("textbox", {name: "编辑条目"}).press("Escape");
+  await expect(search).toHaveValue("客户B EXAMPLE.com");
   await page.keyboard.press("/");
   await expect(search).toHaveValue("客户B EXAMPLE.com");
   await page.keyboard.press("Escape");
   await expect(search).toBeVisible();
-  await expect(page.locator(".search-control")).toHaveAttribute("data-clear-armed", "true");
+  await expect(search).not.toBeFocused();
   await page.keyboard.press("Escape");
   await expect(search).toHaveValue("");
   await expect(page).not.toHaveURL(/#q=/);
@@ -109,7 +112,8 @@ test("default river groups today and previews future date markers", async ({page
   await page.getByRole("button", {name: "解锁"}).click();
 
   await expect(page.locator(".date-heading").first()).toHaveText("2026·9月8日·周二");
-  await expect(page.locator(".agenda-future .date-main")).toContainText(["未来...", "12月31日"]);
+  await expect(page.getByRole("separator", {name: "未来"})).toBeVisible();
+  await expect(page.locator(".agenda-future .date-main")).toContainText("12月31日");
   await expect(page.locator(".agenda-future")).toContainText("客户B example.com @12-31");
 
   await page.keyboard.press("/");
@@ -163,7 +167,7 @@ test("mobile uses the same river and default controls", async ({browser}) => {
   await mobileSearch.fill("客户");
   await mobileSearch.press("Escape");
   await expect(mobileSearch).toBeVisible();
-  await expect(page.locator(".search-control")).toHaveAttribute("data-clear-armed", "true");
+  await expect(mobileSearch).not.toBeFocused();
   const mobileEntries = page.locator(".river-entry:not(.reminder-entry) .entry-text");
   await mobileEntries.first().click();
   await expect(page.getByRole("textbox", {name: "编辑条目"})).toBeVisible();
