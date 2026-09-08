@@ -26,12 +26,13 @@ test("setup, add, edit outside-click save, search, and selection search", async 
   const add = page.getByRole("button", {name: "新增"});
   await expect(search).toBeVisible();
   await expect(add).toBeVisible();
-  await expect(page.locator("body")).toHaveCSS("background-color", "rgb(246, 244, 239)");
+  await expect(page.locator("body")).toHaveCSS("background-color", "rgb(239, 238, 233)");
+  await expect(page.locator(".date-main").last()).toHaveText("9月8日");
   await add.click();
   const editor = page.getByRole("textbox", {name: "编辑条目"});
   await editor.fill("客户A 1.2.3.4\n宝塔");
   await expect(page.locator(".sync-status")).toHaveAttribute("data-state", "editing");
-  await page.locator(".sync-status").click();
+  await editor.press("Escape");
   await expect(page.locator(".sync-status")).toHaveAttribute("data-state", "clean", {timeout: 5000});
   await expect(page.getByRole("listitem")).toContainText("客户A 1.2.3.4\n宝塔");
 
@@ -42,6 +43,8 @@ test("setup, add, edit outside-click save, search, and selection search", async 
 
   await page.getByText("客户A 1.2.3.4", {exact: false}).click();
   await editor.fill("客户A 1.2.3.4 已修改");
+  await page.locator(".river-entry .entry-text").filter({hasText: "客户B example.com"}).click();
+  await expect(editor).toHaveValue("客户B example.com @12-31");
   await page.locator(".sync-status").click();
   await expect(page.locator(".sync-status")).toHaveAttribute("data-state", "clean", {timeout: 5000});
 
@@ -69,18 +72,17 @@ test("setup, add, edit outside-click save, search, and selection search", async 
   expect(runtimeErrors).toEqual([]);
 });
 
-test("agenda URL groups today and previews future date markers", async ({page}) => {
-  await page.goto("/#view=agenda");
+test("default river groups today and previews future date markers", async ({page}) => {
+  await page.goto("/");
   await page.getByLabel("主密码").fill(firstPassword);
   await page.getByRole("button", {name: "解锁"}).click();
 
-  await expect(page.locator(".agenda-view")).toBeVisible();
-  await expect(page.locator(".date-heading").first()).toHaveText("2026-09-08");
+  await expect(page.locator(".date-main").first()).toHaveText("9月8日");
   await expect(page.locator(".agenda-future")).toContainText("2026-12-31");
   await expect(page.locator(".agenda-future")).toContainText("客户B example.com @12-31");
 
   await page.getByRole("textbox", {name: "搜索"}).fill("客户B");
-  await expect(page).toHaveURL(/#view=agenda&q=/);
+  await expect(page).toHaveURL(/#q=/);
 });
 
 test("a second tab unlocks and receives incremental changes", async ({browser}) => {
@@ -97,7 +99,7 @@ test("a second tab unlocks and receives incremental changes", async ({browser}) 
   await expect(second.getByLabel("主密码", {exact: true})).toHaveCount(0);
   await expect(second.getByRole("listitem")).toHaveCount(2);
 
-  await first.getByText("客户B example.com", {exact: false}).click();
+  await first.locator(".river-entry .entry-text").filter({hasText: "客户B example.com"}).click();
   await first.getByRole("textbox", {name: "编辑条目"}).fill("客户B example.com 已同步");
   await first.locator(".sync-status").click();
   await expect(second.getByRole("listitem").filter({hasText: "已同步"})).toBeVisible({timeout: 7000});

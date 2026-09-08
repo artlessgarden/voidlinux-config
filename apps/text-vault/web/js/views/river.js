@@ -7,7 +7,7 @@ const {button, div, span, textarea} = van.tags;
 
 // The river owns unfinished UI state. Durable text enters the repository only
 // when a click outside the editor commits the single active draft.
-export function createRiverView({root, repository, saver, sync, queryLocation, view = "river", now = () => new Date()}) {
+export function createRiverView({root, repository, saver, sync, queryLocation, now = () => new Date()}) {
   let query = queryLocation.read();
   let editing = null;
   let selectedText = "";
@@ -18,7 +18,7 @@ export function createRiverView({root, repository, saver, sync, queryLocation, v
   const search = textarea({class: "search-input", rows: 1, spellcheck: false, autocomplete: "off", "aria-label": "搜索", placeholder: "搜索"});
   const add = button({type: "button", class: "add-button", "aria-label": "新增", onclick: startAdd}, "+");
   const selectionSearch = button({type: "button", class: "selection-search", hidden: true, "aria-label": "在新标签搜索选中文字"}, "↗");
-  const shell = div({class: `river-shell ${view === "agenda" ? "agenda-view" : ""}`}, status, river, div({class: "bottom-bar"}, search, add), selectionSearch);
+  const shell = div({class: "river-shell"}, status, river, div({class: "bottom-bar"}, search, add), selectionSearch);
 
   const cleanups = [
     repository.subscribe(renderEntries),
@@ -47,8 +47,7 @@ export function createRiverView({root, repository, saver, sync, queryLocation, v
     if (destroyed) return;
     const oldEditor = river.querySelector(".entry-editor");
     const caret = oldEditor && {start: oldEditor.selectionStart, end: oldEditor.selectionEnd};
-    const rows = view === "agenda" ? renderAgenda(entries()) : entries().map(renderEntry);
-    if (editing?.isNew && view !== "agenda") rows.push(renderEditorRow("new"));
+    const rows = renderAgenda(entries());
     river.replaceChildren(...rows);
     if (editing) queueMicrotask(() => {
       const editor = river.querySelector(".entry-editor");
@@ -61,12 +60,14 @@ export function createRiverView({root, repository, saver, sync, queryLocation, v
   }
 
   function renderAgenda(filteredEntries) {
-    const agenda = buildAgenda(filteredEntries, now());
+    const instant = now();
+    const agenda = buildAgenda(filteredEntries, instant);
+    const today = dateKey(instant);
     const rows = [];
     for (const day of agenda.days) {
-      rows.push(div({class: "date-heading"}, day.date));
+      rows.push(renderDateHeading(day.date, day.date === today));
       rows.push(...day.entries.map(renderEntry));
-      if (day.date === todayKey() && editing?.isNew) rows.push(renderEditorRow("new"));
+      if (day.date === today && editing?.isNew) rows.push(renderEditorRow("new"));
     }
     rows.push(div({class: "agenda-future"},
       div({class: "date-heading future-heading"}, "未来"),
@@ -86,12 +87,17 @@ export function createRiverView({root, repository, saver, sync, queryLocation, v
       class: "entry-editor", "data-editor-id": id, "aria-label": "编辑条目", spellcheck: false,
       value: editing.draft,
       oninput: event => { editing.draft = event.target.value; grow(event.target); renderStatus(); },
+      onkeydown: event => {
+        if (event.key !== "Escape") return;
+        event.preventDefault();
+        void commitEdit();
+      },
     });
     return row(id, editor);
   }
 
   function row(id, body) {
-    return div({class: "river-entry", role: "listitem", "data-entry-id": id}, span({class: "bullet", "aria-hidden": "true"}, "•"), body);
+    return div({class: "river-entry", role: "listitem", "data-entry-id": id}, body);
   }
 
   function startEdit(entry) {
@@ -139,7 +145,23 @@ export function createRiverView({root, repository, saver, sync, queryLocation, v
 
   function onDocumentPointerDown(event) {
     const editor = river.querySelector(".entry-editor");
-    if (editing && editor && !editor.contains(event.target)) void commitEdit();
+    if (!editing || !editor || editor.contains(event.target)) return;
+
+    // Commit first, then honor the same click as the next ordinary action.
+    // This makes switching entries one physical gesture instead of two modes.
+    const entryID = event.target.closest?.(".river-entry")?.dataset.entryId;
+    const wantsAdd = event.target.closest?.(".add-button");
+    const wantsSearch = event.target.closest?.(".search-input");
+    if (entryID || wantsAdd || wantsSearch) {
+      event.preventDefault();
+      event.stopPropagation();
+    }
+    void commitEdit();
+    if (entryID && entryID !== "new") {
+      const entry = repository.get(entryID);
+      if (entry) startEdit(entry);
+    } else if (wantsAdd) startAdd();
+    else if (wantsSearch) search.focus();
   }
 
   function onSearch() {
@@ -199,11 +221,6 @@ export function createRiverView({root, repository, saver, sync, queryLocation, v
     event.returnValue = "";
   }
 
-  function todayKey() {
-    const value = now();
-    return `${value.getFullYear()}-${String(value.getMonth() + 1).padStart(2, "0")}-${String(value.getDate()).padStart(2, "0")}`;
-  }
-
   function destroy() {
     if (destroyed) return;
     destroyed = true;
@@ -215,6 +232,18 @@ export function createRiverView({root, repository, saver, sync, queryLocation, v
   }
 
   return destroy;
+}
+
+function renderDateHeading(key, today) {
+  const [year, month, day] = key.split("-").map(Number);
+  const weekday = ["周日", "周一", "周二", "周三", "周四", "周五", "周六"][new Date(year, month - 1, day).getDay()];
+  return div({class: `date-heading${today ? " today" : ""}`},
+    div({class: "date-main"}, `${month}月${day}日`),
+    div({class: "date-meta"}, `${weekday} · ${year}`));
+}
+
+function dateKey(value) {
+  return `${value.getFullYear()}-${String(value.getMonth() + 1).padStart(2, "0")}-${String(value.getDate()).padStart(2, "0")}`;
 }
 
 function grow(element) {
