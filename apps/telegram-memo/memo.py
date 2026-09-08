@@ -146,6 +146,14 @@ def watch(root, follow=True, arrange=True):
     try:
         while True:
             now = time.monotonic()
+            if follow:
+                request = Path(os.environ.get('XDG_RUNTIME_DIR', '/tmp')) / ('telegram-memo-' + str(os.getuid())) / 'close-request'
+                try:
+                    request.unlink()
+                except FileNotFoundError:
+                    pass
+                else:
+                    print('Q', flush=True)
             if follow and connection is None and now >= retry_at:
                 try:
                     connection = socket.socket(socket.AF_UNIX)
@@ -170,7 +178,13 @@ def watch(root, follow=True, arrange=True):
                     while b'\n' in buffer:
                         line, buffer = buffer.split(b'\n', 1)
                         try:
-                            selected = tracker.update(json.loads(line))
+                            event = json.loads(line)
+                            selected = tracker.update(event)
+                            if ('WindowsChanged' in event or 'WindowClosed' in event) and not any(
+                                (w.get('app_id') or '').startswith('org.telegram.desktop')
+                                for w in tracker.windows.values()
+                            ):
+                                print('Q', flush=True)
                             if selected:
                                 path = memo_path(root, selected)
                                 print('P' + str(path).encode().hex(), flush=True)

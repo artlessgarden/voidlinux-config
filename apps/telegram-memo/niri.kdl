@@ -4,5 +4,8 @@ window-rule {
     open-focused false
     default-column-width { proportion 0.382; }
 }
-// Start once per niri login; hot-reloading this file does not launch it again.
-spawn-at-startup "sh" "-c" "exec \"$HOME/.local/bin/telegram-memo\""
+// Start the background waiter at login; open the editor only after Telegram.
+spawn-at-startup "sh" "-c" "exec \"$HOME/.local/bin/telegram-memo\" --watch"
+binds {
+    Mod+Shift+Z repeat=false { spawn "sh" "-c" "exec \"$HOME/.local/bin/telegram-memo\" --toggle"; }
+}

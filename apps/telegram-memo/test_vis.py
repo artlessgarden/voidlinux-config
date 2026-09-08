@@ -158,7 +158,7 @@ class VisIntegration(unittest.TestCase):
             pid, fd = pty.fork()
             if pid == 0:
                 os.environ.update(TERM='xterm-256color', NIRI_SOCKET=str(root / 'niri.sock'),
-                                  TELEGRAM_MEMO_ROOT=str(root),
+                                  TELEGRAM_MEMO_ROOT=str(root), XDG_RUNTIME_DIR=str(root),
                                   TELEGRAM_MEMO_FOLLOW='1', TELEGRAM_MEMO_NO_DOCK='1',
                                   TELEGRAM_MEMO_HELPER=str(Path(__file__).with_name('memo.py').resolve()))
                 os.chdir(root)
@@ -199,6 +199,10 @@ class VisIntegration(unittest.TestCase):
                 send({'WindowOpenedOrChanged': {'window': window('客户 B')}})
                 self.assertNotIn('UNSAVED-KEEP', a.read_text())
                 self.assertNotIn('UNSAVED-KEEP', b.read_text())
+                # Closing Telegram must not discard a buffer whose save fails.
+                send({'WindowClosed': {'id': 1}})
+                self.assertEqual(os.waitpid(pid, os.WNOHANG)[0], 0)
+                self.assertNotIn('UNSAVED-KEEP', a.read_text())
                 a.chmod(0o644)
                 os.write(fd, b':memo-follow\r')
                 drain()
@@ -211,12 +215,16 @@ class VisIntegration(unittest.TestCase):
                 os.write(fd, b'iAFTER-RECONNECT\x1b')
                 drain(1.5)
                 self.assertIn('AFTER-RECONNECT', a.read_text())
-                os.write(fd, b':wq\r')
+                os.write(fd, b'iSAVE-ON-TG-CLOSE')
+                request = root / ('telegram-memo-' + str(os.getuid())) / 'close-request'
+                request.parent.mkdir()
+                request.touch()
                 drain()
                 exited, status = os.waitpid(pid, os.WNOHANG)
                 self.assertEqual(exited, pid, output.decode(errors='replace')[-2000:])
                 self.assertEqual(os.waitstatus_to_exitcode(status), 0)
                 pid = None
+                self.assertIn('SAVE-ON-TG-CLOSE', a.read_text())
                 self.assertNotIn(b'stack traceback', output)
                 self.assertEqual(len(list(root.glob('*.txt'))), 2)
             finally:

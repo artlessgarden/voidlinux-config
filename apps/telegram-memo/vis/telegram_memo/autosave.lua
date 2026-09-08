@@ -63,6 +63,8 @@ vis.events.subscribe(vis.events.PROCESS_RESPONSE, function(name, kind, _, data)
         local mode = vis.mode
         local safe_mode = mode == vis.modes.NORMAL or mode == vis.modes.INSERT or mode == vis.modes.REPLACE
         if safe_mode and not vis.count and M.clock - M.last_input >= 1 then M.save() end
+      elseif line == 'Q' then
+        vis.events.emit('Memo::CLOSE')
       elseif line:match('^P[0-9a-f]+$') and (#line - 1) % 2 == 0 then
         local path = line:sub(2):gsub('..', function(pair) return string.char(tonumber(pair, 16)) end)
         vis.events.emit(M.path_event, path)

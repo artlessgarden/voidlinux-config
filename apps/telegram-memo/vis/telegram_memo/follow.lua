@@ -28,6 +28,14 @@ local function switch(path)
 end
 
 vis.events.subscribe(save.path_event, switch)
+vis.events.subscribe('Memo::CLOSE', function()
+  local count = 0
+  for _ in vis:windows() do count = count + 1 end
+  local win = vis.win
+  -- Never force-close extra editor windows or a file opened outside memo.
+  if count ~= 1 or not win or not save.contains(win.file.path) then return end
+  if save.save() and not win.file.modified then vis:command('q') end
+end)
 vis:command_register('memo-follow', function()
   if pending then switch(pending) end
   return true

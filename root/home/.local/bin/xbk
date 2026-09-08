@@ -1,0 +1,10 @@
+#!/usr/bin/env bash
+# 清理旧内核，保留最新的一个可回退旧版本；vkpurge 另行保护运行中及包管理器使用的内核。
+set -euo pipefail
+
+versions=$(vkpurge list | sort -V | head -n -1)
+if [[ -z $versions ]]; then
+	printf '%s\n' '没有需要清理的旧内核。'
+	exit 0
+fi
+printf '%s\n' "$versions" | xargs -r -o -n 1 sudo vkpurge rm

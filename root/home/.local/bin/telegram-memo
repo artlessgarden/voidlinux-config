@@ -1,3 +1,3 @@
 #!/bin/sh
 set -eu
-exec python3 "$HOME/voidlinux-config/apps/telegram-memo/launch.py"
+exec python3 "$HOME/voidlinux-config/apps/telegram-memo/launch.py" "$@"

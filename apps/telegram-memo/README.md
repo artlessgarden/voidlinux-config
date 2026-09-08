@@ -10,6 +10,8 @@ Remove the marker and restart vis to disable the feature on this machine.
 
 Run `telegram-memo`. Repeating the command finds the existing editor instead
 of opening another. Close with `:wq` to save and exit.
+`Super+Shift+Z` runs `telegram-memo --toggle`: open when absent, otherwise
+request a save and close through the memo helper. A failed save keeps vis open.
 
 - The current Telegram chat opens `~/work/memo/<chat name>.txt`.
 - New files are empty; existing files are never initialized or overwritten.
@@ -85,10 +87,16 @@ this plugin or the personal status bar.
 Files use the exact chat name (apart from slash sanitization), and the original
 personal status bar displays the filename and modified marker as before.
 
-The included niri file starts `telegram-memo` on the next niri login. Config
-reloads do not trigger startup commands; for the current session, launch it
-manually if needed. If Telegram is not running yet, the memo window waits for
-Telegram events. Remove the `spawn-at-startup` line to disable only autostart.
+The included niri file starts `telegram-memo --watch` on the next niri login.
+Config reloads do not trigger startup commands. The watcher checks once per
+second and opens the editor only once a Telegram chat window exists. Closing
+all Telegram windows (including closing to tray) saves and closes the memo;
+minimizing or switching workspaces does not. Save failures, extra vis windows,
+or an open file outside memo keep the editor open. Reopening Telegram starts
+the memo again. Manually closing the memo leaves it closed for the rest of
+that Telegram window session; `telegram-memo` can reopen it explicitly.
+The watcher exits with the niri session and uses a separate singleton lock.
+Remove the `spawn-at-startup` line to disable only autostart.
 
 ## Checks
 
