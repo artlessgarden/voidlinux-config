@@ -221,16 +221,15 @@ local function grep_history()
   end
 
   local input = util.temp_path("vis-history")
-  if not util.write_lines(input, files) then
+  if not util.write_all(input, table.concat(files, "\0") .. "\0") then
     vis:info("history grep: failed to create file list")
     return true
   end
 
   local field_sep = project.shquote("\t")
-  local reload = "rg --line-number --column --no-heading --color=never --smart-case"
+  local reload = "xargs -0 -r rg --with-filename --line-number --column --no-heading --color=never --smart-case"
     .. " --field-match-separator " .. field_sep
-    .. " --files-from " .. project.shquote(input)
-    .. " -- {q} || true"
+    .. " -- {q} < " .. project.shquote(input) .. " || true"
   local preview = preview_command("{1}", "{2}")
   local command = "fzf --disabled --prompt='history grep> '"
     .. " --bind " .. project.shquote("start:reload:" .. reload)

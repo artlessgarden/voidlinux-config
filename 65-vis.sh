@@ -4,9 +4,10 @@ set -eu
 
 src=$HOME/.local/src/vis
 prefix=$HOME/.local
+repo=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
 
 sudo xbps-install -Sy \
-	base-devel pkg-config \
+	base-devel pkg-config python3 \
 	ncurses-devel \
 	lua54-devel lua54-lpeg \
 	tre-devel acl-devel
@@ -18,20 +19,5 @@ else
 	git clone --depth=1 https://github.com/martanne/vis.git "$src"
 fi
 
-cd "$src"
-make distclean >/dev/null 2>&1 || true
-./configure \
-	--prefix="$prefix" \
-	--enable-curses=yes \
-	--enable-lua=yes \
-	--disable-lpeg-static \
-	--enable-tre=yes \
-	--enable-acl=yes
-make -j2
-make -C test/core
-make -C test/lua
-make -C test/vis
-make install
-
-"$prefix/bin/vis" -v
-printf '%s\n' 'Vis 已安装；重新打开 Vis 即使用新版本。'
+# Build and patch a temporary checkout, keeping the upstream checkout clean.
+python3 "$repo/apps/vis-cjk/build.py" --source "$src" --prefix "$prefix"

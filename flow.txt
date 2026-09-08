@@ -18,6 +18,7 @@ sh 90-helium.sh
 
 # MSI
 sh msi/20-pkg-hardware.sh
+sh msi/70-telegram-memo.sh
 sh msi/80-grub.sh
 sh msi/85-power.sh
 

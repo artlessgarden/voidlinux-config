@@ -16,6 +16,8 @@ require("my.cursor")
 require("my.fcitx")
 require("my.history")
 require("my.lock")
+-- Optional Telegram memo plugin; remove this line to disable.
+dofile(home .. "/voidlinux-config/apps/telegram-memo/vis/init.lua")
 require("my.status")
 
 vis.events.subscribe(vis.events.INIT, function()

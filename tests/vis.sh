@@ -44,9 +44,9 @@ cat >"$tmp/bin/git" <<'EOF'
 #!/bin/sh
 exit 0
 EOF
-cat >"$tmp/bin/make" <<'EOF'
+cat >"$tmp/bin/python3" <<'EOF'
 #!/bin/sh
-printf 'make %s\n' "$*" >>"$VIS_TEST_LOG"
+printf 'python3 %s\n' "$*" >>"$VIS_TEST_LOG"
 exit 0
 EOF
 cat >"$tmp/home/.local/src/vis/configure" <<'EOF'
@@ -61,17 +61,12 @@ chmod +x "$tmp/bin/"* "$tmp/home/.local/src/vis/configure" \
 	"$tmp/home/.local/bin/vis"
 VIS_TEST_LOG="$tmp/packages" HOME="$tmp/home" PATH="$tmp/bin:$PATH" \
 	sh "$repo/65-vis.sh"
-for package in base-devel ncurses-devel lua54-devel lua54-lpeg tre-devel \
+for package in base-devel python3 ncurses-devel lua54-devel lua54-lpeg tre-devel \
 	acl-devel pkg-config; do
 	grep -qw "$package" "$tmp/packages" || \
 		fail "Vis installer does not install $package"
 done
-for suite in core lua vis; do
-	grep -qx "make -C test/$suite" "$tmp/packages" || \
-		fail "Vis installer does not run the non-interactive $suite tests"
-done
-if grep -qx 'make test' "$tmp/packages"; then
-	fail 'Vis installer runs the interactive Vim comparison suite'
-fi
+grep -Fq "python3 $repo/apps/vis-cjk/build.py --source $tmp/home/.local/src/vis --prefix $tmp/home/.local" "$tmp/packages" || \
+	fail 'Vis installer does not use the checked temporary-build workflow'
 
 printf 'ok - Vis config and source build dependencies are complete\n'

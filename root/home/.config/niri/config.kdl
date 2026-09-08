@@ -49,6 +49,21 @@ prefer-no-csd
 hotkey-overlay { skip-at-startup; }
 window-rule { open-floating false; }
 
+// Optional Telegram memo window rule.
+include "~/voidlinux-config/apps/telegram-memo/niri.kdl"
+
+// Waydroid：全高平铺，默认使用 Niri 最窄的预设列宽。
+window-rule {
+    match app-id="^Waydroid$" title="^Waydroid$"
+    open-maximized-to-edges false
+    open-maximized false
+    open-fullscreen false
+    open-floating false
+    default-column-width { proportion 0.382; }
+    default-window-height { proportion 1.0; }
+}
+
+
 // xdg-desktop-portal-termfilechooser 使用这个标题启动 Alacritty。
 window-rule {
     match app-id="^Alacritty$" title="^termfilechooser$"

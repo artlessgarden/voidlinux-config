@@ -1,7 +1,5 @@
 require("vis")
 local vis = vis
-
-local history = require("my.history")
 local project = require("my.project")
 
 local mode_names = {
@@ -43,43 +41,18 @@ local function percent(win)
   return tostring(math.floor((pos * 100 / size) + 0.5)) .. "%"
 end
 
-local function history_label(path, current, current_modified)
-  local label = project.relative(path)
-  if label == "-" then label = tostring(path or "-") end
-
-  if path == current then
-    return ">" .. label .. (current_modified and "+" or "")
-  end
-
-  return label
-end
-
-local function history_text(current, current_modified)
-  local files = history.files(20)
-
-  if #files == 0 and current then
-    files = { current }
-  end
-
-  local labels = {}
-  for _, path in ipairs(files) do
-    table.insert(labels, history_label(path, current, current_modified))
-  end
-
-  if #labels == 0 then return ">-" end
-  return table.concat(labels, "  ")
-end
-
 local function draw(win)
   local mode_label = " " .. (mode_names[vis.mode] or "?") .. " "
-  local current = project.absolute(win.file.path or win.file.name)
-  local modified = win.file.modified
+  local path = win.file.path or win.file.name or ""
+  local filename = path ~= "" and project.relative(path) or "[No Name]"
+  if win.file.modified then filename = filename .. "+" end
+  local directory = project.home_shorten(project.root):gsub("/+$", "") .. "/"
   local syntax = win.syntax or "text"
   local line = win.selection and win.selection.line or 1
   local col = win.selection and win.selection.col or 1
 
   win:status(
-    mode_label .. " " .. project.home_shorten(project.root) .. " | " .. history_text(current, modified),
+    mode_label .. " " .. directory .. " " .. filename,
     " " .. table.concat({ syntax, tostring(line) .. "," .. tostring(col), percent(win) }, "  ") .. " "
   )
 
