@@ -23,12 +23,14 @@ test("setup, add, edit outside-click save, search, and selection search", async 
   await page.getByRole("button", {name: "创建保险库"}).click();
 
   const search = page.getByRole("textbox", {name: "搜索"});
-  const add = page.getByRole("button", {name: "新增"});
-  await expect(search).toBeVisible();
-  await expect(add).toBeVisible();
+  await expect(search).toBeHidden();
   await expect(page.locator("body")).toHaveCSS("background-color", "rgb(239, 238, 233)");
-  await expect(page.locator(".date-main").last()).toHaveText("9月8日");
-  await add.click();
+  await expect(page.locator(".date-heading:not(.future-heading) .date-main").last()).toHaveText("9月8日");
+  await page.keyboard.press("/");
+  await expect(search).toBeFocused();
+  await search.press("Escape");
+  await expect(search).toBeHidden();
+  await page.keyboard.press("o");
   const editor = page.getByRole("textbox", {name: "编辑条目"});
   await editor.fill("客户A 1.2.3.4\n宝塔");
   await expect(page.locator(".sync-status")).toHaveAttribute("data-state", "editing");
@@ -36,18 +38,19 @@ test("setup, add, edit outside-click save, search, and selection search", async 
   await expect(page.locator(".sync-status")).toHaveAttribute("data-state", "clean", {timeout: 5000});
   await expect(page.getByRole("listitem")).toContainText("客户A 1.2.3.4\n宝塔");
 
-  await add.click();
+  await page.keyboard.press("o");
   await editor.fill("客户B example.com @12-31");
   await page.locator(".sync-status").click();
   await expect(page.locator(".sync-status")).toHaveAttribute("data-state", "clean", {timeout: 5000});
 
   await page.getByText("客户A 1.2.3.4", {exact: false}).click();
   await editor.fill("客户A 1.2.3.4 已修改");
-  await page.locator(".river-entry .entry-text").filter({hasText: "客户B example.com"}).click();
+  await page.locator(".river-entry:not(.reminder-entry) .entry-text").filter({hasText: "客户B example.com"}).click();
   await expect(editor).toHaveValue("客户B example.com @12-31");
   await page.locator(".sync-status").click();
   await expect(page.locator(".sync-status")).toHaveAttribute("data-state", "clean", {timeout: 5000});
 
+  await page.keyboard.press("/");
   await search.fill("EXAMPLE.com");
   await expect(page.getByRole("listitem")).toHaveCount(1);
   await expect(page.getByRole("listitem")).toContainText("客户B example.com");
@@ -81,6 +84,7 @@ test("default river groups today and previews future date markers", async ({page
   await expect(page.locator(".agenda-future")).toContainText("2026-12-31");
   await expect(page.locator(".agenda-future")).toContainText("客户B example.com @12-31");
 
+  await page.keyboard.press("/");
   await page.getByRole("textbox", {name: "搜索"}).fill("客户B");
   await expect(page).toHaveURL(/#q=/);
 });
@@ -99,7 +103,7 @@ test("a second tab unlocks and receives incremental changes", async ({browser}) 
   await expect(second.getByLabel("主密码", {exact: true})).toHaveCount(0);
   await expect(second.getByRole("listitem")).toHaveCount(2);
 
-  await first.locator(".river-entry .entry-text").filter({hasText: "客户B example.com"}).click();
+  await first.locator(".river-entry:not(.reminder-entry) .entry-text").filter({hasText: "客户B example.com"}).click();
   await first.getByRole("textbox", {name: "编辑条目"}).fill("客户B example.com 已同步");
   await first.locator(".sync-status").click();
   await expect(second.getByRole("listitem").filter({hasText: "已同步"})).toBeVisible({timeout: 7000});
@@ -113,8 +117,16 @@ test("mobile uses the same river and default controls", async ({browser}) => {
   await page.getByLabel("主密码").fill(firstPassword);
   await page.getByRole("button", {name: "解锁"}).click();
   await expect(page.getByRole("list", {name: "条目河流"})).toBeVisible();
-  await expect(page.getByRole("textbox", {name: "搜索"})).toBeVisible();
-  await expect(page.getByRole("button", {name: "新增"})).toBeVisible();
+  const trigger = page.getByRole("button", {name: "搜索，长按新增"});
+  await expect(trigger).toBeVisible();
+  await trigger.click();
+  await expect(page.getByRole("textbox", {name: "搜索"})).toBeFocused();
+  await page.getByRole("textbox", {name: "搜索"}).press("Escape");
+  await trigger.dispatchEvent("pointerdown", {clientX: 20, clientY: 20});
+  await page.waitForTimeout(600);
+  await trigger.dispatchEvent("pointerup", {clientX: 20, clientY: 20});
+  await expect(page.getByRole("textbox", {name: "编辑条目"})).toBeVisible();
+  await page.locator(".sync-status").click();
   await expect(page.getByRole("listitem")).toHaveCount(2);
   await context.close();
 });
