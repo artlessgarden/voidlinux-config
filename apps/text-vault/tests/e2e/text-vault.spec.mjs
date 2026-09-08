@@ -24,7 +24,7 @@ test("setup, add, edit outside-click save, search, and selection search", async 
 
   const search = page.getByRole("textbox", {name: "搜索"});
   await expect(search).toBeHidden();
-  await expect(page.locator("body")).toHaveCSS("background-color", "rgb(184, 187, 178)");
+  await expect(page.locator("body")).toHaveCSS("background-color", "rgb(150, 155, 146)");
   await expect(page.locator(".date-heading:not(.future-heading) .date-main").last()).toHaveText("9月8日");
   await page.keyboard.press("/");
   await expect(search).toBeFocused();
@@ -32,11 +32,12 @@ test("setup, add, edit outside-click save, search, and selection search", async 
   await expect(search).toBeHidden();
   await page.keyboard.press("o");
   const editor = page.getByRole("textbox", {name: "编辑条目"});
-  await editor.fill("客户A 1.2.3.4\n宝塔");
+  await editor.fill("\n\n客户A 1.2.3.4\n宝塔\n\n");
   await expect(page.locator(".sync-status")).toHaveAttribute("data-state", "editing");
   await editor.press("Escape");
   await expect(page.locator(".sync-status")).toHaveAttribute("data-state", "clean", {timeout: 5000});
   await expect(page.getByRole("listitem")).toContainText("客户A 1.2.3.4\n宝塔");
+  await expect(page.getByRole("listitem").first().locator(".entry-text")).toHaveText("客户A 1.2.3.4\n宝塔");
 
   await page.keyboard.press("o");
   await editor.fill("客户B example.com @12-31");
@@ -57,6 +58,8 @@ test("setup, add, edit outside-click save, search, and selection search", async 
   await expect(page.locator(".agenda-future")).toHaveCount(0);
   await page.locator(".date-heading").click();
   await expect(search).toBeHidden();
+  await expect(page.locator(".search-control")).toHaveAttribute("data-has-query", "true");
+  await expect(page.locator(".search-control")).toHaveCSS("height", "50px");
   await page.keyboard.press("/");
   await expect(search).toHaveValue("客户B EXAMPLE.com");
 
@@ -85,7 +88,7 @@ test("default river groups today and previews future date markers", async ({page
   await page.getByRole("button", {name: "解锁"}).click();
 
   await expect(page.locator(".date-main").first()).toHaveText("9月8日");
-  await expect(page.locator(".agenda-future .date-main")).toContainText(["未来", "12月31日"]);
+  await expect(page.locator(".agenda-future .date-main")).toContainText(["未来...", "12月31日"]);
   await expect(page.locator(".agenda-future")).toContainText("客户B example.com @12-31");
 
   await page.keyboard.press("/");

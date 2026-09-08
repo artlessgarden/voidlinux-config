@@ -20,7 +20,7 @@ export function createRiverView({root, repository, saver, sync, queryLocation, n
   const river = div({class: "river", role: "list", "aria-label": "条目河流"});
   const search = textarea({class: "search-input", rows: 1, spellcheck: false, autocomplete: "off", "aria-label": "搜索", placeholder: "搜索"});
   const searchTrigger = button({type: "button", class: "search-trigger", "aria-label": "搜索，长按新增"});
-  const searchControl = div({class: "search-control", "data-open": "false"}, searchTrigger, search);
+  const searchControl = div({class: "search-control", "data-open": "false", "data-has-query": String(Boolean(query.trim()))}, searchTrigger, search);
   const selectionSearch = button({type: "button", class: "selection-search", hidden: true, "aria-label": "在新标签搜索选中文字"}, "↗");
   const shell = div({class: "river-shell"}, status, river, searchControl, selectionSearch);
 
@@ -94,7 +94,7 @@ export function createRiverView({root, repository, saver, sync, queryLocation, n
         futureRows.push(row(null, div({class: "entry-text reminder-text"}, reminder.entry.text || " "), "reminder-entry"));
       }
       rows.push(div({class: "agenda-future"},
-        div({class: "date-heading future-heading"}, div({class: "date-main"}, "未来")),
+        div({class: "date-heading future-heading"}, div({class: "date-main"}, "未来...")),
         ...futureRows));
     }
     return rows;
@@ -102,12 +102,12 @@ export function createRiverView({root, repository, saver, sync, queryLocation, n
 
   function renderEntry(entry) {
     if (editing?.id === entry.id) return renderEditorRow(entry.id);
-    return row(entry.id, div({class: "entry-text", onclick: () => startEdit(entry)}, entry.text || " "));
+    return row(entry.id, div({class: "entry-text", onclick: () => startEdit(entry)}, cleanText(entry.text) || " "));
   }
 
   function renderEditorRow(id) {
     const editor = textarea({
-      class: "entry-editor", "data-editor-id": id, "aria-label": "编辑条目", spellcheck: false,
+      class: "entry-editor", "data-editor-id": id, "aria-label": "编辑条目", spellcheck: false, rows: 1,
       value: editing.draft,
       oninput: event => { editing.draft = event.target.value; grow(event.target); renderStatus(); },
       onkeydown: event => {
@@ -150,19 +150,20 @@ export function createRiverView({root, repository, saver, sync, queryLocation, n
   async function commitEdit() {
     if (!editing) return;
     const finished = editing;
+    const text = cleanText(finished.draft);
     editing = null;
     longPressed = false;
     search.disabled = false;
     searchTrigger.disabled = false;
 
     let changed = false;
-    if (finished.isNew && finished.draft.trim()) {
+    if (finished.isNew && text) {
       const instant = now();
       const iso = instant instanceof Date ? instant.toISOString() : String(instant);
-      repository.upsert({...createEntry({existingIDs: repository.knownIDs(), now: iso}), text: finished.draft, updatedAt: iso});
+      repository.upsert({...createEntry({existingIDs: repository.knownIDs(), now: iso}), text, updatedAt: iso});
       changed = true;
-    } else if (!finished.isNew && finished.draft !== finished.original) {
-      repository.updateEntryText(finished.id, finished.draft);
+    } else if (!finished.isNew && text !== finished.original) {
+      repository.updateEntryText(finished.id, text);
       changed = true;
     }
     renderEntries();
@@ -220,6 +221,7 @@ export function createRiverView({root, repository, saver, sync, queryLocation, n
   function hideSearch() {
     searchControl.dataset.open = "false";
     search.blur();
+    search.style.height = "";
   }
 
   function onTriggerClick(event) {
@@ -255,6 +257,7 @@ export function createRiverView({root, repository, saver, sync, queryLocation, n
   function onSearch() {
     if (editing) return;
     query = search.value;
+    searchControl.dataset.hasQuery = String(Boolean(query.trim()));
     queryLocation.write(query);
     renderEntries();
     grow(search);
@@ -264,6 +267,7 @@ export function createRiverView({root, repository, saver, sync, queryLocation, n
     if (editing) return;
     query = value;
     search.value = value;
+    searchControl.dataset.hasQuery = String(Boolean(query.trim()));
     renderEntries();
   }
 
@@ -334,6 +338,12 @@ function renderDateHeading(key, today) {
 
 function dateKey(value) {
   return `${value.getFullYear()}-${String(value.getMonth() + 1).padStart(2, "0")}-${String(value.getDate()).padStart(2, "0")}`;
+}
+
+// Stored entries have no meaningful whitespace outside their first and last
+// visible character. Interior spaces and blank lines remain untouched.
+function cleanText(text) {
+  return text.trim();
 }
 
 function grow(element) {
