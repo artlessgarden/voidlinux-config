@@ -117,8 +117,8 @@ Mod+shift+c repeat=false { spawn "firefox" "--new-window"; }
 Mod+ctrl+c repeat=false { spawn "google-chrome-stable" "--new-window"; }
 Mod+z repeat=false { spawn "Telegram"; }
 Mod+v repeat=false { toggle-overview; }
-Mod+p repeat=false { spawn-sh "grim - | swappy -f -"; }
-Mod+shift+p repeat=false { spawn-sh "grim -g \"$(slurp)\" - | swappy -f -"; }
+Mod+p repeat=false { spawn "bash" "-c" "grim - | tee >(wl-copy --type image/png) | swappy -f -"; }
+Mod+shift+p repeat=false { spawn "bash" "-c" "geometry=$(slurp) && grim -g \"$geometry\" - | tee >(wl-copy --type image/png) | swappy -f -"; }
 Mod+r repeat=false { switch-preset-column-width; }
 
 Mod+s  cooldown-ms=70   { focus-column-left; }

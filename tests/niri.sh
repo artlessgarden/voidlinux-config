@@ -23,7 +23,8 @@ grep -Fq 'wpctl" "set-volume" "@DEFAULT_AUDIO_SINK@" "2%+"' \
 grep -Fq 'wpctl" "set-mute" "@DEFAULT_AUDIO_SINK@" "toggle"' \
 	"$root/root/home/.config/niri/config.kdl" || fail 'mute uses PipeWire'
 grep -Eq '(^|[[:space:]])swappy([[:space:]\\]|$)' "$root/60-pkg-apps.sh" || fail 'Swappy is installed'
-grep -Fq '| swappy -f -' "$root/root/home/.config/niri/config.kdl" || fail 'screenshots open in Swappy'
+grep -Fq '| tee >(wl-copy --type image/png) | swappy -f -' "$root/root/home/.config/niri/config.kdl" || fail 'screenshots copy PNG and open Swappy'
+grep -Fq 'geometry=$(slurp) && grim' "$root/root/home/.config/niri/config.kdl" || fail 'cancelled selection must not capture the desktop'
 grep -Fq 'Mod+c repeat=false { spawn "helium" "--new-window"; }' \
 	"$root/root/home/.config/niri/config.kdl" || fail 'Mod+c opens Helium'
 grep -Fq 'Mod+shift+c repeat=false { spawn "firefox" "--new-window"; }' \
