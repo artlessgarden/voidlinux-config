@@ -21,7 +21,7 @@ export function createRiverView({root, repository, saver, sync, queryLocation, n
   const search = textarea({class: "search-input", rows: 1, spellcheck: false, autocomplete: "off", "aria-label": "搜索", placeholder: "搜索"});
   const searchTrigger = button({type: "button", class: "search-trigger", "aria-label": "搜索，长按新增"});
   const searchControl = div({class: "search-control", "data-open": "false", "data-has-query": String(Boolean(query.trim()))}, searchTrigger, search);
-  const selectionSearch = button({type: "button", class: "selection-search", hidden: true, "aria-label": "在新标签搜索选中文字"}, "↗");
+  const selectionSearch = button({type: "button", class: "selection-search", hidden: true, "aria-label": "在新标签搜索选中文字"});
   const shell = div({class: "river-shell"}, status, river, searchControl, selectionSearch);
 
   const cleanups = [
@@ -45,6 +45,7 @@ export function createRiverView({root, repository, saver, sync, queryLocation, n
   searchTrigger.addEventListener("pointerup", cancelHold);
   searchTrigger.addEventListener("pointercancel", cancelHold);
   searchTrigger.addEventListener("contextmenu", event => event.preventDefault());
+  searchControl.addEventListener("transitionend", onSearchTransitionEnd);
 
   root.replaceChildren(shell);
   search.value = query;
@@ -64,7 +65,9 @@ export function createRiverView({root, repository, saver, sync, queryLocation, n
     if (editing) queueMicrotask(() => {
       const editor = river.querySelector(".entry-editor");
       if (!editor) return;
-      grow(editor);
+      // Existing entries start at their rendered height, so entering edit mode
+      // does not move the river. New entries have no rendered height to inherit.
+      if (!editing.initialHeight) grow(editor);
       editor.focus();
       const start = caret?.start ?? editor.value.length;
       editor.setSelectionRange(start, caret?.end ?? start);
@@ -102,13 +105,14 @@ export function createRiverView({root, repository, saver, sync, queryLocation, n
 
   function renderEntry(entry) {
     if (editing?.id === entry.id) return renderEditorRow(entry.id);
-    return row(entry.id, div({class: "entry-text", onclick: () => startEdit(entry)}, cleanText(entry.text) || " "));
+    return row(entry.id, div({class: "entry-text", onclick: event => startEdit(entry, event.currentTarget)}, cleanText(entry.text) || " "));
   }
 
   function renderEditorRow(id) {
     const editor = textarea({
       class: "entry-editor", "data-editor-id": id, "aria-label": "编辑条目", spellcheck: false, rows: 1,
       value: editing.draft,
+      style: editing.initialHeight ? `height:${editing.initialHeight}px` : "",
       oninput: event => { editing.draft = event.target.value; grow(event.target); renderStatus(); },
       onkeydown: event => {
         if (event.key !== "Escape") return;
@@ -125,9 +129,9 @@ export function createRiverView({root, repository, saver, sync, queryLocation, n
     return div(attributes, span({class: "entry-marker", "aria-hidden": "true"}), body);
   }
 
-  function startEdit(entry) {
+  function startEdit(entry, source) {
     if (editing) return;
-    editing = {id: entry.id, draft: entry.text, original: entry.text, isNew: false};
+    editing = {id: entry.id, draft: entry.text, original: entry.text, isNew: false, initialHeight: source?.getBoundingClientRect().height || 0};
     beginEditing();
   }
 
@@ -176,23 +180,27 @@ export function createRiverView({root, repository, saver, sync, queryLocation, n
     const editor = river.querySelector(".entry-editor");
     if (!editing || !editor || editor.contains(event.target)) return;
 
-    // Commit first, then honor the same click as the next ordinary action.
-    // This makes switching entries one physical gesture instead of two modes.
-    const entryID = event.target.closest?.(".river-entry")?.dataset.entryId;
+    // Commit the active entry before interpreting another surface.
+    // Entry switching intentionally takes a second click, preventing an
+    // outside-save gesture from also opening an unintended entry.
+    const wantsEntry = event.target.closest?.(".river-entry");
     const wantsSearch = event.target.closest?.(".search-input");
-    if (entryID || wantsSearch) {
+    if (wantsEntry || wantsSearch) {
       event.preventDefault();
       event.stopPropagation();
     }
     void commitEdit();
-    if (entryID && entryID !== "new") {
-      const entry = repository.get(entryID);
-      if (entry) startEdit(entry);
-    } else if (wantsSearch) showSearch();
+    if (wantsSearch) showSearch();
   }
 
   function onDocumentKeydown(event) {
-    if (event.isComposing || event.ctrlKey || event.metaKey || event.altKey || event.target.closest?.("textarea, input")) return;
+    if (event.isComposing || event.altKey) return;
+    if ((event.ctrlKey || event.metaKey) && event.key === "Enter" && selectedText) {
+      event.preventDefault();
+      openSelectionSearch();
+      return;
+    }
+    if (event.ctrlKey || event.metaKey || event.target.closest?.("textarea, input")) return;
     if (event.key === "/") {
       event.preventDefault();
       showSearch();
@@ -210,15 +218,22 @@ export function createRiverView({root, repository, saver, sync, queryLocation, n
 
   function showSearch() {
     if (editing) return;
+    search.style.height = "48px";
     searchControl.dataset.open = "true";
     queueMicrotask(() => {
       search.focus();
       search.setSelectionRange(search.value.length, search.value.length);
-      grow(search);
     });
   }
 
   function hideSearch() {
+    if (!query.trim() && query) {
+      query = "";
+      search.value = "";
+      queryLocation.write("");
+      searchControl.dataset.hasQuery = "false";
+      renderEntries();
+    }
     searchControl.dataset.open = "false";
     search.blur();
     search.style.height = "";
@@ -246,6 +261,10 @@ export function createRiverView({root, repository, saver, sync, queryLocation, n
   function onTriggerPointerMove(event) {
     if (!holdOrigin || Math.hypot(event.clientX - holdOrigin.x, event.clientY - holdOrigin.y) <= 10) return;
     cancelHold();
+  }
+
+  function onSearchTransitionEnd(event) {
+    if (event.propertyName === "width" && searchControl.dataset.open === "true") grow(search);
   }
 
   function cancelHold() {
@@ -283,7 +302,7 @@ export function createRiverView({root, repository, saver, sync, queryLocation, n
     const box = range.getBoundingClientRect();
     selectionSearch.style.left = `${Math.min(window.innerWidth - 42, Math.max(8, box.right + 6))}px`;
     selectionSearch.style.top = `${Math.min(window.innerHeight - 42, Math.max(8, box.bottom + 6))}px`;
-    selectionSearch.hidden = false;
+    selectionSearch.hidden = !window.matchMedia("(max-width: 600px)").matches;
   }
 
   function openSelectionSearch() {
@@ -322,6 +341,7 @@ export function createRiverView({root, repository, saver, sync, queryLocation, n
     document.removeEventListener("selectionchange", onSelectionChange);
     window.removeEventListener("focus", onWindowFocus);
     window.removeEventListener("beforeunload", onBeforeUnload);
+    searchControl.removeEventListener("transitionend", onSearchTransitionEnd);
     if (holdTimer !== null) clearTimeout(holdTimer);
   }
 
@@ -332,8 +352,8 @@ function renderDateHeading(key, today) {
   const [year, month, day] = key.split("-").map(Number);
   const weekday = ["周日", "周一", "周二", "周三", "周四", "周五", "周六"][new Date(year, month - 1, day).getDay()];
   return div({class: `date-heading${today ? " today" : ""}`},
-    div({class: "date-main"}, `${month}月${day}日`),
-    div({class: "date-meta"}, `${weekday} · ${year}`));
+    div({class: "date-main"}, `${year}年${month}月${day}日`),
+    div({class: "date-meta"}, weekday));
 }
 
 function dateKey(value) {

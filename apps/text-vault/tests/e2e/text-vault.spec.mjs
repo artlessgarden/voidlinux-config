@@ -25,7 +25,7 @@ test("setup, add, edit outside-click save, search, and selection search", async 
   const search = page.getByRole("textbox", {name: "搜索"});
   await expect(search).toBeHidden();
   await expect(page.locator("body")).toHaveCSS("background-color", "rgb(150, 155, 146)");
-  await expect(page.locator(".date-heading:not(.future-heading) .date-main").last()).toHaveText("9月8日");
+  await expect(page.locator(".date-heading:not(.future-heading)").last()).toHaveText("2026年9月8日周二");
   await page.keyboard.press("/");
   await expect(search).toBeFocused();
   await search.press("Escape");
@@ -44,8 +44,13 @@ test("setup, add, edit outside-click save, search, and selection search", async 
   await page.locator(".sync-status").click();
   await expect(page.locator(".sync-status")).toHaveAttribute("data-state", "clean", {timeout: 5000});
 
-  await page.getByText("客户A 1.2.3.4", {exact: false}).click();
+  const firstEntry = page.getByText("客户A 1.2.3.4", {exact: false});
+  const displayedHeight = await firstEntry.evaluate(node => node.getBoundingClientRect().height);
+  await firstEntry.click();
+  await expect.poll(async () => Math.abs((await editor.boundingBox()).height - displayedHeight)).toBeLessThan(0.1);
   await editor.fill("客户A 1.2.3.4 已修改");
+  await page.locator(".river-entry:not(.reminder-entry) .entry-text").filter({hasText: "客户B example.com"}).click();
+  await expect(editor).toHaveCount(0);
   await page.locator(".river-entry:not(.reminder-entry) .entry-text").filter({hasText: "客户B example.com"}).click();
   await expect(editor).toHaveValue("客户B example.com @12-31");
   await page.locator(".sync-status").click();
@@ -59,7 +64,7 @@ test("setup, add, edit outside-click save, search, and selection search", async 
   await page.locator(".date-heading").click();
   await expect(search).toBeHidden();
   await expect(page.locator(".search-control")).toHaveAttribute("data-has-query", "true");
-  await expect(page.locator(".search-control")).toHaveCSS("height", "50px");
+  await expect(page.locator(".search-control")).toHaveCSS("height", "48px");
   await page.keyboard.press("/");
   await expect(search).toHaveValue("客户B EXAMPLE.com");
 
@@ -73,9 +78,9 @@ test("setup, add, edit outside-click save, search, and selection search", async 
     document.dispatchEvent(new Event("selectionchange"));
   });
   const selectionSearch = page.getByRole("button", {name: "在新标签搜索选中文字"});
-  await expect(selectionSearch).toBeVisible();
+  await expect(selectionSearch).toBeHidden();
   const opened = context.waitForEvent("page");
-  await selectionSearch.click();
+  await page.keyboard.press("Control+Enter");
   const newTab = await opened;
   await expect(newTab).toHaveURL(/#q=/);
   await newTab.close();
@@ -87,8 +92,8 @@ test("default river groups today and previews future date markers", async ({page
   await page.getByLabel("主密码").fill(firstPassword);
   await page.getByRole("button", {name: "解锁"}).click();
 
-  await expect(page.locator(".date-main").first()).toHaveText("9月8日");
-  await expect(page.locator(".agenda-future .date-main")).toContainText(["未来...", "12月31日"]);
+  await expect(page.locator(".date-heading").first()).toHaveText("2026年9月8日周二");
+  await expect(page.locator(".agenda-future .date-main")).toContainText(["未来...", "2026年12月31日"]);
   await expect(page.locator(".agenda-future")).toContainText("客户B example.com @12-31");
 
   await page.keyboard.press("/");
@@ -127,6 +132,15 @@ test("mobile uses the same river and default controls", async ({browser}) => {
   await expect(page.getByRole("list", {name: "条目河流"})).toBeVisible();
   const trigger = page.getByRole("button", {name: "搜索，长按新增"});
   await expect(trigger).toBeVisible();
+  await page.locator(".entry-text").first().evaluate(node => {
+    const range = document.createRange();
+    range.selectNodeContents(node);
+    const selection = window.getSelection();
+    selection.removeAllRanges();
+    selection.addRange(range);
+    document.dispatchEvent(new Event("selectionchange"));
+  });
+  await expect(page.getByRole("button", {name: "在新标签搜索选中文字"})).toBeVisible();
   await trigger.click();
   await expect(page.getByRole("textbox", {name: "搜索"})).toBeFocused();
   await page.getByRole("textbox", {name: "搜索"}).press("Escape");
