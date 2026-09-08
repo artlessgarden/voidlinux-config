@@ -19,10 +19,13 @@ common_files="$repo/20-pkg-base.sh $repo/40-sv-base.sh $repo/50-link-home.sh $re
 if grep -Eiq 'intel|amd|sof|tlp|iwlwifi|efibootmgr|nameserver|foot|neovim|emacs' $common_files; then
 	fail 'common setup contains host hardware or rejected software'
 fi
-grep -Fq 'module_blacklist=nouveau' "$repo/root/etc/default/grub.asus" ||
-	fail 'ASUS does not disable its unused NVIDIA GPU driver'
-if grep -Riq 'nouveau' $common_files "$repo/msi"; then
-	fail 'ASUS-specific NVIDIA policy leaks into shared or MSI configuration'
+grep -Fq '/sys/class/firmware-attributes/asus-armoury/attributes/dgpu_disable/current_value' \
+	"$repo/asus/85-power.sh" || fail 'ASUS does not use the current firmware dGPU switch'
+grep -Fq '/sys/devices/platform/asus-nb-wmi/dgpu_disable' "$repo/asus/85-power.sh" ||
+	fail 'ASUS lacks the compatible firmware dGPU switch'
+if grep -Riq 'nouveau' $common_files "$repo/msi" "$repo/asus" \
+	"$repo/root/etc/default/grub.asus"; then
+	fail 'NVIDIA driver blacklist remains instead of firmware-level dGPU disable'
 fi
 grep -q 'pipewire' "$repo/20-pkg-base.sh" || fail 'PipeWire is common'
 grep -q 'wireplumber' "$repo/20-pkg-base.sh" || fail 'WirePlumber is common'
