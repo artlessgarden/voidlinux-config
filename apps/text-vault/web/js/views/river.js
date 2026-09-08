@@ -98,7 +98,7 @@ export function createRiverView({root, repository, saver, sync, queryLocation, n
         futureRows.push(row(null, div({class: "entry-text reminder-text", tabindex: 0}, reminder.entry.text || " "), "reminder-entry"));
       }
       rows.push(div({class: "agenda-future"},
-        div({class: "future-heading", role: "separator", "aria-label": "未来"}),
+        button({type: "button", class: "future-heading", "aria-label": "新增条目", onclick: startAdd}),
         ...futureRows));
     }
     return rows;

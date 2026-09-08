@@ -30,6 +30,7 @@ button:focus-visible, input:focus-visible, textarea:focus-visible { outline: 1px
 
 .search-control { position: fixed; z-index: 2; right: 18px; bottom: 18px; display: grid; grid-template-columns: 48px minmax(0, 1fr); align-items: end; width: 48px; overflow: hidden; border-radius: 24px; opacity: 1; pointer-events: auto; background: var(--surface); box-shadow: 0 8px 30px rgb(0 0 0 / .22); transition: width 160ms ease, opacity 120ms ease; }
 .search-control[data-open="true"] { width: min(360px, calc(100vw - 36px)); opacity: 1; pointer-events: auto; }
+.search-control:focus-within { background: color-mix(in srgb, var(--surface) 82%, var(--marker)); }
 .search-input { width: 100%; min-width: 0; min-height: 48px; max-height: 30dvh; resize: none; padding: 13px 14px 13px 0; visibility: hidden; opacity: 0; background: transparent; line-height: 1.45; scrollbar-width: none; transition: opacity 100ms ease, visibility 0s linear 100ms; }
 .search-input::-webkit-scrollbar { display: none; }
 .search-control[data-open="false"] .search-input { height: 48px; }
@@ -49,7 +50,7 @@ button:focus-visible, input:focus-visible, textarea:focus-visible { outline: 1px
 .date-heading:first-child { margin-top: 0; }
 .date-year, .date-dot, .date-main, .date-meta { font: inherit; }
 .agenda-future { min-height: 45vh; padding-top: 20px; margin-top: 32px; }
-.future-heading { width: 60%; height: 1px; margin: 0 auto 28px; background: color-mix(in srgb, var(--line) 55%, transparent); }
+.future-heading { display: block; width: 60%; height: 17px; margin: 0 auto 20px; background: linear-gradient(transparent 8px, color-mix(in srgb, var(--line) 55%, transparent) 8px 9px, transparent 9px); }
 .agenda-future .date-heading, .agenda-future .river-entry { opacity: .32; transition: opacity 120ms ease; }
 .agenda-future .river-entry:hover, .agenda-future .river-entry:active, .agenda-future .river-entry:focus-within { opacity: 1; }
 .reminder-text:focus-visible { outline: 0; }

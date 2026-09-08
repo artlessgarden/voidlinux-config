@@ -112,9 +112,13 @@ test("default river groups today and previews future date markers", async ({page
   await page.getByRole("button", {name: "解锁"}).click();
 
   await expect(page.locator(".date-heading").first()).toHaveText("2026·9月8日·周二");
-  await expect(page.getByRole("separator", {name: "未来"})).toBeVisible();
+  const futureAdd = page.getByRole("button", {name: "新增条目"});
+  await expect(futureAdd).toBeVisible();
   await expect(page.locator(".agenda-future .date-main")).toContainText("12月31日");
   await expect(page.locator(".agenda-future")).toContainText("客户B example.com @12-31");
+  await futureAdd.click();
+  await expect(page.getByRole("textbox", {name: "编辑条目"})).toBeFocused();
+  await page.getByRole("textbox", {name: "编辑条目"}).press("Escape");
 
   await page.keyboard.press("/");
   await page.getByRole("textbox", {name: "搜索"}).fill("客户B");
