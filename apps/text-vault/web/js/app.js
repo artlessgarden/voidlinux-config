@@ -1,17 +1,13 @@
 import van from "../vendor/van-1.6.1.js";
 import {APIError, createAPI} from "./api.js";
-import {createWorkspace} from "./application/workspace.js";
 import {createQueryLocation} from "./browser/query-location.js";
 import {createVault, deriveServerCredential, unlockVault} from "./crypto.js";
 import {checkEnvironment} from "./environment.js";
-import {createPasswordFeature} from "./features/change-password.js";
-import {actionForKey} from "./features/vim-keymap.js";
 import {decryptSnapshot} from "./load.js";
 import {createRepository} from "./repository.js";
 import {createSaveCoordinator} from "./save.js";
 import {createSyncCoordinator} from "./sync.js";
 import {createTabSession} from "./tab-session.js";
-import {createViewRegistry} from "./views/registry.js";
 import {createRiverView} from "./views/river.js";
 
 const {button, form, h1, input, label, main, p, section} = van.tags;
@@ -128,44 +124,26 @@ async function openVault(key, snapshot) {
   tabSession.offer({key, csrfToken: api.csrfToken()});
   const stopSessionUpdates = tabSession.subscribe(session => api.setCSRFToken(session.csrfToken));
 
-  // This is the composition root: concrete browser and persistence adapters
-  // are assembled here, while the workspace and renderer see only their small
-  // injected interfaces.
+  // This is the only assembly point. The river receives stable data, query,
+  // save, and sync interfaces directly; there is no framework between them.
   const queryLocation = createQueryLocation({
     location: window.location,
     history: window.history,
     addEventListener: window.addEventListener.bind(window),
     removeEventListener: window.removeEventListener.bind(window),
   });
-  const passwordFeature = createPasswordFeature({key, api, tabSession});
-  const workspace = createWorkspace({
+  const destroyRiver = createRiverView({
+    root,
     repository,
     saver,
     sync,
-    initialQuery: queryLocation.read(),
-    openPassword: passwordFeature.open,
-  });
-  const stopLocation = queryLocation.subscribe(text => void workspace.dispatch({type: "query/change", text}));
-  const stopWorkspace = workspace.subscribe(state => {
-    if (queryLocation.read() !== state.query.text) queryLocation.write(state.query.text);
-  });
-  const views = createViewRegistry({river: createRiverView});
-  views.mount(workspace.snapshot().view, {
-    root,
-    workspace,
-    actionForKey,
-    passwordFeature,
-    openSelectedTextSearch: text => window.open(queryLocation.url(text), "_blank", "noopener"),
+    queryLocation,
   });
   sync.start();
 
   window.addEventListener("unload", () => {
-    views.destroy();
-    stopWorkspace();
-    stopLocation();
+    destroyRiver();
     queryLocation.destroy();
-    passwordFeature.destroy();
-    workspace.destroy();
     sync.stop();
     stopSessionUpdates();
     tabSession.close();

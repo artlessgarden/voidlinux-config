@@ -1,167 +1,201 @@
 import van from "../../vendor/van-1.6.1.js";
+import {runQuery} from "../core/query.js";
+import {createEntry} from "../model.js";
 
 const {button, div, span, textarea} = van.tags;
 
-// River is a renderer: it turns workspace snapshots into DOM and translates
-// raw DOM events through injected interaction functions. It cannot access the
-// repository, persistence, cryptography, API, or session implementations.
-export function createRiverView({root, workspace, actionForKey, passwordFeature, openSelectedTextSearch}) {
+// The river owns unfinished UI state. Durable text enters the repository only
+// when a click outside the editor commits the single active draft.
+export function createRiverView({root, repository, saver, sync, queryLocation, now = () => new Date()}) {
+  let query = queryLocation.read();
+  let editing = null;
+  let selectedText = "";
   let destroyed = false;
+
   const status = div({class: "sync-status", "data-state": "clean", role: "status", "aria-label": "已保存"});
   const river = div({class: "river", role: "list", "aria-label": "条目河流"});
-  const bottom = textarea({class: "bottom-input", rows: 1, spellcheck: false, autocomplete: "off", "aria-label": "输入", placeholder: "o 新增  / 搜索  : 命令"});
-  const gear = button({type: "button", class: "gear", "aria-label": "设置", onclick: () => void workspace.dispatch({type: "password/open"})}, "⚙");
-  const shell = div({class: "river-shell", "data-mode": "normal"}, status, gear, river, bottom, passwordFeature.element);
+  const search = textarea({class: "search-input", rows: 1, spellcheck: false, autocomplete: "off", "aria-label": "搜索", placeholder: "搜索"});
+  const add = button({type: "button", class: "add-button", "aria-label": "新增", onclick: startAdd}, "+");
+  const selectionSearch = button({type: "button", class: "selection-search", hidden: true, "aria-label": "在新标签搜索选中文字"}, "↗");
+  const shell = div({class: "river-shell"}, status, river, div({class: "bottom-bar"}, search, add), selectionSearch);
 
-  const unsubscribe = workspace.subscribe(render);
-  document.addEventListener("keydown", onDocumentKeydown);
+  const cleanups = [
+    repository.subscribe(renderEntries),
+    saver.subscribe(renderStatus),
+    sync.subscribe(renderStatus),
+    queryLocation.subscribe(onLocationChange),
+  ];
+  search.addEventListener("input", onSearch);
+  document.addEventListener("pointerdown", onDocumentPointerDown, true);
+  document.addEventListener("selectionchange", onSelectionChange);
   window.addEventListener("focus", onWindowFocus);
   window.addEventListener("beforeunload", onBeforeUnload);
-  bottom.addEventListener("input", onBottomInput);
-  bottom.addEventListener("keydown", onBottomKeydown);
-  bottom.addEventListener("focus", onBottomFocus);
+  selectionSearch.addEventListener("pointerdown", event => event.preventDefault());
+  selectionSearch.addEventListener("click", openSelectionSearch);
 
   root.replaceChildren(shell);
-  render();
+  search.value = query;
+  renderEntries();
+  renderStatus();
 
-  function render() {
-    const state = workspace.snapshot();
-    river.replaceChildren(...state.entries.map(entry => renderEntry(entry, state)));
-    shell.dataset.mode = state.mode;
-    status.dataset.state = state.status;
-    status.setAttribute("aria-label", ({clean: "已保存", editing: "正在编辑", saving: "正在保存", failed: "同步失败"})[state.status]);
-    bottom.placeholder = state.message || "o 新增  / 搜索  : 命令";
-
-    // The bottom control survives redraws. Its displayed value follows
-    // workspace state only at mode boundaries and during live search.
-    if (state.mode === "normal") {
-      bottom.value = state.query.text ? `/${state.query.text}` : "";
-      if (document.activeElement === bottom) bottom.blur();
-    }
-    if (["add", "search", "command"].includes(state.mode)) {
-      bottom.value = state.draft;
-      queueMicrotask(() => {
-        bottom.focus();
-        grow(bottom);
-        const start = state.mode === "search" ? 1 : bottom.value.length;
-        const end = state.mode === "search" ? bottom.value.length : start;
-        bottom.setSelectionRange(start, end);
-      });
-    }
+  function entries() {
+    return runQuery({type: "full-text", text: query, orderBy: "createdAt", direction: "asc"}, repository.values());
   }
 
-  function renderEntry(entry, state) {
-    const active = entry.id === state.selectedId;
-    const editing = state.mode === "edit" && active;
-    const body = editing
-      ? textarea({class: "entry-editor", "aria-label": "编辑条目", spellcheck: false, value: state.draft,
-        oninput: event => { void workspace.dispatch({type: "draft/change", text: event.target.value}); grow(event.target); },
-        onkeydown: onEditorKeydown})
-      : div({class: "entry-text"}, entry.text || " ");
-    const row = div({
-      class: `river-entry${active ? " selected" : ""}`,
-      role: "listitem",
-      "data-entry-id": entry.id,
-      onclick: () => void workspace.dispatch({type: "selection/set", id: entry.id}),
-    }, span({class: "bullet", "aria-hidden": "true"}, "•"), body);
+  function renderEntries() {
+    if (destroyed) return;
+    const oldEditor = river.querySelector(".entry-editor");
+    const caret = oldEditor && {start: oldEditor.selectionStart, end: oldEditor.selectionEnd};
+    const rows = entries().map(renderEntry);
+    if (editing?.isNew) rows.push(renderEditorRow("new"));
+    river.replaceChildren(...rows);
     if (editing) queueMicrotask(() => {
-      const editor = row.querySelector(".entry-editor");
+      const editor = river.querySelector(".entry-editor");
       if (!editor) return;
       grow(editor);
       editor.focus();
-      editor.setSelectionRange(editor.value.length, editor.value.length);
+      const start = caret?.start ?? editor.value.length;
+      editor.setSelectionRange(start, caret?.end ?? start);
     });
-    return row;
   }
 
-  function onDocumentKeydown(event) {
-    const state = workspace.snapshot();
-    if (passwordFeature.element.open || state.mode !== "normal") return;
-    const action = actionForKey(keyEvent(event), state.mode);
-    if (!action) return;
-    event.preventDefault();
-    if (action.type === "selection/search") {
-      const text = selectedSearchText(window.getSelection()?.toString());
-      if (text) openSelectedTextSearch(text);
-      return;
+  function renderEntry(entry) {
+    if (editing?.id === entry.id) return renderEditorRow(entry.id);
+    return row(entry.id, div({class: "entry-text", onclick: () => startEdit(entry)}, entry.text || " "));
+  }
+
+  function renderEditorRow(id) {
+    const editor = textarea({
+      class: "entry-editor", "data-editor-id": id, "aria-label": "编辑条目", spellcheck: false,
+      value: editing.draft,
+      oninput: event => { editing.draft = event.target.value; grow(event.target); renderStatus(); },
+    });
+    return row(id, editor);
+  }
+
+  function row(id, body) {
+    return div({class: "river-entry", role: "listitem", "data-entry-id": id}, span({class: "bullet", "aria-hidden": "true"}, "•"), body);
+  }
+
+  function startEdit(entry) {
+    if (editing) return;
+    editing = {id: entry.id, draft: entry.text, original: entry.text, isNew: false};
+    beginEditing();
+  }
+
+  function startAdd() {
+    if (editing) return;
+    editing = {id: "", draft: "", original: "", isNew: true};
+    beginEditing();
+    river.scrollTop = river.scrollHeight;
+  }
+
+  function beginEditing() {
+    search.disabled = true;
+    add.disabled = true;
+    hideSelectionSearch();
+    renderEntries();
+    renderStatus();
+  }
+
+  async function commitEdit() {
+    if (!editing) return;
+    const finished = editing;
+    editing = null;
+    search.disabled = false;
+    add.disabled = false;
+
+    let changed = false;
+    if (finished.isNew && finished.draft.trim()) {
+      const instant = now();
+      const iso = instant instanceof Date ? instant.toISOString() : String(instant);
+      repository.upsert({...createEntry({existingIDs: repository.knownIDs(), now: iso}), text: finished.draft, updatedAt: iso});
+      changed = true;
+    } else if (!finished.isNew && finished.draft !== finished.original) {
+      repository.updateEntryText(finished.id, finished.draft);
+      changed = true;
     }
-    void workspace.dispatch(action).then(() => {
-      if (action.type === "selection/move") selectedRow()?.scrollIntoView({block: "nearest"});
-    });
+    renderEntries();
+    renderStatus();
+    if (changed) try { await saver.save(); } catch {}
   }
 
-  function onBottomInput() {
-    void workspace.dispatch({type: "draft/change", text: bottom.value});
-    grow(bottom);
+  function onDocumentPointerDown(event) {
+    const editor = river.querySelector(".entry-editor");
+    if (editing && editor && !editor.contains(event.target)) void commitEdit();
   }
 
-  // Touching the bottom control is the phone equivalent of `/`. During Edit,
-  // the entry textarea remains the only writable control until submission.
-  function onBottomFocus() {
-    const state = workspace.snapshot();
-    if (state.mode === "normal") void workspace.dispatch({type: "input/search-start"});
-    if (state.mode === "edit") queueMicrotask(() => river.querySelector(".entry-editor")?.focus());
+  function onSearch() {
+    if (editing) return;
+    query = search.value;
+    queryLocation.write(query);
+    renderEntries();
+    grow(search);
   }
 
-  function onBottomKeydown(event) {
-    const action = actionForKey(keyEvent(event), workspace.snapshot().mode);
-    if (!action) return;
-    event.preventDefault();
-    if (action.type !== "input/block-newline") void workspace.dispatch(action);
+  function onLocationChange(value) {
+    if (editing) return;
+    query = value;
+    search.value = value;
+    renderEntries();
   }
 
-  function onEditorKeydown(event) {
-    const action = actionForKey(keyEvent(event), workspace.snapshot().mode);
-    if (!action) return;
-    event.preventDefault();
-    void workspace.dispatch(action);
+  function onSelectionChange() {
+    const selection = window.getSelection();
+    if (!selection || selection.isCollapsed || !selection.rangeCount) return hideSelectionSearch();
+    const range = selection.getRangeAt(0);
+    const ancestor = range.commonAncestorContainer;
+    const node = ancestor.nodeType === Node.TEXT_NODE ? ancestor.parentElement : ancestor;
+    if (!node?.closest?.(".entry-text")) return hideSelectionSearch();
+    selectedText = selection.toString().trim();
+    if (!selectedText) return hideSelectionSearch();
+    const box = range.getBoundingClientRect();
+    selectionSearch.style.left = `${Math.min(window.innerWidth - 42, Math.max(8, box.right + 6))}px`;
+    selectionSearch.style.top = `${Math.min(window.innerHeight - 42, Math.max(8, box.bottom + 6))}px`;
+    selectionSearch.hidden = false;
   }
 
-  function onWindowFocus() {
-    void workspace.dispatch({type: "sync/pull"});
+  function openSelectionSearch() {
+    if (selectedText) window.open(queryLocation.url(selectedText), "_blank", "noopener");
+    hideSelectionSearch();
   }
+
+  function hideSelectionSearch() {
+    selectedText = "";
+    selectionSearch.hidden = true;
+  }
+
+  function renderStatus() {
+    let state = "clean";
+    if (repository.hasQuarantined() || repository.hasConflicts() || ["failed", "conflict"].includes(saver.status()) || ["failed", "conflict"].includes(sync.status())) state = "failed";
+    else if (editing) state = "editing";
+    else if (repository.hasPendingChanges() || ["dirty", "saving"].includes(saver.status())) state = "saving";
+    status.dataset.state = state;
+    status.setAttribute("aria-label", ({clean: "已保存", editing: "正在编辑", saving: "正在保存", failed: "同步失败"})[state]);
+  }
+
+  function onWindowFocus() { void sync.pull().catch(() => {}); }
 
   function onBeforeUnload(event) {
-    if (!workspace.snapshot().unsaved) return;
+    if (!editing && !repository.hasPendingChanges()) return;
     event.preventDefault();
     event.returnValue = "";
-  }
-
-  function selectedRow() {
-    return river.querySelector(".river-entry.selected");
   }
 
   function destroy() {
     if (destroyed) return;
     destroyed = true;
-    unsubscribe();
-    document.removeEventListener("keydown", onDocumentKeydown);
+    for (const cleanup of cleanups) cleanup();
+    document.removeEventListener("pointerdown", onDocumentPointerDown, true);
+    document.removeEventListener("selectionchange", onSelectionChange);
     window.removeEventListener("focus", onWindowFocus);
     window.removeEventListener("beforeunload", onBeforeUnload);
-    bottom.removeEventListener("input", onBottomInput);
-    bottom.removeEventListener("keydown", onBottomKeydown);
-    bottom.removeEventListener("focus", onBottomFocus);
   }
 
   return destroy;
 }
 
-export function selectedSearchText(value) {
-  return String(value ?? "").trim();
-}
-
 function grow(element) {
   element.style.height = "auto";
   element.style.height = `${element.scrollHeight}px`;
-}
-
-function keyEvent(event) {
-  return {
-    key: event.key,
-    shiftKey: event.shiftKey,
-    ctrlKey: event.ctrlKey,
-    metaKey: event.metaKey,
-    isComposing: event.isComposing,
-    targetTag: event.target?.tagName,
-  };
 }

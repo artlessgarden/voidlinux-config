@@ -3,7 +3,6 @@ import {test, expect} from "@playwright/test";
 test.describe.configure({mode: "serial"});
 
 const firstPassword = "daily-vault-passphrase";
-const secondPassword = "new-daily-vault-passphrase";
 
 test("an insecure context shows guidance instead of crashing", async ({page}) => {
   const runtimeErrors = captureRuntimeErrors(page);
@@ -16,53 +15,57 @@ test("an insecure context shows guidance instead of crashing", async ({page}) =>
   expect(runtimeErrors).toEqual([]);
 });
 
-test("setup, add, edit, and live URL search use vim modes", async ({page}) => {
+test("setup, add, edit outside-click save, search, and selection search", async ({page, context}) => {
   const runtimeErrors = captureRuntimeErrors(page, new Set(["GET /api/vault 404"]));
   await page.goto("/");
   await page.getByLabel("新主密码", {exact: true}).fill(firstPassword);
   await page.getByLabel("重复主密码", {exact: true}).fill(firstPassword);
   await page.getByRole("button", {name: "创建保险库"}).click();
 
-  const bottom = page.getByRole("textbox", {name: "输入"});
-  await expect(bottom).toBeVisible();
+  const search = page.getByRole("textbox", {name: "搜索"});
+  const add = page.getByRole("button", {name: "新增"});
+  await expect(search).toBeVisible();
+  await expect(add).toBeVisible();
   await expect(page.locator("body")).toHaveCSS("background-color", "rgb(246, 244, 239)");
-  await expect(bottom).toHaveCSS("background-color", "rgb(238, 235, 228)");
-  await page.keyboard.press("o");
-  await bottom.fill("客户A 1.2.3.4");
-  await bottom.press("Shift+Enter");
-  await bottom.pressSequentially("宝塔");
+  await add.click();
+  const editor = page.getByRole("textbox", {name: "编辑条目"});
+  await editor.fill("客户A 1.2.3.4\n宝塔");
   await expect(page.locator(".sync-status")).toHaveAttribute("data-state", "editing");
-  await bottom.press("Enter");
+  await page.locator(".sync-status").click();
   await expect(page.locator(".sync-status")).toHaveAttribute("data-state", "clean", {timeout: 5000});
   await expect(page.getByRole("listitem")).toContainText("客户A 1.2.3.4\n宝塔");
 
-  await page.keyboard.press("o");
-  await bottom.fill("客户B example.com");
-  await bottom.press("Escape");
+  await add.click();
+  await editor.fill("客户B example.com");
+  await page.locator(".sync-status").click();
   await expect(page.locator(".sync-status")).toHaveAttribute("data-state", "clean", {timeout: 5000});
 
-  await page.keyboard.press("k");
-  await page.keyboard.press("i");
-  const editor = page.getByRole("textbox", {name: "编辑条目"});
+  await page.getByText("客户A 1.2.3.4", {exact: false}).click();
   await editor.fill("客户A 1.2.3.4 已修改");
-  await bottom.click();
-  await expect(editor).toBeFocused();
-  await page.locator(".river").click({position: {x: 3, y: 3}});
-  await expect(editor).toBeVisible();
-  await expect(page.locator(".sync-status")).toHaveAttribute("data-state", "editing");
-  await editor.press("Enter");
+  await page.locator(".sync-status").click();
   await expect(page.locator(".sync-status")).toHaveAttribute("data-state", "clean", {timeout: 5000});
 
-  await page.keyboard.press("/");
-  await bottom.fill("/EXAMPLE.com");
+  await search.fill("EXAMPLE.com");
   await expect(page.getByRole("listitem")).toHaveCount(1);
   await expect(page.getByRole("listitem")).toContainText("客户B example.com");
   await expect(page).toHaveURL(/#q=EXAMPLE%2Ecom|#q=EXAMPLE.com/);
-  await bottom.press("Escape");
-  await expect(bottom).toHaveValue("/EXAMPLE.com");
-  await bottom.blur();
-  await bottom.click();
-  await expect(page.locator(".river-shell")).toHaveAttribute("data-mode", "search");
+
+  await search.fill("");
+  await page.getByText("客户A 1.2.3.4 已修改").evaluate(node => {
+    const range = document.createRange();
+    range.selectNodeContents(node);
+    const selection = window.getSelection();
+    selection.removeAllRanges();
+    selection.addRange(range);
+    document.dispatchEvent(new Event("selectionchange"));
+  });
+  const selectionSearch = page.getByRole("button", {name: "在新标签搜索选中文字"});
+  await expect(selectionSearch).toBeVisible();
+  const opened = context.waitForEvent("page");
+  await selectionSearch.click();
+  const newTab = await opened;
+  await expect(newTab).toHaveURL(/#q=/);
+  await newTab.close();
   expect(runtimeErrors).toEqual([]);
 });
 
@@ -80,31 +83,22 @@ test("a second tab unlocks and receives incremental changes", async ({browser}) 
   await expect(second.getByLabel("主密码", {exact: true})).toHaveCount(0);
   await expect(second.getByRole("listitem")).toHaveCount(2);
 
-  await first.keyboard.press("j");
-  await first.keyboard.press("i");
+  await first.getByText("客户B example.com").click();
   await first.getByRole("textbox", {name: "编辑条目"}).fill("客户B example.com 已同步");
-  await first.getByRole("textbox", {name: "编辑条目"}).press("Escape");
+  await first.locator(".sync-status").click();
   await expect(second.getByRole("listitem").filter({hasText: "已同步"})).toBeVisible({timeout: 7000});
-
-  await first.keyboard.press(":");
-  await first.getByRole("textbox", {name: "输入"}).fill(":changepwd");
-  await first.getByRole("textbox", {name: "输入"}).press("Enter");
-  await expect(first.getByRole("dialog")).toBeVisible();
-  await first.getByLabel("新主密码", {exact: true}).fill(secondPassword);
-  await first.getByLabel("重复新主密码", {exact: true}).fill(secondPassword);
-  await first.getByRole("button", {name: "修改密码"}).click();
-  await expect(first.getByRole("dialog")).not.toBeVisible({timeout: 5000});
   await context.close();
 });
 
-test("mobile uses the same river after unlocking with the changed password", async ({browser}) => {
+test("mobile uses the same river and default controls", async ({browser}) => {
   const context = await browser.newContext({viewport: {width: 390, height: 844}});
   const page = await context.newPage();
   await page.goto("/");
-  await page.getByLabel("主密码").fill(secondPassword);
+  await page.getByLabel("主密码").fill(firstPassword);
   await page.getByRole("button", {name: "解锁"}).click();
   await expect(page.getByRole("list", {name: "条目河流"})).toBeVisible();
-  await expect(page.getByRole("textbox", {name: "输入"})).toBeVisible();
+  await expect(page.getByRole("textbox", {name: "搜索"})).toBeVisible();
+  await expect(page.getByRole("button", {name: "新增"})).toBeVisible();
   await expect(page.getByRole("listitem")).toHaveCount(2);
   await context.close();
 });
