@@ -23,7 +23,7 @@ button:focus-visible, input:focus-visible, textarea:focus-visible { outline: 1px
 .river { overflow: auto; padding: 38px max(18px, calc((100vw - 900px) / 2)) 160px; }
 .river-entry { display: grid; grid-template-columns: 1em minmax(0, 1fr); gap: 12px; margin-bottom: 18px; padding: 0 4px; line-height: 1.65; }
 .entry-marker { width: .5em; height: 1em; margin-top: .32em; border-radius: 1px; background: var(--marker); }
-.river-entry:has(.entry-editor) { border-radius: 2px; background: var(--card); box-shadow: 0 0 0 8px var(--card); }
+.river-entry:has(.entry-editor) { border-radius: 1px; background: var(--card); box-shadow: 0 0 0 8px var(--card); }
 .entry-text { min-width: 0; white-space: pre-wrap; overflow-wrap: anywhere; cursor: text; }
 .entry-editor { display: block; width: 100%; resize: none; overflow: hidden; padding: 0; background: transparent; line-height: 1.65; }
 .entry-editor:focus-visible { outline: 0; }
@@ -31,24 +31,27 @@ button:focus-visible, input:focus-visible, textarea:focus-visible { outline: 1px
 .search-control { position: fixed; z-index: 2; right: 18px; bottom: 18px; display: grid; grid-template-columns: 48px minmax(0, 1fr); align-items: end; width: 48px; overflow: hidden; border-radius: 24px; opacity: 0; pointer-events: none; background: var(--surface); box-shadow: 0 8px 30px rgb(35 34 30 / .11); transition: width 160ms ease, opacity 120ms ease; }
 .search-control[data-open="true"] { width: min(360px, calc(100% - 36px)); opacity: 1; pointer-events: auto; }
 .search-input { width: 100%; min-width: 0; min-height: 48px; max-height: 30dvh; resize: none; padding: 13px 14px 13px 0; visibility: hidden; opacity: 0; background: transparent; line-height: 1.45; transition: opacity 100ms ease, visibility 0s linear 100ms; }
+.search-input { scrollbar-width: none; }
+.search-input::-webkit-scrollbar { display: none; }
 .search-control[data-open="false"] .search-input { height: 48px; }
 .search-control[data-open="true"] .search-input { visibility: visible; opacity: 1; transition-delay: 50ms, 0s; }
 .search-input::placeholder { color: var(--muted); }
-.search-trigger { position: relative; display: block; width: 48px; height: 48px; flex: none; touch-action: manipulation; }
+.search-trigger { position: relative; display: block; width: 48px; height: 48px; flex: none; touch-action: none; }
 .search-trigger::before { content: ""; position: absolute; width: 13px; height: 13px; border: 1.5px solid var(--muted); border-radius: 50%; left: 14px; top: 12px; }
 .search-trigger::after { content: ""; position: absolute; width: 8px; height: 1.5px; background: var(--muted); transform: rotate(45deg); left: 26px; top: 27px; }
 .search-control[data-open="false"][data-has-query="true"] .search-trigger { background: var(--marker); }
 .search-control[data-open="false"][data-has-query="true"] .search-trigger::before { border-color: var(--surface); }
 .search-control[data-open="false"][data-has-query="true"] .search-trigger::after { background: var(--surface); }
 .search-input:disabled, .search-trigger:disabled { opacity: .45; }
+.search-control[data-has-query="true"] .search-trigger:disabled { opacity: 1; }
 .selection-search { position: fixed; z-index: 3; width: 36px; height: 36px; border-radius: 50%; background: var(--surface); box-shadow: 0 4px 16px rgb(35 34 30 / .18); }
 .selection-search::before { content: ""; position: absolute; width: 11px; height: 11px; border: 1.5px solid var(--muted); border-radius: 50%; left: 10px; top: 9px; }
 .selection-search::after { content: ""; position: absolute; width: 7px; height: 1.5px; background: var(--muted); transform: rotate(45deg); left: 20px; top: 21px; }
 
 .date-heading { display: flex; align-items: baseline; gap: .7em; margin: 48px 4px 20px; color: var(--text); font: 500 23px/1.2 ui-sans-serif, system-ui, sans-serif; letter-spacing: -.02em; }
 .date-heading:first-child { margin-top: 0; }
-.date-main, .date-meta { font: inherit; }
-.date-meta { color: var(--muted); }
+.date-year, .date-main, .date-meta { font: inherit; }
+.date-year { color: var(--muted); }
 .agenda-future { min-height: 45vh; padding-top: 20px; margin-top: 32px; color: color-mix(in srgb, var(--text) 55%, transparent); }
 .future-heading { margin-top: 0; }
 .agenda-future .date-heading { color: inherit; }

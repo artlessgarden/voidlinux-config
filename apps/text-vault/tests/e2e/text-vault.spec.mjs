@@ -25,7 +25,7 @@ test("setup, add, edit outside-click save, search, and selection search", async 
   const search = page.getByRole("textbox", {name: "搜索"});
   await expect(search).toBeHidden();
   await expect(page.locator("body")).toHaveCSS("background-color", "rgb(150, 155, 146)");
-  await expect(page.locator(".date-heading:not(.future-heading)").last()).toHaveText("2026年9月8日周二");
+  await expect(page.locator(".date-heading:not(.future-heading)").last()).toHaveText("2026 ·9月8日周二");
   await page.keyboard.press("/");
   await expect(search).toBeFocused();
   await search.press("Escape");
@@ -61,14 +61,22 @@ test("setup, add, edit outside-click save, search, and selection search", async 
   await expect(page.getByRole("listitem")).toHaveCount(1);
   await expect(page.getByRole("listitem")).toContainText("客户B example.com");
   await expect(page.locator(".agenda-future")).toHaveCount(0);
+  await search.fill("不存在");
+  await expect(page.locator(".date-heading")).toHaveCount(0);
+  await search.fill("客户B EXAMPLE.com");
   await page.locator(".date-heading").click();
   await expect(search).toBeHidden();
   await expect(page.locator(".search-control")).toHaveAttribute("data-has-query", "true");
   await expect(page.locator(".search-control")).toHaveCSS("height", "48px");
   await page.keyboard.press("/");
   await expect(search).toHaveValue("客户B EXAMPLE.com");
-
-  await search.fill("");
+  await page.keyboard.press("Control+Escape");
+  await expect(search).toHaveValue("");
+  await expect(page).not.toHaveURL(/#q=/);
+  await page.keyboard.press("/");
+  await search.fill("   ");
+  await search.press("Escape");
+  await expect(search).toHaveValue("");
   await page.getByText("客户A 1.2.3.4 已修改").evaluate(node => {
     const range = document.createRange();
     range.selectNodeContents(node);
@@ -78,12 +86,13 @@ test("setup, add, edit outside-click save, search, and selection search", async 
     document.dispatchEvent(new Event("selectionchange"));
   });
   const selectionSearch = page.getByRole("button", {name: "在新标签搜索选中文字"});
-  await expect(selectionSearch).toBeHidden();
+  await expect(selectionSearch).toBeVisible();
   const opened = context.waitForEvent("page");
-  await page.keyboard.press("Control+Enter");
+  await selectionSearch.click();
   const newTab = await opened;
   await expect(newTab).toHaveURL(/#q=/);
   await newTab.close();
+  await expect(editor).toHaveCount(0);
   expect(runtimeErrors).toEqual([]);
 });
 
@@ -92,8 +101,8 @@ test("default river groups today and previews future date markers", async ({page
   await page.getByLabel("主密码").fill(firstPassword);
   await page.getByRole("button", {name: "解锁"}).click();
 
-  await expect(page.locator(".date-heading").first()).toHaveText("2026年9月8日周二");
-  await expect(page.locator(".agenda-future .date-main")).toContainText(["未来...", "2026年12月31日"]);
+  await expect(page.locator(".date-heading").first()).toHaveText("2026 ·9月8日周二");
+  await expect(page.locator(".agenda-future .date-main")).toContainText(["未来...", "12月31日"]);
   await expect(page.locator(".agenda-future")).toContainText("客户B example.com @12-31");
 
   await page.keyboard.press("/");
@@ -130,7 +139,7 @@ test("mobile uses the same river and default controls", async ({browser}) => {
   await page.getByLabel("主密码").fill(firstPassword);
   await page.getByRole("button", {name: "解锁"}).click();
   await expect(page.getByRole("list", {name: "条目河流"})).toBeVisible();
-  const trigger = page.getByRole("button", {name: "搜索，长按新增"});
+  const trigger = page.getByRole("button", {name: "搜索，上滑新增，左滑清空"});
   await expect(trigger).toBeVisible();
   await page.locator(".entry-text").first().evaluate(node => {
     const range = document.createRange();
@@ -142,11 +151,17 @@ test("mobile uses the same river and default controls", async ({browser}) => {
   });
   await expect(page.getByRole("button", {name: "在新标签搜索选中文字"})).toBeVisible();
   await trigger.click();
-  await expect(page.getByRole("textbox", {name: "搜索"})).toBeFocused();
-  await page.getByRole("textbox", {name: "搜索"}).press("Escape");
-  await trigger.dispatchEvent("pointerdown", {clientX: 20, clientY: 20});
-  await page.waitForTimeout(600);
-  await trigger.dispatchEvent("pointerup", {clientX: 20, clientY: 20});
+  const mobileSearch = page.getByRole("textbox", {name: "搜索"});
+  await expect(mobileSearch).toBeFocused();
+  await mobileSearch.fill("客户");
+  await mobileSearch.press("Escape");
+  await expect(page.locator(".search-control")).toHaveAttribute("data-has-query", "true");
+  await trigger.dispatchEvent("pointerdown", {pointerId: 1, clientX: 60, clientY: 40});
+  await trigger.dispatchEvent("pointerup", {pointerId: 1, clientX: 10, clientY: 40});
+  await expect(page.locator(".search-control")).toHaveAttribute("data-has-query", "false");
+  await page.waitForTimeout(450);
+  await trigger.dispatchEvent("pointerdown", {pointerId: 2, clientX: 40, clientY: 60});
+  await trigger.dispatchEvent("pointerup", {pointerId: 2, clientX: 40, clientY: 10});
   await expect(page.getByRole("textbox", {name: "编辑条目"})).toBeVisible();
   await page.locator(".sync-status").click();
   await expect(page.locator(".river-entry:not(.reminder-entry)")).toHaveCount(2);

@@ -11,15 +11,15 @@ export function createRiverView({root, repository, saver, sync, queryLocation, n
   let query = queryLocation.read();
   let editing = null;
   let selectedText = "";
-  let holdTimer = null;
-  let holdOrigin = null;
-  let longPressed = false;
+  let gesture = null;
+  let gestureHandled = false;
+  let ignoreEntryClick = false;
   let destroyed = false;
 
   const status = div({class: "sync-status", "data-state": "clean", role: "status", "aria-label": "已保存"});
   const river = div({class: "river", role: "list", "aria-label": "条目河流"});
   const search = textarea({class: "search-input", rows: 1, spellcheck: false, autocomplete: "off", "aria-label": "搜索", placeholder: "搜索"});
-  const searchTrigger = button({type: "button", class: "search-trigger", "aria-label": "搜索，长按新增"});
+  const searchTrigger = button({type: "button", class: "search-trigger", "aria-label": "搜索，上滑新增，左滑清空"});
   const searchControl = div({class: "search-control", "data-open": "false", "data-has-query": String(Boolean(query.trim()))}, searchTrigger, search);
   const selectionSearch = button({type: "button", class: "selection-search", hidden: true, "aria-label": "在新标签搜索选中文字"});
   const shell = div({class: "river-shell"}, status, river, searchControl, selectionSearch);
@@ -41,9 +41,8 @@ export function createRiverView({root, repository, saver, sync, queryLocation, n
   selectionSearch.addEventListener("click", openSelectionSearch);
   searchTrigger.addEventListener("click", onTriggerClick);
   searchTrigger.addEventListener("pointerdown", onTriggerPointerDown);
-  searchTrigger.addEventListener("pointermove", onTriggerPointerMove);
-  searchTrigger.addEventListener("pointerup", cancelHold);
-  searchTrigger.addEventListener("pointercancel", cancelHold);
+  searchTrigger.addEventListener("pointerup", onTriggerPointerUp);
+  searchTrigger.addEventListener("pointercancel", cancelGesture);
   searchTrigger.addEventListener("contextmenu", event => event.preventDefault());
   searchControl.addEventListener("transitionend", onSearchTransitionEnd);
 
@@ -80,6 +79,7 @@ export function createRiverView({root, repository, saver, sync, queryLocation, n
     const today = dateKey(instant);
     const rows = [];
     for (const day of agenda.days) {
+      if (query.trim() && !day.entries.length) continue;
       rows.push(renderDateHeading(day.date, day.date === today));
       rows.push(...day.entries.map(renderEntry));
       if (day.date === today && editing?.isNew) rows.push(renderEditorRow("new"));
@@ -105,7 +105,11 @@ export function createRiverView({root, repository, saver, sync, queryLocation, n
 
   function renderEntry(entry) {
     if (editing?.id === entry.id) return renderEditorRow(entry.id);
-    return row(entry.id, div({class: "entry-text", onclick: event => startEdit(entry, event.currentTarget)}, cleanText(entry.text) || " "));
+    return row(entry.id, div({class: "entry-text", onclick: event => {
+      if (!window.getSelection()?.isCollapsed) return;
+      if (ignoreEntryClick) return;
+      startEdit(entry, event.currentTarget);
+    }}, cleanText(entry.text) || " "));
   }
 
   function renderEditorRow(id) {
@@ -115,6 +119,14 @@ export function createRiverView({root, repository, saver, sync, queryLocation, n
       style: editing.initialHeight ? `height:${editing.initialHeight}px` : "",
       oninput: event => { editing.draft = event.target.value; grow(event.target); renderStatus(); },
       onkeydown: event => {
+        if ((event.ctrlKey || event.metaKey) && event.key === "Enter") {
+          const text = event.currentTarget.value.slice(event.currentTarget.selectionStart, event.currentTarget.selectionEnd).trim();
+          if (text) {
+            event.preventDefault();
+            openTextSearch(text);
+          }
+          return;
+        }
         if (event.key !== "Escape") return;
         event.preventDefault();
         void commitEdit();
@@ -156,7 +168,6 @@ export function createRiverView({root, repository, saver, sync, queryLocation, n
     const finished = editing;
     const text = cleanText(finished.draft);
     editing = null;
-    longPressed = false;
     search.disabled = false;
     searchTrigger.disabled = false;
 
@@ -189,12 +200,21 @@ export function createRiverView({root, repository, saver, sync, queryLocation, n
       event.preventDefault();
       event.stopPropagation();
     }
+    if (wantsEntry) {
+      ignoreEntryClick = true;
+      setTimeout(() => { ignoreEntryClick = false; }, 0);
+    }
     void commitEdit();
     if (wantsSearch) showSearch();
   }
 
   function onDocumentKeydown(event) {
     if (event.isComposing || event.altKey) return;
+    if ((event.ctrlKey || event.metaKey) && event.key === "Escape" && !editing) {
+      event.preventDefault();
+      clearSearch();
+      return;
+    }
     if ((event.ctrlKey || event.metaKey) && event.key === "Enter" && selectedText) {
       event.preventDefault();
       openSelectionSearch();
@@ -240,9 +260,9 @@ export function createRiverView({root, repository, saver, sync, queryLocation, n
   }
 
   function onTriggerClick(event) {
-    if (longPressed) {
+    if (gestureHandled) {
       event.preventDefault();
-      longPressed = false;
+      gestureHandled = false;
       return;
     }
     showSearch();
@@ -250,27 +270,46 @@ export function createRiverView({root, repository, saver, sync, queryLocation, n
 
   function onTriggerPointerDown(event) {
     if (searchTrigger.disabled) return;
-    holdOrigin = {x: event.clientX, y: event.clientY};
-    holdTimer = setTimeout(() => {
-      holdTimer = null;
-      longPressed = true;
-      startAdd();
-    }, 500);
+    gesture = {id: event.pointerId, x: event.clientX, y: event.clientY};
+    searchTrigger.setPointerCapture?.(event.pointerId);
   }
 
-  function onTriggerPointerMove(event) {
-    if (!holdOrigin || Math.hypot(event.clientX - holdOrigin.x, event.clientY - holdOrigin.y) <= 10) return;
-    cancelHold();
+  function onTriggerPointerUp(event) {
+    if (!gesture || gesture.id !== event.pointerId) return cancelGesture();
+    const dx = event.clientX - gesture.x;
+    const dy = event.clientY - gesture.y;
+    gesture = null;
+    if (dy < -32 && Math.abs(dy) > Math.abs(dx)) {
+      markGestureHandled();
+      startAdd();
+    } else if (dx < -32 && Math.abs(dx) > Math.abs(dy) && query.trim()) {
+      markGestureHandled();
+      clearSearch();
+    }
+  }
+
+  function markGestureHandled() {
+    gestureHandled = true;
+    setTimeout(() => { gestureHandled = false; }, 400);
   }
 
   function onSearchTransitionEnd(event) {
     if (event.propertyName === "width" && searchControl.dataset.open === "true") grow(search);
   }
 
-  function cancelHold() {
-    if (holdTimer !== null) clearTimeout(holdTimer);
-    holdTimer = null;
-    holdOrigin = null;
+  function cancelGesture() {
+    gesture = null;
+    gestureHandled = false;
+  }
+
+  function clearSearch() {
+    query = "";
+    search.value = "";
+    search.style.height = "";
+    searchControl.dataset.open = "false";
+    searchControl.dataset.hasQuery = "false";
+    queryLocation.write("");
+    renderEntries();
   }
 
   function onSearch() {
@@ -302,12 +341,16 @@ export function createRiverView({root, repository, saver, sync, queryLocation, n
     const box = range.getBoundingClientRect();
     selectionSearch.style.left = `${Math.min(window.innerWidth - 42, Math.max(8, box.right + 6))}px`;
     selectionSearch.style.top = `${Math.min(window.innerHeight - 42, Math.max(8, box.bottom + 6))}px`;
-    selectionSearch.hidden = !window.matchMedia("(max-width: 600px)").matches;
+    selectionSearch.hidden = false;
   }
 
   function openSelectionSearch() {
-    if (selectedText) window.open(queryLocation.url(selectedText), "_blank", "noopener");
+    if (selectedText) openTextSearch(selectedText);
     hideSelectionSearch();
+  }
+
+  function openTextSearch(text) {
+    window.open(queryLocation.url(text), "_blank", "noopener");
   }
 
   function hideSelectionSearch() {
@@ -342,7 +385,7 @@ export function createRiverView({root, repository, saver, sync, queryLocation, n
     window.removeEventListener("focus", onWindowFocus);
     window.removeEventListener("beforeunload", onBeforeUnload);
     searchControl.removeEventListener("transitionend", onSearchTransitionEnd);
-    if (holdTimer !== null) clearTimeout(holdTimer);
+    cancelGesture();
   }
 
   return destroy;
@@ -352,7 +395,8 @@ function renderDateHeading(key, today) {
   const [year, month, day] = key.split("-").map(Number);
   const weekday = ["周日", "周一", "周二", "周三", "周四", "周五", "周六"][new Date(year, month - 1, day).getDay()];
   return div({class: `date-heading${today ? " today" : ""}`},
-    div({class: "date-main"}, `${year}年${month}月${day}日`),
+    div({class: "date-year"}, `${year} ·`),
+    div({class: "date-main"}, `${month}月${day}日`),
     div({class: "date-meta"}, weekday));
 }
 
