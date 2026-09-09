@@ -52,6 +52,7 @@ test("setup, add, edit outside-click save, search, and selection search", async 
   await editor.fill(`客户B example.com ${reminderMarker}`);
   await page.locator(".sync-status").click();
   await expect(page.locator(".sync-status")).toHaveAttribute("data-state", "clean", {timeout: 5000});
+  await expect(page.locator(".river > .river-entry .date-token")).toHaveText(reminderMarker);
 
   const firstEntry = page.getByText("客户A 1.2.3.4", {exact: false});
   const displayedHeight = await firstEntry.evaluate(node => node.getBoundingClientRect().height);
@@ -136,6 +137,8 @@ test("default river groups today and previews future date markers", async ({page
   await expect(futureAdd).toBeVisible();
   await expect(page.locator(".agenda-future .date-main")).toContainText(tomorrowHeading);
   await expect(page.locator(".agenda-future")).toContainText(`客户B example.com ${reminderMarker}`);
+  await expect(page.locator(".agenda-future .date-token")).toHaveText(reminderMarker);
+  await expect(page.locator(".agenda-future .date-token")).not.toHaveCSS("background-color", "rgba(0, 0, 0, 0)");
   await futureAdd.click();
   await expect(page.getByRole("textbox", {name: "编辑条目"})).toBeFocused();
   await page.getByRole("textbox", {name: "编辑条目"}).press("Escape");

@@ -101,7 +101,7 @@ export function createRiverView({root, repository, saver, sync, queryLocation, n
           futureRows.push(renderDateHeading(reminder.date, false));
           lastDate = reminder.date;
         }
-        futureRows.push(row(null, div({class: "entry-text reminder-text", tabindex: 0}, reminder.entry.text || " "), "reminder-entry"));
+        futureRows.push(row(null, div({class: "entry-text reminder-text", tabindex: 0}, ...highlightDateMarkers(reminder.entry.text || " ")), "reminder-entry"));
       }
       rows.push(div({class: "agenda-future"},
         button({type: "button", class: "future-heading", "aria-label": "新增条目", onclick: startAdd}),
@@ -116,7 +116,7 @@ export function createRiverView({root, repository, saver, sync, queryLocation, n
       if (!window.getSelection()?.isCollapsed) return;
       if (ignoreEntryClick) return;
       startEdit(entry, event.currentTarget, textOffsetAtPoint(event.currentTarget, event.clientX, event.clientY));
-    }}, cleanText(entry.text) || " "));
+    }}, ...highlightDateMarkers(cleanText(entry.text) || " ")));
   }
 
   function renderEditorRow(id) {
@@ -433,6 +433,22 @@ function renderDateHeading(key, today) {
 
 function dateKey(value) {
   return `${value.getFullYear()}-${String(value.getMonth() + 1).padStart(2, "0")}-${String(value.getDate()).padStart(2, "0")}`;
+}
+
+// Date markers remain ordinary text data. The view only decorates their
+// rendered ranges, so copying and editing still expose the original text.
+function highlightDateMarkers(text) {
+  const nodes = [];
+  const pattern = /(?:^|[^\p{L}\p{N}_])(@(?:\d{4}-\d{1,2}-\d{1,2}|\d{1,2}-\d{1,2}|\d{1,2}))(?![\d-])/gu;
+  let cursor = 0;
+  for (const match of String(text).matchAll(pattern)) {
+    const token = match[1];
+    const start = match.index + match[0].length - token.length;
+    nodes.push(text.slice(cursor, start), span({class: "date-token"}, token));
+    cursor = start + token.length;
+  }
+  nodes.push(text.slice(cursor));
+  return nodes;
 }
 
 // Stored entries have no meaningful whitespace outside their first and last

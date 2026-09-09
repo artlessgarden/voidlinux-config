@@ -25,6 +25,7 @@ button:focus-visible, input:focus-visible, textarea:focus-visible { outline: 1px
 .entry-marker { width: .5em; height: 1em; margin-top: .32em; border-radius: 1px; background: var(--marker); }
 .river-entry:has(.entry-editor) { border-radius: 1px; background: var(--card); box-shadow: 0 0 0 8px var(--card); }
 .entry-text { min-width: 0; white-space: pre-wrap; overflow-wrap: anywhere; cursor: text; }
+.date-token { background: color-mix(in srgb, var(--marker) 42%, transparent); }
 .entry-editor { display: block; width: 100%; resize: none; overflow: hidden; padding: 0; background: transparent; line-height: 1.65; }
 .entry-editor:focus-visible { outline: 0; }
 
