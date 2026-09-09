@@ -68,7 +68,7 @@ test("setup, add, edit outside-click save, search, and selection search", async 
 
   await swipeLeft(page, trigger);
   await expect(page).toHaveURL(/order=updated/);
-  await expect(page.locator(".river > .date-heading")).toHaveCount(0);
+  await expect(page.locator(".date-heading")).toHaveCount(0);
   expect(await page.locator(".river > .river-entry .entry-text").allTextContents()).toEqual([
     `客户B example.com ${reminderMarker}`,
     "客户A 1.2.3.4 已修改",
@@ -83,6 +83,9 @@ test("setup, add, edit outside-click save, search, and selection search", async 
   await expect(page.getByRole("listitem")).toHaveCount(1);
   await expect(page.getByRole("listitem")).toContainText("客户B example.com");
   await expect(page.locator(".agenda-future")).toHaveCount(0);
+  await search.fill("一\n二\n三\n四");
+  await expect.poll(async () => (await search.boundingBox()).height).toBeGreaterThan(70);
+  await expect.poll(async () => (await search.boundingBox()).height).toBeLessThan(97);
   await search.fill("不存在");
   await expect(page.locator(".date-heading")).toHaveCount(0);
   await search.fill("客户B EXAMPLE.com");

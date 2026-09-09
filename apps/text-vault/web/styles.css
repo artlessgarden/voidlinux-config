@@ -31,7 +31,7 @@ button:focus-visible, input:focus-visible, textarea:focus-visible { outline: 1px
 .search-control { position: fixed; z-index: 2; right: 18px; bottom: 18px; display: grid; grid-template-columns: 48px minmax(0, 1fr); align-items: end; width: 48px; overflow: hidden; border-radius: 24px; opacity: 1; pointer-events: auto; background: var(--surface); box-shadow: 0 8px 30px rgb(0 0 0 / .22); transition: width 160ms ease, opacity 120ms ease; }
 .search-control[data-open="true"] { width: min(360px, calc(100vw - 36px)); opacity: 1; pointer-events: auto; }
 .search-control:focus-within { background: color-mix(in srgb, var(--surface) 82%, var(--marker)); }
-.search-input { width: 100%; min-width: 0; min-height: 48px; max-height: 30dvh; resize: none; padding: 13px 14px 13px 0; visibility: hidden; opacity: 0; background: transparent; line-height: 1.45; scrollbar-width: none; transition: opacity 100ms ease, visibility 0s linear 100ms; }
+.search-input { width: 100%; min-width: 0; min-height: 48px; max-height: calc(4.35em + 26px); overflow-y: auto; resize: none; padding: 13px 14px 13px 0; visibility: hidden; opacity: 0; background: transparent; line-height: 1.45; scrollbar-width: none; transition: opacity 100ms ease, visibility 0s linear 100ms; }
 .search-input::-webkit-scrollbar { display: none; }
 .search-control[data-open="false"] .search-input { height: 48px; }
 .search-control[data-open="true"] .search-input { visibility: visible; opacity: 1; transition-delay: 50ms, 0s; }

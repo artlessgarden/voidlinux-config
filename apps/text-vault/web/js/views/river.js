@@ -97,7 +97,7 @@ export function createRiverView({root, repository, saver, sync, queryLocation, n
       const futureRows = [];
       let lastDate = "";
       for (const reminder of agenda.reminders) {
-        if (reminder.date !== lastDate) {
+        if (orderBy === "createdAt" && reminder.date !== lastDate) {
           futureRows.push(renderDateHeading(reminder.date, false));
           lastDate = reminder.date;
         }
