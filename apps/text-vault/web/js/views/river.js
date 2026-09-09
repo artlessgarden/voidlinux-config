@@ -9,6 +9,7 @@ const {button, div, span, textarea} = van.tags;
 // when a click outside the editor commits the single active draft.
 export function createRiverView({root, repository, saver, sync, queryLocation, now = () => new Date()}) {
   let query = queryLocation.read();
+  let orderBy = queryLocation.readOrder();
   let editing = null;
   let selectedText = "";
   let gesture = null;
@@ -19,7 +20,7 @@ export function createRiverView({root, repository, saver, sync, queryLocation, n
   const status = div({class: "sync-status", "data-state": "clean", role: "status", "aria-label": "已保存"});
   const river = div({class: "river", role: "list", "aria-label": "条目河流"});
   const search = textarea({class: "search-input", rows: 1, spellcheck: false, autocomplete: "off", "aria-label": "搜索", placeholder: "搜索"});
-  const searchTrigger = button({type: "button", class: "search-trigger", "aria-label": "搜索，打开时点击清空，上滑新增"});
+  const searchTrigger = button({type: "button", class: "search-trigger", "aria-label": "搜索，打开时点击清空，上滑新增，左滑切换排列"});
   const searchControl = div({class: "search-control", "data-open": String(Boolean(query.trim()))}, searchTrigger, search);
   const selectionSearch = button({type: "button", class: "selection-search", hidden: true, "aria-label": "在新标签搜索选中文字"});
   const shell = div({class: "river-shell"}, status, river, searchControl, selectionSearch);
@@ -53,7 +54,7 @@ export function createRiverView({root, repository, saver, sync, queryLocation, n
   renderStatus();
 
   function entries() {
-    return runQuery({type: "full-text", text: query, orderBy: "createdAt", direction: "asc"}, repository.values());
+    return runQuery({type: "full-text", text: query, orderBy, direction: "asc"}, repository.values());
   }
 
   function renderEntries() {
@@ -79,11 +80,16 @@ export function createRiverView({root, repository, saver, sync, queryLocation, n
     const agenda = buildAgenda(filteredEntries, instant);
     const today = dateKey(instant);
     const rows = [];
-    for (const day of agenda.days) {
-      if (query.trim() && !day.entries.length) continue;
-      rows.push(renderDateHeading(day.date, day.date === today));
-      rows.push(...day.entries.map(renderEntry));
-      if (day.date === today && editing?.isNew) rows.push(renderEditorRow("new"));
+    if (orderBy === "updatedAt") {
+      rows.push(...filteredEntries.map(renderEntry));
+      if (editing?.isNew) rows.push(renderEditorRow("new"));
+    } else {
+      for (const day of agenda.days) {
+        if (query.trim() && !day.entries.length) continue;
+        rows.push(renderDateHeading(day.date, day.date === today));
+        rows.push(...day.entries.map(renderEntry));
+        if (day.date === today && editing?.isNew) rows.push(renderEditorRow("new"));
+      }
     }
     // Future references use the same date-and-entry grammar as the river.
     // A query already contains those entries, so its result does not repeat them.
@@ -289,7 +295,17 @@ export function createRiverView({root, repository, saver, sync, queryLocation, n
     if (dy < -32 && Math.abs(dy) > Math.abs(dx)) {
       markGestureHandled();
       startAdd();
+    } else if (dx < -32 && Math.abs(dx) > Math.abs(dy)) {
+      markGestureHandled();
+      toggleOrder();
     }
+  }
+
+  function toggleOrder() {
+    if (editing) return;
+    orderBy = orderBy === "createdAt" ? "updatedAt" : "createdAt";
+    queryLocation.writeOrder(orderBy);
+    renderEntries();
   }
 
   function markGestureHandled() {
@@ -335,6 +351,7 @@ export function createRiverView({root, repository, saver, sync, queryLocation, n
   function onLocationChange(value) {
     if (editing) return;
     query = value;
+    orderBy = queryLocation.readOrder();
     search.value = value;
     searchControl.dataset.open = String(Boolean(query.trim()));
     renderEntries();

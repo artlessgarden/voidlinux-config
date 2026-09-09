@@ -3,6 +3,9 @@
 export function buildAgenda(entries, now = new Date()) {
   const today = startOfDay(now);
   const todayKey = dateKey(today);
+  const lastVisible = new Date(today);
+  lastVisible.setDate(lastVisible.getDate() + 6);
+  const lastVisibleKey = dateKey(lastVisible);
   const days = new Map();
   const reminders = [];
   const seenReminders = new Set();
@@ -15,9 +18,9 @@ export function buildAgenda(entries, now = new Date()) {
       days.get(createdKey).push(entry);
     }
 
-    for (const target of reminderDates(entry.text, today)) {
-      const key = `${target}:${entry.id}`;
-      if (seenReminders.has(key)) continue;
+    const target = nearestReminderDate(entry.text, today);
+    const key = `${target}:${entry.id}`;
+    if (target && target <= lastVisibleKey && !seenReminders.has(key)) {
       seenReminders.add(key);
       reminders.push({date: target, entry});
     }
@@ -33,19 +36,40 @@ export function buildAgenda(entries, now = new Date()) {
   };
 }
 
-function reminderDates(text, today) {
-  const result = [];
-  const pattern = /(?:^|[^\p{L}\p{N}_])@(\d{1,2})-(\d{1,2})(?!\d)/gu;
+function nearestReminderDate(text, today) {
+  const candidates = [];
+  const pattern = /(?:^|[^\p{L}\p{N}_])@(\d{1,4})(?:-(\d{1,2}))?(?:-(\d{1,2}))?(?![\d-])/gu;
   for (const match of String(text).matchAll(pattern)) {
-    const month = Number(match[1]);
-    const day = Number(match[2]);
-    let year = today.getFullYear();
-    let candidate = validDate(year, month, day);
-    if (!candidate) continue;
-    if (candidate < today) candidate = validDate(year + 1, month, day);
-    if (candidate) result.push(dateKey(candidate));
+    let candidate = null;
+    if (match[3]) candidate = fixedDate(Number(match[1]), Number(match[2]), Number(match[3]), today);
+    else if (match[2]) candidate = annualDate(Number(match[1]), Number(match[2]), today);
+    else candidate = monthlyDate(Number(match[1]), today);
+    if (candidate) candidates.push(candidate);
   }
-  return result;
+  const nearest = candidates.toSorted((left, right) => left - right)[0];
+  return nearest ? dateKey(nearest) : null;
+}
+
+function fixedDate(year, month, day, today) {
+  const candidate = validDate(year, month, day);
+  return candidate && candidate >= today ? candidate : null;
+}
+
+function annualDate(month, day, today) {
+  let candidate = validDate(today.getFullYear(), month, day);
+  if (!candidate) return null;
+  if (candidate < today) candidate = validDate(today.getFullYear() + 1, month, day);
+  return candidate;
+}
+
+function monthlyDate(day, today) {
+  if (day < 1 || day > 31) return null;
+  for (let offset = 0; offset < 24; offset += 1) {
+    const month = today.getMonth() + offset;
+    const candidate = validDate(today.getFullYear() + Math.floor(month / 12), (month % 12) + 1, day);
+    if (candidate && candidate >= today) return candidate;
+  }
+  return null;
 }
 
 function validDate(year, month, day) {

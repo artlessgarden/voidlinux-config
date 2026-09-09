@@ -41,6 +41,18 @@ test("query changes preserve the selected view", () => {
   assert.equal(query.url("other"), "https://vault.test/#view=agenda&q=other");
 });
 
+test("updated order is optional URL state", () => {
+  const browser = fakeBrowser("https://vault.test/#q=client");
+  const query = createQueryLocation(browser);
+
+  assert.equal(query.readOrder(), "createdAt");
+  query.writeOrder("updatedAt");
+  assert.equal(browser.replaced.href, "https://vault.test/#q=client&order=updated");
+
+  browser.location.hash = "#q=client&order=updated";
+  assert.equal(query.readOrder(), "updatedAt");
+});
+
 function fakeBrowser(href) {
   let listener = null;
   const location = {href, hash: new URL(href).hash};

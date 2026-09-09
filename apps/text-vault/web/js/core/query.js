@@ -10,13 +10,13 @@ export function runQuery(spec, objects) {
   const needles = spec.text.trim().toLocaleLowerCase().split(/\s+/u).filter(Boolean);
   return objects
     .filter(object => object.kind === "entry" && needles.every(needle => object.text.toLocaleLowerCase().includes(needle)))
-    .toSorted((left, right) => left.createdAt.localeCompare(right.createdAt) || left.id.localeCompare(right.id));
+    .toSorted((left, right) => left[spec.orderBy].localeCompare(right[spec.orderBy]) || left.id.localeCompare(right.id));
 }
 
 function validateQuery(spec) {
   if (!spec || typeof spec !== "object" || Array.isArray(spec)) throw new TypeError("invalid query");
   if (spec.type !== "full-text") throw new TypeError("unsupported query type");
   if (typeof spec.text !== "string") throw new TypeError("invalid query text");
-  if (spec.orderBy !== "createdAt") throw new TypeError("unsupported query order");
+  if (!["createdAt", "updatedAt"].includes(spec.orderBy)) throw new TypeError("unsupported query order");
   if (spec.direction !== "asc") throw new TypeError("unsupported query direction");
 }

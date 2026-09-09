@@ -12,6 +12,10 @@ export function createQueryLocation({location, history, addEventListener, remove
     return new URLSearchParams(location.hash.slice(1)).get("q") ?? "";
   }
 
+  function readOrder() {
+    return new URLSearchParams(location.hash.slice(1)).get("order") === "updated" ? "updatedAt" : "createdAt";
+  }
+
   function write(query) {
     history.replaceState(history.state, "", url(query));
   }
@@ -25,6 +29,15 @@ export function createQueryLocation({location, history, addEventListener, remove
     return next.href;
   }
 
+  function writeOrder(orderBy) {
+    const next = new URL(location.href);
+    const parameters = new URLSearchParams(next.hash.slice(1));
+    if (orderBy === "updatedAt") parameters.set("order", "updated");
+    else parameters.delete("order");
+    next.hash = parameters.toString();
+    history.replaceState(history.state, "", next.href);
+  }
+
   function subscribe(callback) {
     subscribers.add(callback);
     return () => subscribers.delete(callback);
@@ -35,5 +48,5 @@ export function createQueryLocation({location, history, addEventListener, remove
     subscribers.clear();
   }
 
-  return {read, write, url, subscribe, destroy};
+  return {read, write, url, readOrder, writeOrder, subscribe, destroy};
 }

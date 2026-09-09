@@ -27,9 +27,15 @@ test("equal creation times use the id as a deterministic tie break", () => {
   assert.deepEqual(runQuery(fullText(""), [sameTime, early]).map(object => object.id), ["268t00000", "268t00002"]);
 });
 
+test("updated order keeps the most recently changed entry last", () => {
+  const recentlyChanged = {...early, updatedAt: "2026-08-30T00:00:00.000Z"};
+  const result = runQuery({...fullText(""), orderBy: "updatedAt"}, [recentlyChanged, later]);
+  assert.deepEqual(result.map(object => object.id), ["268t00001", "268t00000"]);
+});
+
 test("unsupported query declarations fail explicitly", () => {
   assert.throws(() => runQuery({...fullText(""), type: "map"}, []), /unsupported query type/);
-  assert.throws(() => runQuery({...fullText(""), orderBy: "updatedAt"}, []), /unsupported query order/);
+  assert.throws(() => runQuery({...fullText(""), orderBy: "title"}, []), /unsupported query order/);
   assert.throws(() => runQuery({...fullText(""), direction: "desc"}, []), /unsupported query direction/);
   assert.throws(() => runQuery({...fullText(""), text: 42}, []), /invalid query text/);
 });

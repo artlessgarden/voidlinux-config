@@ -3,6 +3,12 @@ import {test, expect} from "@playwright/test";
 test.describe.configure({mode: "serial"});
 
 const firstPassword = "daily-vault-passphrase";
+const today = new Date();
+const tomorrow = new Date(today);
+tomorrow.setDate(tomorrow.getDate() + 1);
+const reminderMarker = `@${tomorrow.getMonth() + 1}-${tomorrow.getDate()}`;
+const todayHeading = `${today.getFullYear()}·${today.getMonth() + 1}月${today.getDate()}日·${["周日", "周一", "周二", "周三", "周四", "周五", "周六"][today.getDay()]}`;
+const tomorrowHeading = `${tomorrow.getMonth() + 1}月${tomorrow.getDate()}日`;
 
 test("an insecure context shows guidance instead of crashing", async ({page}) => {
   const runtimeErrors = captureRuntimeErrors(page);
@@ -23,11 +29,12 @@ test("setup, add, edit outside-click save, search, and selection search", async 
   await page.getByRole("button", {name: "创建保险库"}).click();
 
   const search = page.getByRole("textbox", {name: "搜索"});
-  await expect(page.getByRole("button", {name: "搜索，打开时点击清空，上滑新增"})).toBeVisible();
+  const trigger = page.getByRole("button", {name: "搜索，打开时点击清空，上滑新增，左滑切换排列"});
+  await expect(trigger).toBeVisible();
   await expect(search).toBeHidden();
   await expect(page.locator("body")).toHaveCSS("background-color", "rgb(41, 45, 43)");
   await expect(page.locator("body")).toHaveCSS("background-image", /animal-tile\.svg/);
-  await expect(page.locator(".date-heading:not(.future-heading)").last()).toHaveText("2026·9月8日·周二");
+  await expect(page.locator(".date-heading").last()).toHaveText(todayHeading);
   await page.keyboard.press("/");
   await expect(search).toBeFocused();
   await search.press("Escape");
@@ -42,7 +49,7 @@ test("setup, add, edit outside-click save, search, and selection search", async 
   await expect(page.getByRole("listitem").first().locator(".entry-text")).toHaveText("客户A 1.2.3.4\n宝塔");
 
   await page.keyboard.press("o");
-  await editor.fill("客户B example.com @12-31");
+  await editor.fill(`客户B example.com ${reminderMarker}`);
   await page.locator(".sync-status").click();
   await expect(page.locator(".sync-status")).toHaveAttribute("data-state", "clean", {timeout: 5000});
 
@@ -55,9 +62,19 @@ test("setup, add, edit outside-click save, search, and selection search", async 
   await page.locator(".river-entry:not(.reminder-entry) .entry-text").filter({hasText: "客户B example.com"}).click();
   await expect(editor).toHaveCount(0);
   await page.locator(".river-entry:not(.reminder-entry) .entry-text").filter({hasText: "客户B example.com"}).click();
-  await expect(editor).toHaveValue("客户B example.com @12-31");
+  await expect(editor).toHaveValue(`客户B example.com ${reminderMarker}`);
   await page.locator(".sync-status").click();
   await expect(page.locator(".sync-status")).toHaveAttribute("data-state", "clean", {timeout: 5000});
+
+  await swipeLeft(page, trigger);
+  await expect(page).toHaveURL(/order=updated/);
+  await expect(page.locator(".river > .date-heading")).toHaveCount(0);
+  expect(await page.locator(".river > .river-entry .entry-text").allTextContents()).toEqual([
+    `客户B example.com ${reminderMarker}`,
+    "客户A 1.2.3.4 已修改",
+  ]);
+  await swipeLeft(page, trigger);
+  await expect(page).not.toHaveURL(/order=updated/);
 
   await page.keyboard.press("/");
   await search.fill("客户B EXAMPLE.com");
@@ -111,11 +128,11 @@ test("default river groups today and previews future date markers", async ({page
   await page.getByLabel("主密码").fill(firstPassword);
   await page.getByRole("button", {name: "解锁"}).click();
 
-  await expect(page.locator(".date-heading").first()).toHaveText("2026·9月8日·周二");
+  await expect(page.locator(".date-heading").first()).toHaveText(todayHeading);
   const futureAdd = page.getByRole("button", {name: "新增条目"});
   await expect(futureAdd).toBeVisible();
-  await expect(page.locator(".agenda-future .date-main")).toContainText("12月31日");
-  await expect(page.locator(".agenda-future")).toContainText("客户B example.com @12-31");
+  await expect(page.locator(".agenda-future .date-main")).toContainText(tomorrowHeading);
+  await expect(page.locator(".agenda-future")).toContainText(`客户B example.com ${reminderMarker}`);
   await futureAdd.click();
   await expect(page.getByRole("textbox", {name: "编辑条目"})).toBeFocused();
   await page.getByRole("textbox", {name: "编辑条目"}).press("Escape");
@@ -154,7 +171,7 @@ test("mobile uses the same river and default controls", async ({browser}) => {
   await page.getByLabel("主密码").fill(firstPassword);
   await page.getByRole("button", {name: "解锁"}).click();
   await expect(page.getByRole("list", {name: "条目河流"})).toBeVisible();
-  const trigger = page.getByRole("button", {name: "搜索，打开时点击清空，上滑新增"});
+  const trigger = page.getByRole("button", {name: "搜索，打开时点击清空，上滑新增，左滑切换排列"});
   await expect(trigger).toBeVisible();
   await page.locator(".entry-text").first().evaluate(node => {
     const range = document.createRange();
@@ -207,4 +224,12 @@ function captureRuntimeErrors(page, allowedResponses = new Set()) {
     if (!allowedResponses.has(summary)) errors.push(summary);
   });
   return errors;
+}
+
+async function swipeLeft(page, locator) {
+  const box = await locator.boundingBox();
+  await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+  await page.mouse.down();
+  await page.mouse.move(box.x - 40, box.y + box.height / 2);
+  await page.mouse.up();
 }
