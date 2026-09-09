@@ -101,7 +101,7 @@ export function createRiverView({root, repository, saver, sync, queryLocation, n
           futureRows.push(renderDateHeading(reminder.date, false));
           lastDate = reminder.date;
         }
-        futureRows.push(row(null, div({class: "entry-text reminder-text", tabindex: 0}, ...highlightDateMarkers(reminder.entry.text || " ")), "reminder-entry"));
+        futureRows.push(renderReminderEntry(reminder.entry));
       }
       rows.push(div({class: "agenda-future"},
         button({type: "button", class: "future-heading", "aria-label": "新增条目", onclick: startAdd}),
@@ -111,7 +111,7 @@ export function createRiverView({root, repository, saver, sync, queryLocation, n
   }
 
   function renderEntry(entry) {
-    if (editing?.id === entry.id) return renderEditorRow(entry.id);
+    if (editing?.id === entry.id && editing.surface !== "reminder") return renderEditorRow(entry.id);
     return row(entry.id, div({class: "entry-text", onclick: event => {
       if (!window.getSelection()?.isCollapsed) return;
       if (ignoreEntryClick) return;
@@ -119,7 +119,16 @@ export function createRiverView({root, repository, saver, sync, queryLocation, n
     }}, ...highlightDateMarkers(cleanText(entry.text) || " ")));
   }
 
-  function renderEditorRow(id) {
+  function renderReminderEntry(entry) {
+    if (editing?.id === entry.id && editing.surface === "reminder") return renderEditorRow(entry.id, "reminder-entry");
+    return row(entry.id, div({class: "entry-text reminder-text", tabindex: 0, onclick: event => {
+      if (!window.getSelection()?.isCollapsed) return;
+      if (ignoreEntryClick) return;
+      startEdit(entry, event.currentTarget, textOffsetAtPoint(event.currentTarget, event.clientX, event.clientY), "reminder");
+    }}, ...highlightDateMarkers(entry.text || " ")), "reminder-entry");
+  }
+
+  function renderEditorRow(id, extraClass = "") {
     const editor = textarea({
       class: "entry-editor", "data-editor-id": id, "aria-label": "编辑条目", spellcheck: false, rows: 1,
       value: editing.draft,
@@ -140,7 +149,7 @@ export function createRiverView({root, repository, saver, sync, queryLocation, n
         void commitEdit();
       },
     });
-    return row(id, editor);
+    return row(id, editor, extraClass);
   }
 
   function row(id, body, extraClass = "") {
@@ -149,9 +158,9 @@ export function createRiverView({root, repository, saver, sync, queryLocation, n
     return div(attributes, span({class: "entry-marker", "aria-hidden": "true"}), body);
   }
 
-  function startEdit(entry, source, initialCaret) {
+  function startEdit(entry, source, initialCaret, surface = "river") {
     if (editing) return;
-    editing = {id: entry.id, draft: entry.text, original: entry.text, isNew: false, initialHeight: source?.getBoundingClientRect().height || 0, initialCaret};
+    editing = {id: entry.id, draft: entry.text, original: entry.text, isNew: false, initialHeight: source?.getBoundingClientRect().height || 0, initialCaret, surface};
     beginEditing();
   }
 

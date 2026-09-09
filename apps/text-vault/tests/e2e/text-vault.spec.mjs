@@ -139,6 +139,17 @@ test("default river groups today and previews future date markers", async ({page
   await expect(page.locator(".agenda-future")).toContainText(`客户B example.com ${reminderMarker}`);
   await expect(page.locator(".agenda-future .date-token")).toHaveText(reminderMarker);
   await expect(page.locator(".agenda-future .date-token")).not.toHaveCSS("background-color", "rgba(0, 0, 0, 0)");
+  const futureDate = page.locator(".agenda-future .date-heading");
+  await futureDate.hover();
+  await expect(futureDate).toHaveCSS("opacity", "0.65");
+  const futureReminder = page.locator(".agenda-future .reminder-entry");
+  await futureReminder.hover();
+  await expect(futureReminder).toHaveCSS("opacity", "0.65");
+  await futureReminder.locator(".reminder-text").click({position: {x: 2, y: 5}});
+  const futureEditor = page.locator(".agenda-future .entry-editor");
+  await expect(futureEditor).toBeFocused();
+  await expect(futureEditor).toHaveValue(`客户B example.com ${reminderMarker}`);
+  await futureEditor.press("Escape");
   await futureAdd.click();
   await expect(page.getByRole("textbox", {name: "编辑条目"})).toBeFocused();
   await page.getByRole("textbox", {name: "编辑条目"}).press("Escape");

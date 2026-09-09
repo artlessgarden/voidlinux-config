@@ -54,7 +54,8 @@ button:focus-visible, input:focus-visible, textarea:focus-visible { outline: 1px
 .future-heading { display: block; width: 60%; height: 17px; margin: 0 auto 20px; background: linear-gradient(transparent 8px, color-mix(in srgb, var(--line) 55%, transparent) 8px 9px, transparent 9px); }
 .agenda-future .date-heading, .agenda-future .river-entry { opacity: .32; transition: opacity 120ms ease; }
 .agenda-future .date-heading:hover, .agenda-future .date-heading:active,
-.agenda-future .river-entry:hover, .agenda-future .river-entry:active, .agenda-future .river-entry:focus-within { opacity: 1; }
+.agenda-future .river-entry:hover, .agenda-future .river-entry:active, .agenda-future .river-entry:focus-within { opacity: .65; }
+.agenda-future .river-entry:has(.entry-editor) { opacity: 1; }
 .reminder-text:focus-visible { outline: 0; }
 
 .auth-shell { min-height: 100dvh; display: grid; place-items: center; padding: 20px; background: var(--background); font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
