@@ -1,8 +1,8 @@
 #!/bin/sh
 set -eu
 repo=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)
-status=$repo/root/home/.config/vis/my/status.lua
-formatter=$repo/root/home/.config/vis/my/formatter.lua
+status=$repo/root/home/.config/vis/visrc.lua
+formatter=$status
 
 fail() {
 	printf 'not ok - %s\n' "$1" >&2
@@ -34,10 +34,9 @@ package main
 var enabled=true
 EOF
 cat >"$tmp/check.lua" <<'EOF'
-for _, name in ipairs({"entry", "navigate", "history", "project", "completion"}) do
-  assert(not package.loaded["my." .. name], "cross-file module still loaded: " .. name)
+for _, name in ipairs({"entry", "navigate", "history", "project", "completion", "cursor", "lock", "formatter", "status"}) do
+  assert(not package.loaded["my." .. name], "external personal module still loaded: " .. name)
 end
-assert(package.loaded["my.cursor"] and package.loaded["my.lock"], "cursor/lock helpers missing")
 assert(package.loaded["plugins/complete-word"], "stock current-file completion missing")
 local win = vis.win
 local stat = assert(io.open("/proc/self/stat")):read("*l")
@@ -49,8 +48,8 @@ assert(lock:read("*l") == pid, "file lock does not identify the actual Vis proce
 lock:close()
 local text = win.file:content(0, win.file.size)
 win.selection.pos = assert(text:find("true", 1, true)) - 1
-require("my.toggle").boolean()
-assert(require("my.formatter").format(), "format failed")
+vis:feedkeys("=")
+assert(win.file:content(0, win.file.size):find("var enabled = true", 1, true), "format key failed")
 vis:command("w")
 assert(not win.file.modified, "save failed")
 local result = assert(io.open(os.getenv("VIS_CHECK_RESULT"), "w"))
@@ -71,7 +70,7 @@ XDG_STATE_HOME="$tmp/state" VIS_PATH="$tmp/vis-test" VIS_CHECK_CONFIG="$repo/roo
 	"vis +check-config '$tmp/input.go'" "$tmp/edit-session" >/dev/null 2>&1 ||
 	fail 'Vis editing smoke test failed'
 [ "$(cat "$tmp/result" 2>/dev/null || :)" = ok ] || fail 'Vis config assertions did not execute'
-grep -Fxq 'var enabled = false' "$tmp/input.go" || fail 'Vis toggle/format/save failed'
+grep -Fxq 'var enabled = true' "$tmp/input.go" || fail 'Vis format/save failed'
 
 # A second editor process must restore the position saved by the first one.
 cat >"$tmp/check-cursor.lua" <<'EOF'
