@@ -31,10 +31,11 @@ preferences are local to each host and are not overwritten by setup.
 MSI restores Emacs with `sh msi/65-emacs.sh`. The active configuration is
 `root/home/.config/emacs`, linked to `~/.config/emacs`; Org is built in.
 Packages live in `~/.local/share/emacs/elpa` and private state in
-`~/.local/state/emacs`. The original archive remains as a reference.
+`~/.local/state/emacs`.
 
-`sh msi/66-telega.sh` adds the Telegram client, builds the matching TDLib under
-`~/.local/opt/tdlib-1.8.66`, and installs its helper under `~/.local/share/telega`.
+`sh msi/66-telega.sh` adds the Telegram client and builds TDLib from upstream
+master under `~/.local/opt/tdlib`, and installs its helper under `~/.local/share/telega`.
+Rerun the script to update TDLib and rebuild the telega helper.
 The build uses four jobs by default (`TELEGA_BUILD_JOBS=2` uses less memory).
 In graphical Emacs, use `C-c T` or `M-x telega` and authorize with your phone.
 Account data and downloaded media stay outside the repository. Media playback
@@ -126,8 +127,11 @@ entry at HK 9443, and finally restore `mihomoctl use rule split`.
 
 ## Mihomo
 
-`sh 45-mihomo.sh` installs the existing Mihomo binary as a root-run runit
-service. On its first run it creates the private
+`sh 45-mihomo.sh` downloads the latest official stable Mihomo binary
+(x86_64 or aarch64) and installs it as a root-run runit service.
+Rerun it to update; an already-running service is restarted after validation.
+`MIHOMO_BIN=/path/to/mihomo sh 45-mihomo.sh` uses a local binary instead.
+On its first run it creates the private
 `/etc/mihomo/config.yaml` without enabling the service. Paste the two complete
 static Mihomo proxy mappings, remove the `REPLACE_STATIC_NODE_VALUES` marker,
 then run `sh 45-mihomo.sh` again. The second run validates the configuration
@@ -179,3 +183,11 @@ non-interactively are not wrapped.
 `use` changes Mihomo's native mode and policy-group selection. Process control
 remains runit's job: use `sudo sv up mihomo`, `sudo sv down mihomo`, or
 `sudo sv restart mihomo`.
+
+## Upstream programs
+
+Mihomo (`45-mihomo.sh`), Mouseless (`75-mouseless.sh`) and Helium
+(`90-helium.sh`) use the latest official release binaries; rerun their scripts
+to update. Vis builds upstream master with the local CJK patch. TDLib builds
+upstream master because no official Linux release binary is provided; the
+telega helper is rebuilt against it. Other system applications use XBPS.

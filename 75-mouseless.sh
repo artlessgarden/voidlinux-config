@@ -1,14 +1,32 @@
 #!/bin/sh
-# Build Mouseless and grant the logged-in user access to input and uinput.
+# Install the official Mouseless binary and grant the logged-in user access to input and uinput.
 set -eu
 repo=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
 mouseless_tmp=$(mktemp -d)
 trap 'rm -rf "$mouseless_tmp"' EXIT HUP INT TERM
 
-GOBIN=$mouseless_tmp go install github.com/jbensmann/mouseless@latest
+sudo xbps-install -y curl tar gzip
+[ "$(uname -m)" = x86_64 ] || {
+	printf '%s\n' 'Mouseless 官方目前只提供 Linux x86_64 二进制。' >&2
+	exit 1
+}
+latest=$(curl -fsSL https://api.github.com/repos/jbensmann/mouseless/releases/latest |
+	sed -n 's/.*"tag_name": "\([^"]*\)".*/\1/p' | head -n 1)
+case $latest in
+v[0-9]*) ;;
+*)
+	printf '%s\n' '无法获取 Mouseless 最新稳定版。' >&2
+	exit 1
+	;;
+esac
+curl -fL "https://github.com/jbensmann/mouseless/releases/download/$latest/mouseless_linux_amd64.tar.gz" \
+	-o "$mouseless_tmp/mouseless.tar.gz"
+tar -xzf "$mouseless_tmp/mouseless.tar.gz" -C "$mouseless_tmp" mouseless
+"$mouseless_tmp/mouseless" --version
 
 mkdir -p "$HOME/.local/bin"
-install -m 755 "$mouseless_tmp/mouseless" "$HOME/.local/bin/mouseless"
+install -m 755 "$mouseless_tmp/mouseless" "$HOME/.local/bin/mouseless.new"
+mv -f "$HOME/.local/bin/mouseless.new" "$HOME/.local/bin/mouseless"
 
 # Remove the former system-wide binary when upgrading this configuration.
 sudo rm -f /usr/local/bin/mouseless
