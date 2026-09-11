@@ -16,7 +16,10 @@ Terminal editing uses Vis with the CJK build in `65-vis.sh`. LF handles file
 navigation (`Ctrl-f` file search, `Ctrl-g` content search); opening text runs
 Vis in the same terminal, and quitting Vis returns to LF. Vis keeps only
 current-file editing helpers: theme/status, input-method switching, clipboard,
-manual formatting, boolean toggle, and upstream current-file completion.
+manual formatting, boolean toggle, upstream current-file completion, cursor
+position restoration, and concurrent-edit warnings.
+For in-editor file switching, use native `:cd /project`, `:e path`, or `:e .`;
+project scope is the working directory, with no automatic root detection.
 The full former setup is in `archive/vis-full-2026-09-11/vis`.
 Emacs remains available alongside Vis; Org files use Emacs on the MSI setup.
 Niri `Mod+Space` opens Fuzzel to launch installed applications. It uses the default

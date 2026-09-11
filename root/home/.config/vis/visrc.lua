@@ -10,6 +10,8 @@ local formatter = require("my.formatter")
 local toggle = require("my.toggle")
 require("my.theme")
 require("my.fcitx")
+require("my.cursor")
+require("my.lock")
 require("my.status")
 
 -- LF owns file navigation; Vis only adds editing actions for the current file.
