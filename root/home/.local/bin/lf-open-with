@@ -1,0 +1,17 @@
+#!/bin/sh
+set -eu
+
+[ "$#" -ge 2 ] || {
+	printf 'usage: lf-open-with APP FILE...\n' >&2
+	exit 2
+}
+
+app=$1
+shift
+
+command -v "$app" >/dev/null 2>&1 || {
+	printf 'application not found: %s\n' "$app" >&2
+	exit 127
+}
+
+exec lf-detach "$app" -- "$@"

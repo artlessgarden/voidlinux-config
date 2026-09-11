@@ -9,6 +9,7 @@ chooser=$repo/root/home/.config/xdg-desktop-portal-termfilechooser/lf-wrapper.sh
 preview=$repo/root/home/.config/lf/preview
 archive=$repo/root/home/.local/bin/lf-archive
 detach=$repo/root/home/.local/bin/lf-detach
+open_with=$repo/root/home/.local/bin/lf-open-with
 show_items=$repo/root/home/.local/bin/lf-show-items
 portal=$repo/root/home/.config/xdg-desktop-portal/niri-portals.conf
 
@@ -21,6 +22,7 @@ fail() {
 [ -x "$preview" ] || fail 'LF previewer is executable'
 [ -x "$archive" ] || fail 'safe LF archive helper exists'
 [ -x "$detach" ] || fail 'detached launcher exists'
+[ -x "$open_with" ] || fail 'open-with helper exists'
 [ -x "$show_items" ] || fail 'FileManager1 ShowItems adapter exists'
 grep -Fx 'org.freedesktop.impl.portal.FileChooser=termfilechooser' "$portal" >/dev/null ||
 	fail 'Niri selects the terminal file chooser portal'
@@ -31,6 +33,7 @@ fi
 	fail 'stale River portal selector remains'
 sh -n "$preview"
 sh -n "$archive"
+sh -n "$open_with"
 
 tmp=$(mktemp -d)
 trap 'rm -rf "$tmp"' EXIT HUP INT TERM
@@ -85,6 +88,21 @@ expected=$(printf '%s\n' '--title' 'lf: /tmp/a file%.txt' '-e' 'lf' '-single' '/
 [ "$(cat "$tmp/args" 2>/dev/null || :)" = "$expected" ] ||
 	fail 'ShowItems selects the decoded file path in lf'
 
+# Open-with must preserve every selected path and detach the chosen app.
+cat >"$tmp/bin/lf-detach" <<'EOF'
+#!/bin/sh
+printf '%s\n' "$@" >"$LF_TEST_ARGS"
+EOF
+chmod +x "$tmp/bin/lf-detach"
+LF_TEST_ARGS="$tmp/open-with-args" PATH="$tmp/bin:$PATH" \
+	"$open_with" imv "$tmp/a file.txt" "$tmp/second file.jpg"
+expected=$(printf '%s\n' 'imv' '--' "$tmp/a file.txt" "$tmp/second file.jpg")
+[ "$(cat "$tmp/open-with-args")" = "$expected" ] ||
+	fail 'open-with does not preserve the app and all selected paths'
+if "$open_with" >/dev/null 2>&1; then
+	fail 'open-with accepts a missing application'
+fi
+
 printf 'ok - LF previews text and archives selections without deleting input\n'
 
 grep -Fq 'gio trash -- $fx' "$lfrc" || fail 'D does not use the standard trash'
@@ -100,6 +118,8 @@ if grep -Eq '^map y([[:space:]]|$)' "$lfrc"; then
 fi
 grep -Fxq 'map gp copy_path' "$lfrc" || fail 'gp does not copy paths'
 grep -Fxq 'map gn copy_name' "$lfrc" || fail 'gn does not copy names'
+grep -Fq 'cmd open-with ${{' "$lfrc" || fail ':open-with command is missing'
+grep -Fq 'lf-open-with "$@" $fx' "$lfrc" || fail ':open-with does not pass all selected files'
 grep -Fq '[ -d "$f" ]' "$lfrc" || fail 'open does not distinguish directories from files'
 grep -Fq 'send $id cd' "$lfrc" || fail 'Enter cannot enter the highlighted directory'
 grep -Fq 'target=$(realpath -- "$target")' "$lfrc" || fail 'fzf jumps do not resolve an unambiguous absolute target'
