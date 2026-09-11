@@ -6,13 +6,18 @@ One small Niri terminal desktop, shared by two laptops.
 - `root/home/` mirrors files linked into the user's home; edits take effect immediately.
 - `~/.config/mimeapps.list` is copied once, then remains local so each laptop keeps its own default browser.
 - `msi/` and `asus/` contain device-specific setup scripts: hardware, GRUB and power.
-- `archive/` keeps only the inactive Neovim configuration; nothing there is linked directly.
+- `archive/` keeps inactive Neovim and the former full Vis configuration; nothing there is linked directly.
 
 Follow the common commands in `flow.txt`, then run only the block for the machine being installed. The scripts are literal on purpose: there is no host detection, generator or overlay system.
 
 Personal documents, accounts, histories, caches and credentials stay outside this repository.
 
-Terminal editing uses the restored Vis configuration and CJK build in `65-vis.sh`.
+Terminal editing uses Vis with the CJK build in `65-vis.sh`. LF handles file
+navigation (`Ctrl-f` file search, `Ctrl-g` content search); opening text runs
+Vis in the same terminal, and quitting Vis returns to LF. Vis keeps only
+current-file editing helpers: theme/status, input-method switching, clipboard,
+manual formatting, boolean toggle, and upstream current-file completion.
+The full former setup is in `archive/vis-full-2026-09-11/vis`.
 Emacs remains available alongside Vis; Org files use Emacs on the MSI setup.
 Niri `Mod+Space` opens Fuzzel to launch installed applications. It uses the default
 appearance and Alacritty for terminal applications; no launcher config file is needed.

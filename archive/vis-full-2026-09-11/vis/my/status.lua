@@ -1,6 +1,6 @@
 require("vis")
 local vis = vis
-local util = require("my.util")
+local project = require("my.project")
 
 local mode_names = {
   [vis.modes.INSERT] = "INSERT",
@@ -44,14 +44,15 @@ end
 local function draw(win)
   local mode_label = " " .. (mode_names[vis.mode] or "?") .. " "
   local path = win.file.path or win.file.name or ""
-  local filename = path ~= "" and util.home_shorten(path) or "[No Name]"
+  local filename = path ~= "" and project.relative(path) or "[No Name]"
   if win.file.modified then filename = filename .. "+" end
+  local directory = project.home_shorten(project.root):gsub("/+$", "") .. "/"
   local syntax = win.syntax or "text"
   local line = win.selection and win.selection.line or 1
   local col = win.selection and win.selection.col or 1
 
   win:status(
-    mode_label .. " " .. filename,
+    mode_label .. " " .. directory .. " " .. filename,
     " " .. table.concat({ syntax, tostring(line) .. "," .. tostring(col), percent(win) }, "  ") .. " "
   )
 
