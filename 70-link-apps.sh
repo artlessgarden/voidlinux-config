@@ -9,7 +9,7 @@ mkdir -p "$HOME/.config" "$HOME/.local/bin" \
 	"$HOME/.local/share/fcitx5/rime"
 
 ln -sfn "$h/.npmrc" "$HOME/.npmrc"
-for name in alacritty fd fontconfig htop lf mpv mouseless; do
+for name in alacritty fd fontconfig htop mpv mouseless; do
 	ln -sfnT "$h/.config/$name" "$HOME/.config/$name"
 done
 
@@ -17,8 +17,6 @@ chmod +x "$h/.local/bin/"* 2>/dev/null || true
 ln -sf "$h/.local/bin/"* "$HOME/.local/bin/"
 ln -sfn "$h/.local/share/applications/helium.desktop" \
 	"$HOME/.local/share/applications/helium.desktop"
-ln -sfn "$h/.local/share/applications/lf.desktop" \
-	"$HOME/.local/share/applications/lf.desktop"
 ln -sfn "$h/.local/share/applications/vim.desktop" \
 	"$HOME/.local/share/applications/vim.desktop"
 ln -sf "$h/.local/share/fcitx5/rime/"* "$HOME/.local/share/fcitx5/rime/"

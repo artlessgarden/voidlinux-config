@@ -21,7 +21,8 @@ Simplification is gradual: prefer packaged applications and their built-in behav
 Keep settings needed for hardware, input, fonts and application launching; add fixes
 only for a current, reproducible problem. Thunar handles desktop file management; the system portal defaults provide the
 graphical file chooser. The former LF desktop integration is archived in
-`archive/lf-desktop-integration/`; interactive LF remains available for now.
+`archive/lf-desktop-integration/`. The remaining LF configuration, helpers and
+tests are in `archive/lf/`; LF is no longer installed or linked by this setup.
 The next areas to review are Emacs's inherited plugin setup and telega's locally
 built TDLib.
 
