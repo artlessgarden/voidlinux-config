@@ -3,7 +3,7 @@ set -eu
 repo=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)
 fail() { printf 'not ok - %s\n' "$1" >&2; exit 1; }
 
-for path in archive/home/.emacs.d archive/home/.config/nvim \
+for path in archive/home/.config/nvim \
 	root/home/.config/niri root/etc/keyd root/etc/default/grub.msi \
 	root/etc/default/grub.asus root/etc/grub.d/09_windows msi asus; do
 	[ -e "$repo/$path" ] || fail "missing $path"
@@ -41,8 +41,8 @@ if grep -Rqs '10-xfn.conf' "$repo/msi" "$repo/root/etc/tlp.d"; then
 fi
 
 for host in msi asus; do
-	if find "$repo/$host" -type f ! -name '*.sh' | grep -q .; then
-		fail "$host directory contains configuration instead of scripts only"
+	if find "$repo/$host" -type f ! -name '*.sh' ! -name '*.md' | grep -q .; then
+		fail "$host directory contains files other than setup scripts and documentation"
 	fi
 done
 

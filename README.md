@@ -6,7 +6,7 @@ One small Niri terminal desktop, shared by two laptops.
 - `root/home/` mirrors files linked into the user's home; edits take effect immediately.
 - `~/.config/mimeapps.list` is copied once, then remains local so each laptop keeps its own default browser.
 - `msi/` and `asus/` contain device-specific setup scripts: hardware, GRUB and power.
-- `archive/` keeps historical Emacs and inactive Neovim configuration; nothing there is linked directly.
+- `archive/` keeps only the inactive Neovim configuration; nothing there is linked directly.
 
 Follow the common commands in `flow.txt`, then run only the block for the machine being installed. The scripts are literal on purpose: there is no host detection, generator or overlay system.
 
@@ -14,7 +14,6 @@ Personal documents, accounts, histories, caches and credentials stay outside thi
 
 Terminal editing uses the restored Vis configuration and CJK build in `65-vis.sh`.
 Emacs remains available alongside Vis; Org files use Emacs on the MSI setup.
-The existing Vis binary and runtime can be restored from the local archive without rebuilding.
 Niri `Mod+Space` opens Fuzzel to launch installed applications. It uses the default
 appearance and Alacritty for terminal applications; no launcher config file is needed.
 
@@ -22,8 +21,7 @@ Simplification is gradual: prefer packaged applications and their built-in behav
 Keep settings needed for hardware, input, fonts and application launching; add fixes
 only for a current, reproducible problem. LF handles desktop file management,
 previews and terminal file selection through xdg-desktop-portal-termfilechooser.
-Its configuration and helpers are active again; archive/lf and
-archive/lf-desktop-integration retain the earlier snapshots.
+Its configuration and helpers live under `root/home/`.
 Emacs and telega remain enabled with their existing configuration.
 
 Helium is installed or updated with `sh 90-helium.sh`; `xbg` also updates it.

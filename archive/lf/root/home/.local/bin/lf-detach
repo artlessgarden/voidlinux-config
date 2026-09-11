@@ -1,9 +1,0 @@
-#!/bin/sh
-set -eu
-
-[ "$#" -gt 0 ] || {
-	printf 'usage: lf-detach COMMAND [ARG...]\n' >&2
-	exit 2
-}
-
-exec setsid -f "$@" </dev/null >/dev/null 2>&1
