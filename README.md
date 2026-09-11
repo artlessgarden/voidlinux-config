@@ -16,6 +16,8 @@ Terminal editing uses the Void `vim` package with its defaults, without a person
 Vim configuration or plugins. The former Vis configuration, source-build installer,
 CJK patch and tests are preserved in `archive/vis/` and are no longer active.
 Existing hosts use the new `EDITOR`/`VISUAL` values in a new shell.
+Niri `Mod+Space` opens Fuzzel to launch installed applications. It uses the default
+appearance and Alacritty for terminal applications; no launcher config file is needed.
 
 Simplification is gradual: prefer packaged applications and their built-in behavior.
 Keep settings needed for hardware, input, fonts and application launching; add fixes
