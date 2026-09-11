@@ -12,7 +12,7 @@ Follow the common commands in `flow.txt`, then run only the block for the machin
 
 Personal documents, accounts, histories, caches and credentials stay outside this repository.
 
-Terminal editing uses Vis with the CJK build in `65-vis.sh`. LF handles file
+Terminal editing uses Vis with the upstream source build in `65-vis.sh`. LF handles file
 navigation (`Ctrl-f` file search, `Ctrl-g` content search); opening text runs
 Vis in the same terminal, and quitting Vis returns to LF. Vis keeps only
 current-file editing helpers: theme/status, input-method switching, clipboard,
@@ -196,6 +196,6 @@ remains runit's job: use `sudo sv up mihomo`, `sudo sv down mihomo`, or
 
 Mihomo (`45-mihomo.sh`), Mouseless (`75-mouseless.sh`) and Helium
 (`90-helium.sh`) use the latest official release binaries; rerun their scripts
-to update. Vis builds upstream master with the local CJK patch. TDLib builds
+to update. Vis builds upstream master without local patches. TDLib builds
 upstream master because no official Linux release binary is provided; the
 telega helper is rebuilt against it. Other system applications use XBPS.

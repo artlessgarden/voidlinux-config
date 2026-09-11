@@ -19,5 +19,5 @@ else
 	git clone --depth=1 https://github.com/martanne/vis.git "$src"
 fi
 
-# Build and patch a temporary checkout, keeping the upstream checkout clean.
+# Build upstream without local patches, keeping the source checkout clean.
 python3 "$repo/apps/vis-cjk/build.py" --source "$src" --prefix "$prefix"

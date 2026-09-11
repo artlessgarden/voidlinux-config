@@ -1,6 +1,7 @@
-# vis 中文状态栏修复
+# Vis 源码构建与可选中文状态栏修复
 
 这是独立的 vis 构建辅助工具，不修改个人 vis 配置。
+默认构建不带补丁的上游版本；中文补丁保留为手动选项。
 当前版本的 `ui_draw_string` 把中文当作单列字符，导致文件名重叠。
 补丁复用 vis 自己的字符解码函数，按实际列宽推进，并处理组合字符和右边界。
 
@@ -15,8 +16,8 @@ sh ~/voidlinux-config/65-vis.sh
 脚本更新上游源码和依赖后，自动调用这里的 `build.py`：
 
 1. 从上游源码目录创建临时 checkout，原目录保持干净，后续 `git pull` 不受补丁影响。
-2. 用真实渲染函数检查中文宽度、重绘、组合字符、边界截断。
-3. 若检查已通过，跳过补丁；否则检查补丁兼容性、应用补丁并重测。
+2. 默认不执行中文补丁及其检查。
+3. 显式使用 `--cjk-patch` 时，检查渲染；有问题才应用兼容补丁并重测。
 4. 编译并运行 vis 的 core、Lua、vis 三组非交互测试。
 5. 暂存安装文件，测试全部通过才发布；vis 二进制采用原子替换，旧窗口可以继续运行。
 
@@ -43,4 +44,10 @@ python3 ~/voidlinux-config/apps/vis-cjk/build.py
 
 ```sh
 python3 -m unittest discover -s apps/vis-cjk -v
+```
+
+需要重新启用中文补丁时：
+
+```sh
+python3 ~/voidlinux-config/apps/vis-cjk/build.py --cjk-patch
 ```

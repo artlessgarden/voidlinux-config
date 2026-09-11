@@ -34,6 +34,18 @@ class CompatibilityTests(unittest.TestCase):
             build.ensure_fix(self.source)
         self.assertEqual(path.read_bytes(), before)
 
+    def test_default_build_does_not_apply_patch(self):
+        run = subprocess.run
+        def stop_before_compiling(command, **kwargs):
+            if command[0] == './configure':
+                raise RuntimeError('reached configure without patching')
+            return run(command, **kwargs)
+        with patch.object(build, 'ensure_fix') as fix, \
+             patch.object(build.subprocess, 'run', side_effect=stop_before_compiling):
+            with self.assertRaisesRegex(RuntimeError, 'reached configure'):
+                build.build(self.source, Path(self.temp.name) / 'prefix')
+            fix.assert_not_called()
+
     def test_failed_check_cannot_publish_or_change_upstream(self):
         prefix = Path(self.temp.name) / 'prefix'
         (prefix / 'bin').mkdir(parents=True)
@@ -43,7 +55,7 @@ class CompatibilityTests(unittest.TestCase):
         with patch.object(build, 'ensure_fix', side_effect=RuntimeError('test failure')), \
              patch.object(build, 'publish') as publish:
             with self.assertRaisesRegex(RuntimeError, 'test failure'):
-                build.build(self.source, prefix)
+                build.build(self.source, prefix, cjk_patch=True)
             publish.assert_not_called()
         self.assertEqual(installed.read_bytes(), b'working-old-editor')
         self.assertEqual((self.source / 'ui-terminal.c').read_bytes(), before)

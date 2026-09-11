@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Build a clean local checkout, test CJK support, then publish staged files."""
+"""Build and test upstream Vis; the local CJK patch is opt-in."""
 import argparse
 import json
 import os
@@ -64,7 +64,7 @@ def publish(staged, prefix):
     atomic_copy(binary, installed)
 
 
-def build(source, prefix):
+def build(source, prefix, cjk_patch=False):
     for args in (['diff', '--quiet'], ['diff', '--cached', '--quiet']):
         subprocess.run(['git', '-C', str(source)] + args, check=True)
     revision = subprocess.check_output(['git', '-C', str(source), 'rev-parse', 'HEAD'], text=True).strip()
@@ -73,7 +73,7 @@ def build(source, prefix):
         subprocess.run(['git', 'clone', '--quiet', '--local', '--no-hardlinks',
                         '--no-checkout', str(source), str(work)], check=True)
         subprocess.run(['git', '-C', str(work), 'checkout', '--quiet', '--detach', revision], check=True)
-        patched = ensure_fix(work)
+        patched = ensure_fix(work) if cjk_patch else False
         subprocess.run(['./configure', '--prefix=' + str(prefix), '--enable-curses=yes',
                         '--enable-lua=yes', '--disable-lpeg-static', '--enable-tre=yes',
                         '--enable-acl=yes'], cwd=work, check=True)
@@ -86,7 +86,7 @@ def build(source, prefix):
         record = staged_prefix / 'share/vis-build/last-build.json'
         record.parent.mkdir(parents=True, exist_ok=True)
         record.write_text(json.dumps({'revision': revision, 'cjk_patch': patched,
-                                      'renderer_test': 'passed', 'suites': ['core', 'lua', 'vis']}, indent=2) + '\n')
+                                      'renderer_test': 'passed' if cjk_patch else 'not run', 'suites': ['core', 'lua', 'vis']}, indent=2) + '\n')
         publish(staged_prefix, prefix)
     subprocess.run([str(prefix / 'bin/vis'), '-v'], check=True)
     print('Vis 已安装；重新打开 Vis 即使用新版本。', flush=True)
@@ -96,8 +96,9 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--source', type=Path, default=Path.home() / '.local/src/vis')
     parser.add_argument('--prefix', type=Path, default=Path.home() / '.local')
+    parser.add_argument('--cjk-patch', action='store_true', help='enable the local CJK renderer fix')
     args = parser.parse_args()
     try:
-        build(args.source.resolve(), args.prefix.resolve())
+        build(args.source.resolve(), args.prefix.resolve(), cjk_patch=args.cjk_patch)
     except (OSError, ValueError, RuntimeError, subprocess.CalledProcessError) as error:
         parser.exit(1, 'Vis 构建停止：' + str(error) + '\n')
