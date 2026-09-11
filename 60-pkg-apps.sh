@@ -6,7 +6,7 @@ sudo xbps-install -S \
 	firefox \
 	grim slurp swappy \
 	imv mpv zathura zathura-pdf-poppler \
-	Thunar gvfs tumbler xdg-desktop-portal-gtk xdg-utils \
+	Thunar gvfs tumbler xdg-desktop-portal-gtk xdg-utils gnome-themes-extra \
 	vim fuzzel curl fd fzf ripgrep htop xz \
 	StyLua shfmt ruff go nodejs \
 	telegram-desktop
