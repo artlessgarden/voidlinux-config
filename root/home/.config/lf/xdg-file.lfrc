@@ -1,0 +1,13 @@
+# Reuse the normal LF setup, but make LF's open action submit files to the
+# portal.  LF itself still handles directories by entering them first.
+source ~/.config/lf/lfrc
+
+cmd open ${{
+	set -f
+	[ -n "${LF_XDG_OUT:-}" ] || exit 1
+	[ -f "$f" ] || [ -L "$f" ] || exit 1
+	printf '%s\n' $fx >"$LF_XDG_OUT"
+	lf -remote "send $id quit"
+}}
+
+map <enter> open

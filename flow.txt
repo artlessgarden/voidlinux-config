@@ -11,8 +11,10 @@ sh 45-mihomo.sh
 sh 50-link-home.sh
 sh 55-mimeapps.sh
 sh 60-pkg-apps.sh
+sh 65-vis.sh
 sh 70-link-apps.sh
 sh 75-mouseless.sh
+sh 90-helium.sh
 
 # MSI
 sh msi/20-pkg-hardware.sh

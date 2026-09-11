@@ -29,8 +29,8 @@ fi
 set -o noclobber
 shopt -s checkwinsize
 
-export EDITOR=vim
-export VISUAL=vim
+export EDITOR=vis
+export VISUAL=vis
 
 alias ld='ls -Alh --color=auto'
 alias cx='chmod +x'
@@ -105,6 +105,13 @@ scp() {
 scpw() {
 	_scp_via_work_bastion "$@"
 }
+
+# Keep the shell in the directory last visited by lf.
+lfcd() {
+	cd "$(command lf -print-last-dir "$@")" || return
+}
+alias lf=lfcd
+
 
 # Start Niri from a TTY.
 ni() {

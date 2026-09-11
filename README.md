@@ -12,21 +12,23 @@ Follow the common commands in `flow.txt`, then run only the block for the machin
 
 Personal documents, accounts, histories, caches and credentials stay outside this repository.
 
-Terminal editing uses the Void `vim` package with its defaults, without a personal
-Vim configuration or plugins. The former Vis configuration, source-build installer,
-CJK patch and tests are preserved in `archive/vis/` and are no longer active.
-Existing hosts use the new `EDITOR`/`VISUAL` values in a new shell.
+Terminal editing uses the restored Vis configuration and CJK build in `65-vis.sh`.
+Emacs remains available alongside Vis; Org files use Emacs on the MSI setup.
+The existing Vis binary and runtime can be restored from the local archive without rebuilding.
 Niri `Mod+Space` opens Fuzzel to launch installed applications. It uses the default
 appearance and Alacritty for terminal applications; no launcher config file is needed.
 
 Simplification is gradual: prefer packaged applications and their built-in behavior.
 Keep settings needed for hardware, input, fonts and application launching; add fixes
-only for a current, reproducible problem. Thunar handles desktop file management; the system portal defaults provide the
-graphical file chooser. The former LF desktop integration is archived in
-`archive/lf-desktop-integration/`. The remaining LF configuration, helpers and
-tests are in `archive/lf/`; LF is no longer installed or linked by this setup.
-The next areas to review are Emacs's inherited plugin setup and telega's locally
-built TDLib.
+only for a current, reproducible problem. LF handles desktop file management,
+previews and terminal file selection through xdg-desktop-portal-termfilechooser.
+Its configuration and helpers are active again; archive/lf and
+archive/lf-desktop-integration retain the earlier snapshots.
+Emacs and telega remain enabled with their existing configuration.
+
+Helium is installed or updated with `sh 90-helium.sh`; `xbg` also updates it.
+Niri `Mod+c` opens Helium and `Mod+Shift+c` opens Firefox. Default-browser
+preferences are local to each host and are not overwritten by setup.
 
 MSI restores Emacs with `sh msi/65-emacs.sh`. The active configuration is
 `root/home/.config/emacs`, linked to `~/.config/emacs`; Org is built in.
