@@ -47,7 +47,8 @@ cmd open ${{
 	case $(file --mime-type -Lb -- "$f") in
 	text/*|application/json|application/xml|application/javascript|\
 	application/x-sh|application/x-shellscript|application/x-zerosize|inode/x-empty)
-		vis -- "$f"
+		# Replace the shell so Ctrl-C in Vis cannot interrupt a waiting shell.
+		exec vis -- "$f"
 		;;
 	image/*)
 		lf-detach imv -- $fx
