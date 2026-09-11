@@ -29,8 +29,8 @@ fi
 set -o noclobber
 shopt -s checkwinsize
 
-export EDITOR=vis
-export VISUAL=vis
+export EDITOR=vim
+export VISUAL=vim
 
 # Keep the shell in the directory last visited by lf.
 lfcd() {
@@ -136,3 +136,6 @@ _set_title() {
 }
 
 PROMPT_COMMAND='_set_title; history -a'
+
+# kimi-code
+export PATH="/home/xfn/.kimi-code/bin:$PATH"

@@ -11,16 +11,18 @@ sh 45-mihomo.sh
 sh 50-link-home.sh
 sh 55-mimeapps.sh
 sh 60-pkg-apps.sh
-sh 65-vis.sh
 sh 70-link-apps.sh
 sh 75-mouseless.sh
 sh 90-helium.sh
 
 # MSI
 sh msi/20-pkg-hardware.sh
-sh msi/70-telegram-memo.sh
+sh msi/65-emacs.sh
+sh msi/66-telega.sh
+sh msi/70-vex.sh
 sh msi/80-grub.sh
 sh msi/85-power.sh
+# MSI 可选安卓环境：按 msi/waydroid.md 安装 VANILLA、ARM 转译及窗口配置。
 
 # ASUS
 sh asus/20-pkg-hardware.sh

@@ -1,4 +1,4 @@
-# Normal interactive lf configuration. Portal selection uses dedicated configs.
+# Optional interactive lf configuration.
 set shell sh
 set shellopts '-eu'
 set ifs "\n"
@@ -33,10 +33,34 @@ cmd open ${{
 		lf -remote "send $id cd \"$escaped\""
 		exit 0
 	fi
+	# Org notes use Emacs only on hosts configured for it.
+	case $f in
+	*.[oO][rR][gG])
+		if [ "$(xdg-mime query default text/org)" = emacs.desktop ]; then
+			lf-detach emacs $fx
+			exit 0
+		fi
+		;;
+	esac
+	# Small CSV files may be detected as text/plain. Respect the host's
+	# spreadsheet default by extension before the general text editor route.
+	spreadsheet_mime=
+	case $f in
+	*.[cC][sS][vV]) spreadsheet_mime=text/csv ;;
+	*.[xX][lL][sS][xX]) spreadsheet_mime=application/vnd.openxmlformats-officedocument.spreadsheetml.sheet ;;
+	*.[xX][lL][sS][mM]) spreadsheet_mime=application/vnd.ms-excel.sheet.macroEnabled.12 ;;
+	esac
+	if [ -n "$spreadsheet_mime" ] &&
+		[ "$(xdg-mime query default "$spreadsheet_mime")" = vex.desktop ]; then
+		for path in $fx; do
+			vex "$path"
+		done
+		exit 0
+	fi
 	case $(file --mime-type -Lb -- "$f") in
 	text/*|application/json|application/xml|application/javascript|\
 	application/x-sh|application/x-shellscript|application/x-zerosize|inode/x-empty)
-		vis -- $fx
+		vim -- $fx
 		;;
 	image/*)
 		lf-detach imv -- $fx

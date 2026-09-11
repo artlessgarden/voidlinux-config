@@ -5,12 +5,50 @@ One small Niri terminal desktop, shared by two laptops.
 - `root/etc/` mirrors files installed into `/etc`; they are copied because they rarely change.
 - `root/home/` mirrors files linked into the user's home; edits take effect immediately.
 - `~/.config/mimeapps.list` is copied once, then remains local so each laptop keeps its own default browser.
-- `msi/` and `asus/` contain device-specific setup scripts: hardware, GRUB and power; MSI also explicitly enables Telegram memo with `msi/70-telegram-memo.sh`.
-- `archive/` keeps inactive Emacs and Neovim configuration; nothing there is linked or installed.
+- `msi/` and `asus/` contain device-specific setup scripts: hardware, GRUB and power.
+- `archive/` keeps historical Emacs and inactive Neovim configuration; nothing there is linked directly.
 
 Follow the common commands in `flow.txt`, then run only the block for the machine being installed. The scripts are literal on purpose: there is no host detection, generator or overlay system.
 
 Personal documents, accounts, histories, caches and credentials stay outside this repository.
+
+Terminal editing uses the Void `vim` package with its defaults, without a personal
+Vim configuration or plugins. The former Vis configuration, source-build installer,
+CJK patch and tests are preserved in `archive/vis/` and are no longer active.
+Existing hosts use the new `EDITOR`/`VISUAL` values in a new shell.
+
+Simplification is gradual: prefer packaged applications and their built-in behavior.
+Keep settings needed for hardware, input, fonts and application launching; add fixes
+only for a current, reproducible problem. Thunar handles desktop file management; the system portal defaults provide the
+graphical file chooser. The former LF desktop integration is archived in
+`archive/lf-desktop-integration/`; interactive LF remains available for now.
+The next areas to review are Emacs's inherited plugin setup and telega's locally
+built TDLib.
+
+MSI restores Emacs with `sh msi/65-emacs.sh`. The active configuration is
+`root/home/.config/emacs`, linked to `~/.config/emacs`; Org is built in.
+Packages live in `~/.local/share/emacs/elpa` and private state in
+`~/.local/state/emacs`. The original archive remains as a reference.
+
+`sh msi/66-telega.sh` adds the Telegram client, builds the matching TDLib under
+`~/.local/opt/tdlib-1.8.66`, and installs its helper under `~/.local/share/telega`.
+The build uses four jobs by default (`TELEGA_BUILD_JOBS=2` uses less memory).
+In graphical Emacs, use `C-c T` or `M-x telega` and authorize with your phone.
+Account data and downloaded media stay outside the repository. Media playback
+and file opening use telega defaults. Voice/video calls are unsupported.
+Niri `Mod+X` starts an Emacs daemon on first use and opens client frames.
+Closing all frames leaves the daemon running; `M-x kill-emacs` stops it.
+
+MSI runs `sh msi/70-vex.sh` to install Vex 2.1.0 from its checksummed official
+release and associate CSV, XLSX and XLSM with it. Desktop opening uses Alacritty;
+LF opens these files in its current terminal when Vex is the host default.
+Version 2.1.0 does not actually load TSV or legacy XLS despite its help text.
+Use CSV for plain table notes. Excel saving rebuilds the workbook, so use Vex
+for viewing existing formatted workbooks rather than preserving their layout or macros.
+
+MSI-only optional Android setup: [Waydroid installation and configuration](msi/waydroid.md)
+documents the verified VANILLA image, Android 13 ARM translation, backups,
+and the full-height 38.2% Niri tile. It is not part of the common or ASUS install.
 
 This repository is the canonical configuration for both laptops. Give each
 machine its own GitHub SSH key and use

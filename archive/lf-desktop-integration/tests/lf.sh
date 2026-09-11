@@ -3,10 +3,15 @@ set -eu
 
 repo=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)
 lfrc=$repo/root/home/.config/lf/lfrc
+file_lfrc=$repo/root/home/.config/lf/xdg-file.lfrc
+directory_lfrc=$repo/root/home/.config/lf/xdg-directory.lfrc
+chooser=$repo/root/home/.config/xdg-desktop-portal-termfilechooser/lf-wrapper.sh
 preview=$repo/root/home/.config/lf/preview
 archive=$repo/root/home/.local/bin/lf-archive
 detach=$repo/root/home/.local/bin/lf-detach
 open_with=$repo/root/home/.local/bin/lf-open-with
+show_items=$repo/root/home/.local/bin/lf-show-items
+portal=$repo/root/home/.config/xdg-desktop-portal/niri-portals.conf
 
 fail() {
 	printf 'not ok - %s\n' "$1" >&2
@@ -18,6 +23,14 @@ fail() {
 [ -x "$archive" ] || fail 'safe LF archive helper exists'
 [ -x "$detach" ] || fail 'detached launcher exists'
 [ -x "$open_with" ] || fail 'open-with helper exists'
+[ -x "$show_items" ] || fail 'FileManager1 ShowItems adapter exists'
+grep -Fx 'org.freedesktop.impl.portal.FileChooser=termfilechooser' "$portal" >/dev/null ||
+	fail 'Niri selects the terminal file chooser portal'
+if grep -Eiq 'river|wlr' "$portal"; then
+	fail 'Niri portal config contains stale River or wlroots backends'
+fi
+[ ! -e "$repo/root/home/.config/xdg-desktop-portal/river-portals.conf" ] ||
+	fail 'stale River portal selector remains'
 sh -n "$preview"
 sh -n "$archive"
 sh -n "$open_with"
@@ -57,7 +70,23 @@ done
 [ "$(cat "$tmp/alive" 2>/dev/null || :)" = alive ] ||
 	fail 'detached GUI process survives its launcher'
 
+# ShowItems must preserve and select the file, not reduce it to its parent.
 mkdir "$tmp/bin"
+cat >"$tmp/bin/alacritty" <<'EOF'
+#!/bin/sh
+printf '%s\n' "$@" >"$LF_TEST_ARGS"
+EOF
+chmod +x "$tmp/bin/alacritty"
+LF_TEST_ARGS="$tmp/args" PATH="$tmp/bin:$PATH" \
+	"$show_items" 'file:///tmp/a%20file%25.txt'
+i=0
+while [ ! -s "$tmp/args" ] && [ "$i" -lt 20 ]; do
+	sleep 0.05
+	i=$((i + 1))
+done
+expected=$(printf '%s\n' '--title' 'lf: /tmp/a file%.txt' '-e' 'lf' '-single' '/tmp/a file%.txt')
+[ "$(cat "$tmp/args" 2>/dev/null || :)" = "$expected" ] ||
+	fail 'ShowItems selects the decoded file path in lf'
 
 # Open-with must preserve every selected path and detach the chosen app.
 cat >"$tmp/bin/lf-detach" <<'EOF'
@@ -94,6 +123,15 @@ grep -Fq 'lf-open-with "$@" $fx' "$lfrc" || fail ':open-with does not pass all s
 grep -Fq '[ -d "$f" ]' "$lfrc" || fail 'open does not distinguish directories from files'
 grep -Fq 'send $id cd' "$lfrc" || fail 'Enter cannot enter the highlighted directory'
 grep -Fq 'target=$(realpath -- "$target")' "$lfrc" || fail 'fzf jumps do not resolve an unambiguous absolute target'
+grep -Fxq 'source ~/.config/lf/lfrc' "$file_lfrc" || fail 'file chooser does not reuse the main LF config'
+grep -Fxq 'source ~/.config/lf/lfrc' "$directory_lfrc" || fail 'directory chooser does not reuse the main LF config'
+grep -Fq 'cmd open ${{' "$file_lfrc" || fail 'file chooser does not replace normal app opening with file selection'
+grep -Fxq 'map <enter> open' "$file_lfrc" || fail 'file chooser Enter does not use file-or-directory open semantics'
+grep -Fxq 'map <enter> xdg-accept-directory' "$directory_lfrc" || fail 'directory chooser Enter does not confirm the selected directory'
+if grep -Fq -- '-single' "$chooser"; then
+	fail 'portal LF disables remote jumps with -single'
+fi
+sh -n "$chooser"
 grep -Fxq 'set dircounts' "$lfrc" || fail 'directory item counts are not enabled'
 if grep -Eq '^map zc([[:space:]]|$)' "$lfrc"; then
 	fail 'directory counts can still be disabled globally'
@@ -113,4 +151,6 @@ grep -Fxq 'set timefmt "2006-01-02 15:04:05"' "$lfrc" || fail 'bottom timestamps
 if grep -Fq '/home/xfn' "$lfrc"; then
 	fail 'LF configuration contains a hard-coded user home'
 fi
+grep -Fxq 'Exec=lf-show-items --service' "$repo/root/home/.local/share/dbus-1/services/org.freedesktop.FileManager1.service" ||
+	fail 'FileManager1 service contains a hard-coded user executable path'
 printf 'ok - LF has recoverable deletion and compact file utilities\n'

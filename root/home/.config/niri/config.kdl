@@ -1,6 +1,8 @@
 // 本文件保存在 voidlinux-config 仓库，通过符号链接作为 Niri 的实际配置。
 
 input {
+    // 允许 binds 中的 Win + 电源键生效，避免被 Niri 默认的休眠动作拦截。
+    disable-power-key-handling
     keyboard { repeat-delay 200; repeat-rate 30; }
     touchpad {
         tap
@@ -49,9 +51,6 @@ prefer-no-csd
 hotkey-overlay { skip-at-startup; }
 window-rule { open-floating false; }
 
-// Optional Telegram memo window rule.
-include "~/voidlinux-config/apps/telegram-memo/niri.kdl"
-
 // Waydroid：全高平铺，默认使用 Niri 最窄的预设列宽。
 window-rule {
     match app-id="^Waydroid$" title="^Waydroid$"
@@ -63,15 +62,6 @@ window-rule {
     default-window-height { proportion 1.0; }
 }
 
-
-// xdg-desktop-portal-termfilechooser 使用这个标题启动 Alacritty。
-window-rule {
-    match app-id="^Alacritty$" title="^termfilechooser$"
-    open-floating true
-    open-focused true
-    default-column-width { proportion 0.8; }
-    default-window-height { proportion 0.8; }
-}
 
 // 两台内屏都使用精确 EDID 型号，避免连接器名称变化或相互覆盖。
 output "AU Optronics 0x0FA7 Unknown" {
@@ -109,6 +99,7 @@ spawn-at-startup "wlsunset" "-l" "20" "-L" "100"
 spawn-at-startup "mouseless"
 
 binds {
+Mod+XF86PowerOff repeat=false allow-when-locked=true { spawn "sudo" "-n" "poweroff";}
 Mod+shift+q repeat=false { close-window; }
 Mod+escape repeat=false { power-off-monitors; }
 Mod+a repeat=false { spawn "alacritty"; }
@@ -116,6 +107,7 @@ Mod+c repeat=false { spawn "helium" "--new-window"; }
 Mod+shift+c repeat=false { spawn "firefox" "--new-window"; }
 Mod+ctrl+c repeat=false { spawn "google-chrome-stable" "--new-window"; }
 Mod+z repeat=false { spawn "Telegram"; }
+Mod+x repeat=false { spawn "emacsclient" "--create-frame" "--no-wait" "--alternate-editor="; }
 Mod+v repeat=false { toggle-overview; }
 Mod+p repeat=false { spawn "bash" "-c" "grim - | tee >(wl-copy --type image/png) | swappy -f -"; }
 Mod+shift+p repeat=false { spawn "bash" "-c" "geometry=$(slurp) && grim -g \"$geometry\" - | tee >(wl-copy --type image/png) | swappy -f -"; }
