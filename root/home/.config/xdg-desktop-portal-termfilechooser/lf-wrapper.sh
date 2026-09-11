@@ -28,10 +28,5 @@ else
     set -- -config "$file_config" "$path"
 fi
 
-command="$termcmd lf"
-for arg in "$@"; do
-    escaped=$(printf '%s' "$arg" | sed 's/"/\\"/g')
-    command="$command \"$escaped\""
-done
-
-sh -c "$command"
+# Only the configured terminal command is shell syntax; paths stay arguments.
+exec sh -c "$termcmd lf \"\$@\"" sh "$@"

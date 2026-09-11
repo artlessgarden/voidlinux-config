@@ -154,3 +154,12 @@ fi
 grep -Fq 'exec "$HOME/.local/bin/lf-show-items" --service' "$repo/root/home/.local/share/dbus-1/services/org.freedesktop.FileManager1.service" ||
 	fail 'FileManager1 service contains a hard-coded user executable path'
 printf 'ok - LF has recoverable deletion and compact file utilities\n'
+
+# File names are arguments, never shell source (including dollars and backticks).
+special_path='/tmp/lf "$HOME" `printf changed` \ file.txt'
+LF_TEST_ARGS="$tmp/chooser-args" TERMCMD="$tmp/bin/alacritty" \
+	"$chooser" 0 0 0 "$special_path" "$tmp/selection" 0
+expected=$(printf '%s\n' lf -config "$HOME/.config/lf/xdg-file.lfrc" "$special_path")
+[ "$(cat "$tmp/chooser-args")" = "$expected" ] ||
+	fail 'file chooser expands shell syntax in a file path'
+printf 'ok - LF chooser preserves special characters in paths\n'
