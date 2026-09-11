@@ -30,9 +30,8 @@ fi
 grep -q 'pipewire' "$repo/20-pkg-base.sh" || fail 'PipeWire is common'
 grep -q 'wireplumber' "$repo/20-pkg-base.sh" || fail 'WirePlumber is common'
 grep -q 'firefox' "$repo/60-pkg-apps.sh" || fail 'Firefox is installed on both hosts'
-[ -x "$repo/90-helium.sh" ] || fail 'Helium is installed on both hosts'
 [ ! -e "$repo/root/home/.config/mimeapps.list" ] || fail 'host application defaults are still shared'
-grep -q 'helium.desktop' "$repo/root/home/.config/mimeapps.list.example" || fail 'fresh hosts do not default to Helium'
+grep -q 'firefox.desktop' "$repo/root/home/.config/mimeapps.list.example" || fail 'fresh hosts do not default to Firefox'
 if grep -Fq '.config/mimeapps.list" "$HOME/.config/mimeapps.list"' "$repo/70-link-apps.sh"; then
 	fail 'application defaults are still linked across hosts'
 fi

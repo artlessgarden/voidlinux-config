@@ -15,20 +15,8 @@ done
 
 chmod +x "$h/.local/bin/"* 2>/dev/null || true
 ln -sf "$h/.local/bin/"* "$HOME/.local/bin/"
-ln -sfn "$h/.local/share/applications/helium.desktop" \
-	"$HOME/.local/share/applications/helium.desktop"
 ln -sfn "$h/.local/share/applications/vim.desktop" \
 	"$HOME/.local/share/applications/vim.desktop"
 ln -sf "$h/.local/share/fcitx5/rime/"* "$HOME/.local/share/fcitx5/rime/"
 
-# Helium policy and initial preferences are common; only the default browser differs.
-sudo install -d -o root -g root -m 755 \
-	/etc/chromium/policies/managed /etc/chromium/policies/recommended
-sudo install -o root -g root -m 644 \
-	"$dir/root/etc/chromium/policies/managed/extensions.json" \
-	/etc/chromium/policies/managed/extensions.json
-sudo install -o root -g root -m 644 \
-	"$dir/root/etc/chromium/policies/recommended/helium.json" \
-	/etc/chromium/policies/recommended/helium.json
-"$h/.local/bin/helium-seed-prefs" || true
 printf '%s\n' '应用配置已链接；正在运行的应用需重新打开。'

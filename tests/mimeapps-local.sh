@@ -14,12 +14,12 @@ fresh=$tmp/fresh
 mkdir -p "$fresh"
 run_setup "$fresh"
 [ ! -L "$fresh/.config/mimeapps.list" ] || fail 'fresh MIME defaults are a shared symlink'
-grep -Fq 'x-scheme-handler/https=helium.desktop' "$fresh/.config/mimeapps.list" || \
-	fail 'fresh install does not seed Helium'
-
-sed -i 's/helium\.desktop/firefox.desktop/g' "$fresh/.config/mimeapps.list"
-run_setup "$fresh"
 grep -Fq 'x-scheme-handler/https=firefox.desktop' "$fresh/.config/mimeapps.list" || \
+	fail 'fresh install does not seed Firefox'
+
+sed -i 's/firefox\.desktop/custom-browser.desktop/g' "$fresh/.config/mimeapps.list"
+run_setup "$fresh"
+grep -Fq 'x-scheme-handler/https=custom-browser.desktop' "$fresh/.config/mimeapps.list" || \
 	fail 'rerunning setup overwrites this host default browser'
 
 legacy=$tmp/legacy

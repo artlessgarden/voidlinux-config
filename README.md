@@ -42,13 +42,6 @@ and file opening use telega defaults. Voice/video calls are unsupported.
 Niri `Mod+X` starts an Emacs daemon on first use and opens client frames.
 Closing all frames leaves the daemon running; `M-x kill-emacs` stops it.
 
-MSI runs `sh msi/70-vex.sh` to install Vex 2.1.0 from its checksummed official
-release and associate CSV, XLSX and XLSM with it. Desktop opening uses Alacritty;
-LF opens these files in its current terminal when Vex is the host default.
-Version 2.1.0 does not actually load TSV or legacy XLS despite its help text.
-Use CSV for plain table notes. Excel saving rebuilds the workbook, so use Vex
-for viewing existing formatted workbooks rather than preserving their layout or macros.
-
 MSI-only optional Android setup: [Waydroid installation and configuration](msi/waydroid.md)
 documents the verified VANILLA image, Android 13 ARM translation, backups,
 and the full-height 38.2% Niri tile. It is not part of the common or ASUS install.
