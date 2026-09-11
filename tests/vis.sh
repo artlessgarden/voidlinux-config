@@ -106,31 +106,49 @@ esac
 EOF
 cat >"$tmp/bin/git" <<'EOF'
 #!/bin/sh
-exit 0
-EOF
-cat >"$tmp/bin/python3" <<'EOF'
+printf 'git %s\n' "$*" >>"$VIS_TEST_LOG"
+if [ "$1" = clone ]; then
+	for destination do :; done
+	mkdir -p "$destination"
+	cat >"$destination/configure" <<'CONFIGURE'
 #!/bin/sh
-printf 'python3 %s\n' "$*" >>"$VIS_TEST_LOG"
-exit 0
+printf 'configure %s\n' "$*" >>"$VIS_TEST_LOG"
+CONFIGURE
+	chmod +x "$destination/configure"
+fi
 EOF
-cat >"$tmp/home/.local/src/vis/configure" <<'EOF'
+cat >"$tmp/bin/make" <<'EOF'
 #!/bin/sh
-exit 0
+printf 'make %s\n' "$*" >>"$VIS_TEST_LOG"
+[ "${VIS_FAIL_TEST:-}" != "$*" ] || exit 1
+if [ "$1" = install ]; then
+	stage=${2#DESTDIR=}$HOME/.local
+	mkdir -p "$stage/bin" "$stage/share/vis"
+	printf '#!/bin/sh\nexit 0\n' >"$stage/bin/vis"
+	chmod +x "$stage/bin/vis"
+	printf 'runtime\n' >"$stage/share/vis/vis.lua"
+fi
 EOF
-cat >"$tmp/home/.local/bin/vis" <<'EOF'
-#!/bin/sh
-exit 0
-EOF
-chmod +x "$tmp/bin/"* "$tmp/home/.local/src/vis/configure" \
-	"$tmp/home/.local/bin/vis"
+printf '#!/bin/sh\n# previous executable\nexit 0\n' >"$tmp/home/.local/bin/vis"
+cp "$tmp/home/.local/bin/vis" "$tmp/previous"
+chmod +x "$tmp/bin/"* "$tmp/home/.local/bin/vis"
 VIS_TEST_LOG="$tmp/packages" HOME="$tmp/home" PATH="$tmp/bin:$PATH" \
-	sh "$repo/65-vis.sh"
-for package in base-devel python3 ncurses-devel lua54-devel lua54-lpeg tre-devel \
+	sh "$repo/65-vis.sh" >/dev/null
+for package in base-devel ncurses-devel lua54-devel lua54-lpeg tre-devel \
 	acl-devel pkg-config; do
 	grep -qw "$package" "$tmp/packages" || \
 		fail "Vis installer does not install $package"
 done
-grep -Fq "python3 $repo/apps/vis-cjk/build.py --source $tmp/home/.local/src/vis --prefix $tmp/home/.local" "$tmp/packages" || \
-	fail 'Vis installer does not use the checked temporary-build workflow'
+for suite in core lua vis; do
+	grep -Fxq "make -C test/$suite" "$tmp/packages" || fail "missing upstream test: $suite"
+done
+cmp "$tmp/previous" "$tmp/home/.local/bin/vis.previous" || fail 'previous executable not preserved'
+[ -f "$tmp/home/.local/share/vis/vis.lua" ] || fail 'native runtime not installed'
+cp "$tmp/home/.local/bin/vis" "$tmp/installed"
+if VIS_FAIL_TEST='-C test/lua' VIS_TEST_LOG="$tmp/packages" HOME="$tmp/home" PATH="$tmp/bin:$PATH" \
+	sh "$repo/65-vis.sh" >/dev/null 2>&1; then
+	fail 'installer continued after upstream test failure'
+fi
+cmp "$tmp/installed" "$tmp/home/.local/bin/vis" || fail 'failed build replaced working executable'
 
 printf 'ok - Vis config and source build dependencies are complete\n'

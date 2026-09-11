@@ -201,6 +201,8 @@ remains runit's job: use `sudo sv up mihomo`, `sudo sv down mihomo`, or
 
 Mihomo (`45-mihomo.sh`), Mouseless (`75-mouseless.sh`) and Helium
 (`90-helium.sh`) use the latest official release binaries; rerun their scripts
-to update. Vis builds upstream master without local patches. TDLib builds
+to update. Vis builds upstream master without local patches, entirely through `65-vis.sh`;
+it runs the core, Lua and Vis tests before installing, and keeps the previous
+executable as `~/.local/bin/vis.previous`. TDLib builds
 upstream master because no official Linux release binary is provided; the
 telega helper is rebuilt against it. Other system applications use XBPS.
