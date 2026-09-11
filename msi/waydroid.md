@@ -68,8 +68,9 @@ libhoudini 是社区脚本安装的闭源转译库；本机已验证一个此前
 
 ```sh
 sudo xbps-install -S git python3 python3-pip
-git clone https://github.com/casualsnek/waydroid_script.git "$HOME/waydroid_script"
-cd "$HOME/waydroid_script"
+mkdir -p "$HOME/.local/src"
+git clone https://github.com/casualsnek/waydroid_script.git "$HOME/.local/src/waydroid_script"
+cd "$HOME/.local/src/waydroid_script"
 git checkout --detach d5289cfd8929e86e7f0dc89ecadcef8b66930eec
 python3 -m venv venv
 venv/bin/pip install -r requirements.txt
@@ -82,7 +83,7 @@ waydroid session stop
 sudo sv -w 30 down waydroid-container
 sudo waydroid container stop
 
-waydroid_backup="$HOME/waydroid-backups/before-houdini-$(date +%Y%m%d-%H%M%S)"
+waydroid_backup="$HOME/.local/state/waydroid-backups/before-houdini-$(date +%Y%m%d-%H%M%S)"
 mkdir -p "$waydroid_backup"
 chmod 700 "$waydroid_backup"
 sudo tar -C /var/lib/waydroid -cpf "$waydroid_backup/system-config.tar" \
@@ -93,7 +94,7 @@ sudo tar -C /var/lib/waydroid -cpf "$waydroid_backup/system-config.tar" \
 备份成功后再安装；仅选择 libhoudini，不安装 GApps、microG 或 Magisk：
 
 ```sh
-cd "$HOME/waydroid_script"
+cd "$HOME/.local/src/waydroid_script"
 sudo venv/bin/python3 main.py -a 13 install libhoudini
 sudo sv -w 30 up waydroid-container
 waydroid show-full-ui
@@ -181,7 +182,7 @@ waydroid session stop      # 停止安卓会话
 waydroid session stop
 sudo sv -w 30 down waydroid-container
 sudo waydroid container stop
-cd "$HOME/waydroid_script"
+cd "$HOME/.local/src/waydroid_script"
 sudo venv/bin/python3 main.py -a 13 uninstall libhoudini
 sudo sv -w 30 up waydroid-container
 waydroid show-full-ui

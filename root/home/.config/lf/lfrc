@@ -17,8 +17,10 @@ set scrolloff 3
 set mouse
 set period 1
 
-# Escape clears selections in normal mode without changing its other modes.
-nmap <esc> unselect
+# Escape cancels transient UI state and clears both selection and file clipboard.
+nmap <esc> :unselect; clear; setfilter
+vmap <esc> :visual-discard; unselect; clear; setfilter
+cmap <esc> :cmd-escape; unselect; clear; setfilter
 
 # Keep download folders ordered with the newest files first.
 setlocal ~/Downloads sortby time

@@ -107,7 +107,11 @@ printf 'ok - LF previews text and archives selections without deleting input\n'
 
 grep -Fq 'gio trash -- $fx' "$lfrc" || fail 'D does not use the standard trash'
 grep -Fxq 'map D trash' "$lfrc" || fail 'D is not mapped to trash'
-grep -Fxq 'nmap <esc> unselect' "$lfrc" || fail 'Escape does not clear selections in normal mode'
+grep -Fxq 'nmap <esc> :unselect; clear; setfilter' "$lfrc" || fail 'Escape does not clear selections in normal mode'
+grep -Fxq 'vmap <esc> :visual-discard; unselect; clear; setfilter' "$lfrc" ||
+	fail 'Escape does not exit visual mode before clearing state'
+grep -Fxq 'cmap <esc> :cmd-escape; unselect; clear; setfilter' "$lfrc" ||
+	fail 'Escape does not exit command-line mode before clearing state'
 if grep -Eq '^map <esc>([[:space:]]|$)' "$lfrc"; then
 	fail 'Escape selection clearing overrides visual mode'
 fi
