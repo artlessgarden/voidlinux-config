@@ -226,7 +226,15 @@ binary adaptation: a changed ABI or packaging layout can still require manual
 adjustment. Updates follow Void's target version, not every Homebrew security
 release. Running `xbps-install` directly bypasses the preparation step.
 
-On a fresh profile the script enables the hardware-decoding flag in `config.py`;
-existing configuration and history are preserved. Intel AV1 hardware decoding
-has been verified on the MSI machine. This build does not support PipeWire
+`70-link-apps.sh` and `95-qutebrowser.sh` link `config.py`, `autoconfig.yml`,
+`quickmarks` and `bookmarks/urls` from `root/home/.config/qutebrowser/`, backing
+up existing regular files. Bookmarks, quickmarks and preferences saved with
+`:set` are versioned alongside the configuration. Save changes with `:save` before
+committing and restart qute after pulling changes made on another machine.
+History, cookies and login sessions remain local. The shared config
+includes hardware decoding, dark mode and EasyList/EasyPrivacy/EasyList China
+ad blocking via `python3-adblock`. Run `:adblock-update` on first use and to
+refresh rules. Qute blocks network requests but does not support cosmetic
+element hiding. AV1 hardware decoding has been verified on both the MSI Intel
+and ASUS Radeon 860M machines. This build does not support PipeWire
 WebRTC screen sharing. `--build-only` prepares the package without installing it.

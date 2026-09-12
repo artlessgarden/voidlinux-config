@@ -13,6 +13,16 @@ for name in alacritty emacs nvim fd fontconfig htop lf vis mpv mouseless xdg-des
 	ln -sfnT "$h/.config/$name" "$HOME/.config/$name"
 done
 
+# 配置、书签、快速书签和 :set 偏好随仓库保存。
+mkdir -p "$HOME/.config/qutebrowser/bookmarks"
+for file in config.py autoconfig.yml quickmarks bookmarks/urls; do
+	qute=$HOME/.config/qutebrowser/$file
+	if [ -f "$qute" ] && [ ! -L "$qute" ]; then
+		mv "$qute" "$qute.before-repo-$(date +%Y%m%d%H%M%S)"
+	fi
+	ln -sfn "$h/.config/qutebrowser/$file" "$qute"
+done
+
 chmod +x "$h/.local/bin/"* 2>/dev/null || true
 ln -sf "$h/.local/bin/"* "$HOME/.local/bin/"
 ln -sfn "$h/.local/share/applications/helium.desktop" \

@@ -7,7 +7,7 @@ sudo xbps-install -S \
 	grim slurp swappy \
 	imv mpv zathura zathura-pdf-poppler \
 	gvfs xdg-desktop-portal-termfilechooser xdg-desktop-portal-gtk xdg-utils gnome-themes-extra \
-	lf fuzzel python3-dbus python3-gobject curl fd fzf ripgrep bat chafa htop xz \
+	lf fuzzel python3-dbus python3-gobject python3-adblock curl fd fzf ripgrep bat chafa htop xz \
 	file mediainfo-cli poppler-utils unzip zip 7zip \
 	StyLua shfmt ruff go nodejs \
 	telegram-desktop

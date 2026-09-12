@@ -15,7 +15,7 @@ test "$(xbps-uhelper arch)" = x86_64 || {
 	exit 1
 }
 if [ -z "$mode" ]; then
-	sudo xbps-install -y python3 patchelf
+	sudo xbps-install -y python3 python3-adblock patchelf
 fi
 
 repo=${XDG_CACHE_HOME:-$HOME/.cache}/qutebrowser-xbps
@@ -134,14 +134,13 @@ if ! xbps-query -p pkgver qutebrowser >/dev/null 2>&1; then
 	sudo xbps-install -y qutebrowser
 fi
 
-config=${XDG_CONFIG_HOME:-$HOME/.config}/qutebrowser/config.py
-if [ ! -e "$config" ]; then
-	mkdir -p "$(dirname "$config")"
-	cat >"$config" <<'PY'
-config.load_autoconfig()
-c.qt.args = ['enable-features=AcceleratedVideoDecodeLinuxGL']
-PY
-else
-	echo "保留已有配置：$config；硬解需要 qt.args 中的 enable-features=AcceleratedVideoDecodeLinuxGL。"
-fi
+config=${XDG_CONFIG_HOME:-$HOME/.config}/qutebrowser
+mkdir -p "$config/bookmarks"
+for file in config.py autoconfig.yml quickmarks bookmarks/urls; do
+	if [ -f "$config/$file" ] && [ ! -L "$config/$file" ]; then
+		mv "$config/$file" "$config/$file.before-repo-$(date +%Y%m%d%H%M%S)"
+	fi
+	ln -sfn "$dir/root/home/.config/qutebrowser/$file" "$config/$file"
+done
+echo '广告规则首次使用或更新：在 qute 中执行 :adblock-update。'
 echo '完成：直接启动 qutebrowser。内核由本地 XBPS 包管理。'
