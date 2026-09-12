@@ -5,6 +5,7 @@ import pathlib
 import re
 import subprocess
 import sys
+import urllib.error
 import urllib.request
 
 OFFICIAL = "https://repo-fastly.voidlinux.org/current"
@@ -27,25 +28,83 @@ def needs_update(installed, available):
     return result.returncode == 1
 
 
-def bottle(formula, version):
-    if formula["versions"]["stable"] != version:
-        raise ValueError(
-            f"需要 {version}，二进制来源目前提供 {formula['versions']['stable']}"
-        )
-    try:
-        digest = formula["bottle"]["stable"]["files"]["x86_64_linux"]["sha256"]
-    except KeyError as error:
-        raise ValueError("没有对应的 x86_64 Linux 二进制") from error
-    if not re.fullmatch("[a-f0-9]{64}", digest):
-        raise ValueError("二进制校验值无效")
-    return digest
+class BottleUnavailable(ValueError):
+    """The requested version has no available Linux bottle."""
 
 
-def fetch(name):
+def registry_index(name, version):
+    if name not in ("qtwebengine", "libxml2") or not re.fullmatch(
+        r"\d+\.\d+\.\d+(?:_\d+)?", version
+    ):
+        raise ValueError("无效的二进制名称或版本")
     with urllib.request.urlopen(
-        f"https://formulae.brew.sh/api/formula/{name}.json", timeout=60
+        f"https://ghcr.io/token?service=ghcr.io&scope=repository:homebrew/core/{name}:pull",
+        timeout=60,
     ) as response:
+        token = json.load(response)["token"]
+    request = urllib.request.Request(
+        f"https://ghcr.io/v2/homebrew/core/{name}/manifests/{version}",
+        headers={
+            "Authorization": "Bearer " + token,
+            "Accept": "application/vnd.oci.image.index.v1+json",
+        },
+    )
+    with urllib.request.urlopen(request, timeout=60) as response:
         return json.load(response)
+
+
+def bottle(name, version):
+    try:
+        manifest = registry_index(name, version)
+    except urllib.error.HTTPError as error:
+        if error.code != 404:
+            raise
+        error.close()
+        raise BottleUnavailable(f"仓库没有 {name} {version}") from error
+    if (
+        manifest.get("annotations", {}).get("org.opencontainers.image.version")
+        != version
+    ):
+        raise ValueError(f"{name} 返回的清单版本与目标 {version} 不符")
+    for entry in manifest.get("manifests", []):
+        platform = entry.get("platform", {})
+        if platform.get("os") != "linux" or platform.get("architecture") != "amd64":
+            continue
+        annotations = entry["annotations"]
+        if (
+            annotations.get("org.opencontainers.image.ref.name")
+            != version + ".x86_64_linux"
+        ):
+            raise ValueError("Linux 二进制的版本标记不符")
+        digest = annotations.get("sh.brew.bottle.digest", "")
+        if not re.fullmatch("[a-f0-9]{64}", digest):
+            raise ValueError("二进制校验值无效")
+        return {
+            "sha256": digest,
+            "dependencies": json.loads(annotations["sh.brew.tab"])[
+                "runtime_dependencies"
+            ],
+        }
+    raise BottleUnavailable(f"{name} {version} 没有 x86_64 Linux 二进制")
+
+
+def resolve(version):
+    qt = bottle("qtwebengine", version)
+    xml_dependency = next(
+        (dep for dep in qt["dependencies"] if dep["full_name"] == "libxml2"), None
+    )
+    if xml_dependency is None:
+        raise ValueError("Qt 二进制清单没有记录 libxml2，需检查新的打包方式")
+    xml_version = xml_dependency["pkg_version"]
+    if not re.fullmatch(r"\d+\.\d+\.\d+(?:_\d+)?", xml_version):
+        raise ValueError("不支持的 libxml2 版本格式")
+    xml = bottle("libxml2", xml_version)
+    return {
+        "qt": version,
+        "xml": xml_version,
+        "qt_sha": qt["sha256"],
+        "xml_sha": xml["sha256"],
+    }
 
 
 def plan(destination):
@@ -67,28 +126,13 @@ def plan(destination):
         return
     version = available.rsplit("_", 1)[0]
     print(f"准备 QtWebEngine {installed} → {available}。")
-    qt = fetch("qtwebengine")
-    if qt["versions"]["stable"] != version:
-        print(
-            f"二进制来源提供 {qt['versions']['stable']}，没有目标 {version}：保留当前内核，继续检查系统升级。"
-        )
+    try:
+        selected = resolve(version)
+    except BottleUnavailable as error:
+        print(f"{error}：保留当前内核，继续检查系统升级。")
         return
-    digest = bottle(qt, version)
-    xml = fetch("libxml2")
-    xml_version = xml["versions"]["stable"]
-    if not re.fullmatch(r"\d+\.\d+\.\d+", xml_version):
-        raise ValueError("不支持的 libxml2 版本格式")
-    pathlib.Path(destination).write_text(
-        json.dumps(
-            {
-                "qt": version,
-                "xml": xml_version,
-                "qt_sha": digest,
-                "xml_sha": bottle(xml, xml_version),
-                "pkgver": available,
-            }
-        )
-    )
+    selected["pkgver"] = available
+    pathlib.Path(destination).write_text(json.dumps(selected))
 
 
 def dependencies(manifest, needed_file):
@@ -152,6 +196,8 @@ if __name__ == "__main__":
     try:
         if sys.argv[1] == "plan":
             plan(sys.argv[2])
+        elif sys.argv[1] == "resolve":
+            print(json.dumps(resolve(sys.argv[2]), indent=2))
         elif sys.argv[1] == "dependencies":
             dependencies(sys.argv[2], sys.argv[3])
         elif sys.argv[1] == "verify":

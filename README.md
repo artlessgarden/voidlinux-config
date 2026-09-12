@@ -209,13 +209,15 @@ updates from replacing this kernel. Other Qt libraries stay on Void's packages.
 `xbg` refreshes Void's indexes, runs `95-qutebrowser.sh --prepare-update`,
 previews the transaction, and upgrades the system with the local repository
 first, then checks that the Python WebEngine bindings load. If Void's WebEngine package is newer, the helper in
-`apps/qutebrowser/update.py` looks for the exact upstream version in Homebrew's
-current x86_64 Linux bottles. It checks hashes, VA-API/codecs, libxml2 and
+`apps/qutebrowser/update.py` requests that exact version tag from Homebrew's
+GHCR archive and selects its x86_64 Linux bottle, including historical releases.
+The private libxml2 also comes from the version recorded in that bottle's build
+metadata. There is no latest-version lookup. It checks hashes, VA-API/codecs, libxml2 and
 libc/C++ symbol versions, then prepares a local package for the same transaction.
 Previous package archives are retained. It does not install the new engine ahead
 of its system dependencies.
 
-If the binary source has no matching version (older or newer), the installed
+If the requested historical tag or its Linux bottle is unavailable, the installed
 engine stays in place and the system update continues when XBPS dependencies
 permit it. Incompatible Qt upgrades fail the preview before system packages
 are changed. Download/verification failures also stop before the system upgrade.
