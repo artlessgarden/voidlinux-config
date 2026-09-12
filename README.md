@@ -46,7 +46,7 @@ remain intact, except that telega has been removed from Emacs. Emacs packages
 may install on first launch and live in `~/.local/share/emacs/elpa`; private
 state stays in `~/.local/state/emacs`.
 
-Niri `Mod+x` opens Vis in Alacritty. Launch optional editors explicitly when needed.
+Niri `Mod+x` opens qutebrowser. Launch optional editors explicitly when needed.
 
 MSI-only optional Android setup: [Waydroid installation and configuration](msi/waydroid.md)
 documents the verified VANILLA image, Android 13 ARM translation, backups,
@@ -196,3 +196,35 @@ Mihomo (`45-mihomo.sh`), Mouseless (`75-mouseless.sh`) and Helium
 to update. Vis builds upstream master without local patches, entirely through `65-vis.sh`;
 it runs the core, Lua and Vis tests before installing, and keeps the previous
 executable as `~/.local/bin/vis.previous`. Other system applications use XBPS.
+
+Qutebrowser: run `sh 95-qutebrowser.sh`. It repackages pinned Homebrew **Linux**
+QtWebEngine 6.11.2 binaries as a native `qt6-webengine` XBPS package, then installs
+Void's qutebrowser. No Qt compilation or Homebrew installation is needed. XBPS
+sees the dependency as satisfied, so it skips the official WebEngine package;
+an existing official package is replaced. Only the required newer libxml2 is
+bundled privately. Downloads are SHA256-checked.
+
+The local repository is `/var/cache/xbps/qutebrowser`; `repolock` prevents normal
+updates from replacing this kernel. Other Qt libraries stay on Void's packages.
+`xbg` refreshes Void's indexes, runs `95-qutebrowser.sh --prepare-update`,
+previews the transaction, and upgrades the system with the local repository
+first, then checks that the Python WebEngine bindings load. If Void's WebEngine package is newer, the helper in
+`apps/qutebrowser/update.py` looks for the exact upstream version in Homebrew's
+current x86_64 Linux bottles. It checks hashes, VA-API/codecs, libxml2 and
+libc/C++ symbol versions, then prepares a local package for the same transaction.
+Previous package archives are retained. It does not install the new engine ahead
+of its system dependencies.
+
+If the binary source has no matching version (older or newer), the installed
+engine stays in place and the system update continues when XBPS dependencies
+permit it. Incompatible Qt upgrades fail the preview before system packages
+are changed. Download/verification failures also stop before the system upgrade.
+The initial 6.11.2 package requires Qt 6.11 and ICU 78. This is a cross-distribution
+binary adaptation: a changed ABI or packaging layout can still require manual
+adjustment. Updates follow Void's target version, not every Homebrew security
+release. Running `xbps-install` directly bypasses the preparation step.
+
+On a fresh profile the script enables the hardware-decoding flag in `config.py`;
+existing configuration and history are preserved. Intel AV1 hardware decoding
+has been verified on the MSI machine. This build does not support PipeWire
+WebRTC screen sharing. `--build-only` prepares the package without installing it.

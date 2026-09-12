@@ -15,6 +15,7 @@ sh 65-vis.sh
 sh 70-link-apps.sh
 sh 75-mouseless.sh
 sh 90-helium.sh
+sh 95-qutebrowser.sh
 
 # MSI
 sh msi/20-pkg-hardware.sh

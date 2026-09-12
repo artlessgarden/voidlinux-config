@@ -108,7 +108,7 @@ Mod+c repeat=false { spawn "helium" "--new-window"; }
 Mod+shift+c repeat=false { spawn "firefox" "--new-window"; }
 Mod+ctrl+c repeat=false { spawn "google-chrome-stable" "--new-window"; }
 Mod+z repeat=false { spawn "Telegram"; }
-Mod+x repeat=false { spawn "alacritty" "-e" "vis"; }
+Mod+x repeat=false { spawn "qutebrowser" ; }
 Mod+v repeat=false { toggle-overview; }
 Mod+b repeat=false { spawn "sh" "-c" "case $(gsettings get org.gnome.desktop.interface gtk-theme) in *dark*) theme=Adwaita; scheme=default;; *) theme=Adwaita-dark; scheme=prefer-dark;; esac; gsettings set org.gnome.desktop.interface gtk-theme \"$theme\" && gsettings set org.gnome.desktop.interface color-scheme \"$scheme\""; }
 Mod+p repeat=false { spawn "bash" "-c" "grim - | tee >(wl-copy --type image/png) | swappy -f -"; }
