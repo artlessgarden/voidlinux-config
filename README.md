@@ -17,9 +17,9 @@ navigation (`Ctrl-f` file search, `Ctrl-g` content search); opening text runs
 Vis in the same terminal, and quitting Vis returns to LF. Vis keeps only
 current-file editing helpers: theme/status, input-method switching, clipboard,
 manual formatting, upstream current-file completion, cursor
-position restoration, and concurrent-edit warnings. All personal Vis settings
-and the theme are in `root/home/.config/vis/visrc.lua`; no other personal Lua
-files are required. The custom status bar shows mode, path, syntax, and cursor position.
+position restoration, and concurrent-edit warnings. Vis settings start in `root/home/.config/vis/visrc.lua`;
+independent editing helpers live in `my/`, and the active color theme lives in
+`themes/`. Comment out a helper’s `require` line to disable that feature. The custom status bar shows mode, path, syntax, and cursor position.
 Formatters `StyLua`, `shfmt`, `ruff`, and `go` are installed by `60-pkg-apps.sh`.
 Prettier is installed separately with `npm install -g prettier` (the tracked
 `.npmrc` puts it under `~/.local/share/npm`).

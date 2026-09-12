@@ -1,8 +1,8 @@
 #!/bin/sh
 set -eu
 repo=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)
-status=$repo/root/home/.config/vis/visrc.lua
-formatter=$status
+status=$repo/root/home/.config/vis/my/status.lua
+formatter=$repo/root/home/.config/vis/my/formatter.lua
 
 fail() {
 	printf 'not ok - %s\n' "$1" >&2
@@ -34,8 +34,8 @@ package main
 var enabled=true
 EOF
 cat >"$tmp/check.lua" <<'EOF'
-for _, name in ipairs({"entry", "navigate", "history", "project", "completion", "cursor", "lock", "formatter", "status"}) do
-  assert(not package.loaded["my." .. name], "external personal module still loaded: " .. name)
+for _, name in ipairs({"entry", "navigate", "history", "project", "completion"}) do
+  assert(not package.loaded["my." .. name], "retired personal module still loaded: " .. name)
 end
 assert(package.loaded["plugins/complete-word"], "stock current-file completion missing")
 local win = vis.win
