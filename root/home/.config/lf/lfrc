@@ -35,15 +35,6 @@ cmd open ${{
 		lf -remote "send $id cd \"$escaped\""
 		exit 0
 	fi
-	# Org notes use Emacs only on hosts configured for it.
-	case $f in
-	*.[oO][rR][gG])
-		if [ "$(xdg-mime query default text/org)" = emacs.desktop ]; then
-			lf-detach emacs $fx
-			exit 0
-		fi
-		;;
-	esac
 	case $(file --mime-type -Lb -- "$f") in
 	text/*|application/json|application/xml|application/javascript|\
 	application/x-sh|application/x-shellscript|application/x-zerosize|inode/x-empty)

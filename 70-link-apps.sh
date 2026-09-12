@@ -9,7 +9,7 @@ mkdir -p "$HOME/.config" "$HOME/.local/bin" \
 	"$HOME/.local/share/fcitx5/rime"
 
 ln -sfn "$h/.npmrc" "$HOME/.npmrc"
-for name in alacritty fd fontconfig htop lf vis mpv mouseless xdg-desktop-portal xdg-desktop-portal-termfilechooser; do
+for name in alacritty emacs nvim fd fontconfig htop lf vis mpv mouseless xdg-desktop-portal xdg-desktop-portal-termfilechooser; do
 	ln -sfnT "$h/.config/$name" "$HOME/.config/$name"
 done
 

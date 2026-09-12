@@ -166,7 +166,6 @@
 
 
 (require 'my-package)
-(require 'my-telega)
 (require 'server)
 (unless (or noninteractive (daemonp) (server-running-p))
   (server-start))

@@ -6,7 +6,6 @@ One small Niri terminal desktop, shared by two laptops.
 - `root/home/` mirrors files linked into the user's home; edits take effect immediately.
 - `~/.config/mimeapps.list` is copied once, then remains local so each laptop keeps its own default browser.
 - `msi/` and `asus/` contain device-specific setup scripts: hardware, GRUB and power.
-- `archive/` keeps inactive Neovim and the former full Vis configuration; nothing there is linked directly.
 
 Follow the common commands in `flow.txt`, then run only the block for the machine being installed. The scripts are literal on purpose: there is no host detection, generator or overlay system.
 
@@ -25,8 +24,7 @@ Prettier is installed separately with `npm install -g prettier` (the tracked
 `.npmrc` puts it under `~/.local/share/npm`).
 For in-editor file switching, use native `:cd /project`, `:e path`, or `:e .`;
 project scope is the working directory, with no automatic root detection.
-The full former setup is in `archive/vis-full-2026-09-11/vis`.
-Emacs remains available alongside Vis; Org files use Emacs on the MSI setup.
+Vis is the default text editor, including Org files.
 Niri `Mod+Space` opens Fuzzel to launch installed applications. It uses the default
 appearance and Alacritty for terminal applications; no launcher config file is needed.
 
@@ -35,26 +33,20 @@ Keep settings needed for hardware, input, fonts and application launching; add f
 only for a current, reproducible problem. LF handles desktop file management,
 previews and terminal file selection through xdg-desktop-portal-termfilechooser.
 Its configuration and helpers live under `root/home/`.
-Emacs and telega remain enabled with their existing configuration.
+Emacs and Neovim are optional; their configurations are linked even when the applications are not installed.
 
 Helium is installed or updated with `sh 90-helium.sh`; `xbg` also updates it.
 Niri `Mod+c` opens Helium and `Mod+Shift+c` opens Firefox. Default-browser
 preferences are local to each host and are not overwritten by setup.
 
-MSI restores Emacs with `sh msi/65-emacs.sh`. The active configuration is
-`root/home/.config/emacs`, linked to `~/.config/emacs`; Org is built in.
-Packages live in `~/.local/share/emacs/elpa` and private state in
-`~/.local/state/emacs`.
+`70-link-apps.sh` links `root/home/.config/emacs` and `root/home/.config/nvim`
+into `~/.config/`. Install `emacs-pgtk` or `neovim` through XBPS when needed;
+there are no dedicated editor installation scripts. Their existing configurations
+remain intact, except that telega has been removed from Emacs. Emacs packages
+may install on first launch and live in `~/.local/share/emacs/elpa`; private
+state stays in `~/.local/state/emacs`.
 
-`sh msi/66-telega.sh` adds the Telegram client and builds TDLib from upstream
-master under `~/.local/opt/tdlib`, and installs its helper under `~/.local/share/telega`.
-Rerun the script to update TDLib and rebuild the telega helper.
-The build uses four jobs by default (`TELEGA_BUILD_JOBS=2` uses less memory).
-In graphical Emacs, use `C-c T` or `M-x telega` and authorize with your phone.
-Account data and downloaded media stay outside the repository. Media playback
-and file opening use telega defaults. Voice/video calls are unsupported.
-Niri `Mod+X` starts an Emacs daemon on first use and opens client frames.
-Closing all frames leaves the daemon running; `M-x kill-emacs` stops it.
+Niri `Mod+x` opens Vis in Alacritty. Launch optional editors explicitly when needed.
 
 MSI-only optional Android setup: [Waydroid installation and configuration](msi/waydroid.md)
 documents the verified VANILLA image, Android 13 ARM translation, backups,
@@ -203,6 +195,4 @@ Mihomo (`45-mihomo.sh`), Mouseless (`75-mouseless.sh`) and Helium
 (`90-helium.sh`) use the latest official release binaries; rerun their scripts
 to update. Vis builds upstream master without local patches, entirely through `65-vis.sh`;
 it runs the core, Lua and Vis tests before installing, and keeps the previous
-executable as `~/.local/bin/vis.previous`. TDLib builds
-upstream master because no official Linux release binary is provided; the
-telega helper is rebuilt against it. Other system applications use XBPS.
+executable as `~/.local/bin/vis.previous`. Other system applications use XBPS.

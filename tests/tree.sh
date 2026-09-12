@@ -3,7 +3,7 @@ set -eu
 repo=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)
 fail() { printf 'not ok - %s\n' "$1" >&2; exit 1; }
 
-for path in archive/home/.config/nvim \
+for path in root/home/.config/nvim \
 	root/home/.config/niri root/etc/keyd root/etc/default/grub.msi \
 	root/etc/default/grub.asus root/etc/grub.d/09_windows msi asus; do
 	[ -e "$repo/$path" ] || fail "missing $path"
@@ -16,7 +16,7 @@ for path in Documents home etc home/.emacs.d home/.config/nvim \
 done
 
 common_files="$repo/20-pkg-base.sh $repo/40-sv-base.sh $repo/50-link-home.sh $repo/60-pkg-apps.sh $repo/70-link-apps.sh $repo/root/home/.bashrc"
-if grep -Eiq 'intel|amd|sof|tlp|iwlwifi|efibootmgr|nameserver|foot|neovim|emacs' $common_files; then
+if grep -Eiq 'intel|amd|sof|tlp|iwlwifi|efibootmgr|nameserver|foot|neovim' $common_files; then
 	fail 'common setup contains host hardware or rejected software'
 fi
 grep -Fq '/sys/class/firmware-attributes/asus-armoury/attributes/dgpu_disable/current_value' \

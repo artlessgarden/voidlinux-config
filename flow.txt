@@ -18,8 +18,6 @@ sh 90-helium.sh
 
 # MSI
 sh msi/20-pkg-hardware.sh
-sh msi/65-emacs.sh
-sh msi/66-telega.sh
 sh msi/80-grub.sh
 sh msi/85-power.sh
 # MSI 可选安卓环境：按 msi/waydroid.md 安装 VANILLA、ARM 转译及窗口配置。
