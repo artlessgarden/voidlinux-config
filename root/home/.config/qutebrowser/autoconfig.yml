@@ -8,3 +8,5 @@ config_version: 2
 settings:
   colors.webpage.darkmode.enabled:
     global: true
+  input.forward_unbound_keys:
+    global: all

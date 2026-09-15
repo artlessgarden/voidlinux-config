@@ -13,15 +13,12 @@ for name in alacritty emacs nvim fd fontconfig htop lf vis mpv mouseless xdg-des
 	ln -sfnT "$h/.config/$name" "$HOME/.config/$name"
 done
 
-# 配置、书签、快速书签和 :set 偏好随仓库保存。
-mkdir -p "$HOME/.config/qutebrowser/bookmarks"
-for file in config.py autoconfig.yml quickmarks bookmarks/urls; do
-	qute=$HOME/.config/qutebrowser/$file
-	if [ -f "$qute" ] && [ ! -L "$qute" ]; then
-		mv "$qute" "$qute.before-repo-$(date +%Y%m%d%H%M%S)"
-	fi
-	ln -sfn "$h/.config/qutebrowser/$file" "$qute"
-done
+# 整个 qute 配置目录随仓库保存，已有实体目录先备份。
+qute=$HOME/.config/qutebrowser
+if [ -d "$qute" ] && [ ! -L "$qute" ]; then
+	mv "$qute" "$qute.before-repo-$(date +%Y%m%d%H%M%S)"
+fi
+ln -sfnT "$h/.config/qutebrowser" "$qute"
 
 chmod +x "$h/.local/bin/"* 2>/dev/null || true
 ln -sf "$h/.local/bin/"* "$HOME/.local/bin/"
@@ -32,6 +29,10 @@ ln -sfn "$h/.local/share/applications/lf.desktop" \
 ln -sfn "$h/.local/share/applications/vis.desktop" \
 	"$HOME/.local/share/applications/vis.desktop"
 ln -sf "$h/.local/share/fcitx5/rime/"* "$HOME/.local/share/fcitx5/rime/"
+mkdir -p "$HOME/.local/share/fcitx5/themes"
+for theme in Nord-Dark Nord-Light; do
+	ln -sfnT "$h/.local/share/fcitx5/themes/$theme" "$HOME/.local/share/fcitx5/themes/$theme"
+done
 
 mkdir -p "$HOME/.local/share/dbus-1/services"
 ln -sfn "$h/.local/share/dbus-1/services/org.freedesktop.FileManager1.service" \

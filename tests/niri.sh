@@ -16,9 +16,13 @@ grep -Eq '(^|[[:space:]])niri([[:space:]\\]|$)' "$root/20-pkg-base.sh" || fail '
 if grep -Eq '(^|[[:space:]])alsa-utils([[:space:]\\]|$)' "$root/20-pkg-base.sh"; then
 	fail 'ALSA mixer utility remains explicitly installed'
 fi
-grep -Fq 'wpctl" "set-volume" "@DEFAULT_AUDIO_SINK@" "2%-"' \
+grep -Fq 'brightnessctl" "set" "1%-"' \
+	"$root/root/home/.config/niri/config.kdl" || fail 'brightness down uses a one-percent step'
+grep -Fq 'brightnessctl" "set" "1%+"' \
+	"$root/root/home/.config/niri/config.kdl" || fail 'brightness up uses a one-percent step'
+grep -Fq 'wpctl" "set-volume" "@DEFAULT_AUDIO_SINK@" "1%-"' \
 	"$root/root/home/.config/niri/config.kdl" || fail 'volume down uses PipeWire'
-grep -Fq 'wpctl" "set-volume" "@DEFAULT_AUDIO_SINK@" "2%+"' \
+grep -Fq 'wpctl" "set-volume" "@DEFAULT_AUDIO_SINK@" "1%+"' \
 	"$root/root/home/.config/niri/config.kdl" || fail 'volume up uses PipeWire'
 grep -Fq 'wpctl" "set-mute" "@DEFAULT_AUDIO_SINK@" "toggle"' \
 	"$root/root/home/.config/niri/config.kdl" || fail 'mute uses PipeWire'

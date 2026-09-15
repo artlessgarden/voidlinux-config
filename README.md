@@ -226,13 +226,67 @@ binary adaptation: a changed ABI or packaging layout can still require manual
 adjustment. Updates follow Void's target version, not every Homebrew security
 release. Running `xbps-install` directly bypasses the preparation step.
 
-`70-link-apps.sh` and `95-qutebrowser.sh` link `config.py`, `autoconfig.yml`,
-`quickmarks` and `bookmarks/urls` from `root/home/.config/qutebrowser/`, backing
-up existing regular files. Bookmarks, quickmarks and preferences saved with
+`70-link-apps.sh` and `95-qutebrowser.sh` link the entire
+`root/home/.config/qutebrowser/` directory, backing up any existing real directory.
+Configuration, local start page, scripts, bookmarks, quickmarks and preferences saved with
 `:set` are versioned alongside the configuration. Save changes with `:save` before
-committing and restart qute after pulling changes made on another machine.
+committing. After configuration updates, run `:config-source --clear` to apply
+changes immediately; restart only for options that require it (such as Qt flags).
 History, cookies and login sessions remain local. The shared config
-includes hardware decoding, dark mode and EasyList/EasyPrivacy/EasyList China
+uses Google search, a blank local `start.html` for the start/default page,
+session restore and the default behavior of keeping the last tab open.
+Completion uses native Tab/Shift+Tab candidate cycling and a shrinking popup.
+Completion keys use qute defaults.
+The linked `site-zoom.py` applies native browser zoom of 150% when navigation
+to Bilibili starts, and restores the previous zoom when leaving Bilibili in that tab.
+It uses qute 3.7 internal APIs, so upgrades may require adjustment.
+`bilibili-ip.user.js` shows existing IP-location data beside comment timestamps
+in modern Bilibili Web Component comments, adapted from BiliReveal (MIT).
+It does not query personal-profile locations or support legacy Vue comments.
+After script changes, run `:greasemonkey-reload` and reload the Bilibili page.
+`bilibili-feed.user.js` replaces the homepage feed with plain video cards and a
+remembered PC/App recommendation switch. Both sources exclude ads and non-video
+cards; fixed ad slots, the homepage banner, category strip and promotional header
+links are hidden. Search and account/history/favorites controls remain native.
+Each batch contains at most 12 videos in four columns and three rows, sized to the
+viewport. There is no infinite scroll. Left/Right in normal mode navigate batches;
+previous batches remain available without fetching again. The toolbar arrows do
+the same. Normal-mode arrow keys are unbound in qute and forwarded to webpages;
+`hjkl` retains qute scrolling. Insert-mode cursor keys are unchanged. Horizontal trackpad/touch swipes also navigate batches, once per
+gesture; vertical scrolling does not fetch recommendations. `Alt+r` switches the
+PC/App source through the webpage keyboard handler. Reloading the page or switching source starts a new batch history.
+For webpage shortcuts, native `Ctrl+v` enters passthrough until `Shift+Escape`;
+`Alt+v` instead passes keys through for one second. Normal-mode `x` closes a tab,
+`e`/`d` scroll up/down half a page, and `j`/`k` keep small-step scrolling; the old
+`xo`/`xO` prefixes are unbound. Leaving that mode early cancels
+the timer. New candidates are checked for redirects into official episode pages.
+Cards show counts, duration, UP avatar/name and publication date. Emphasis badges
+are omitted; only the author name truncates, keeping the date and dislike menu visible.
+Hovering a cover for 650 ms starts a muted,
+low-resolution video preview; leaving, scrolling or hiding the tab releases it.
+Only one preview plays per page. QR codes have a white quiet zone for dark themes.
+“不感兴趣” submits to the selected source's Bilibili API. A successful submission
+leaves a quiet placeholder in the same grid slot with its own server-side undo
+button. Failed submissions leave the card visible; failed undo retains the placeholder.
+PC requests use the existing web login. App recommendations use Bilibili App QR
+authorization (the confirmation can identify a TV client). `bilibili.py` loads
+`bilibili-api.py` as a localhost-only helper inside qute, with fixed App endpoints,
+an exact Origin check and a random key injected into the isolated script world.
+The App credential is saved with mode 0600 in
+`~/.local/share/qutebrowser/bilibili-app-auth.json` (or `$XDG_DATA_HOME`), never in
+the configuration repository. The credential is not injected into webpages.
+QR encoding is local using the bundled MIT-licensed QRCode.js in `lib/`.
+Interface references: [Bilibili-Gate](https://github.com/magicdawn/Bilibili-Gate);
+the recommendation UI is our own small script, without React or a build step.
+The App feed uses an iPad-style request; it is not guaranteed to match the phone
+homepage exactly. These private APIs can change. Playback and comment IP display
+are independent of this feed. Checks: `node tests/qutebrowser-bilibili.cjs` and
+`python3 tests/qutebrowser-bilibili.py` (the latter binds a loopback test port).
+Restored sessions take precedence over the start page. Autoplay, scrolling,
+downloads use qute defaults. Selected tabs are dark grey and other tabs black;
+website appearance preferences saved via `:set` are kept in `autoconfig.yml`.
+The shared config includes
+hardware decoding and EasyList/EasyPrivacy/EasyList China
 ad blocking via `python3-adblock`. Run `:adblock-update` on first use and to
 refresh rules. Qute blocks network requests but does not support cosmetic
 element hiding. AV1 hardware decoding has been verified on both the MSI Intel

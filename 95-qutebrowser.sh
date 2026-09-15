@@ -135,12 +135,10 @@ if ! xbps-query -p pkgver qutebrowser >/dev/null 2>&1; then
 fi
 
 config=${XDG_CONFIG_HOME:-$HOME/.config}/qutebrowser
-mkdir -p "$config/bookmarks"
-for file in config.py autoconfig.yml quickmarks bookmarks/urls; do
-	if [ -f "$config/$file" ] && [ ! -L "$config/$file" ]; then
-		mv "$config/$file" "$config/$file.before-repo-$(date +%Y%m%d%H%M%S)"
-	fi
-	ln -sfn "$dir/root/home/.config/qutebrowser/$file" "$config/$file"
-done
+mkdir -p "$(dirname -- "$config")"
+if [ -d "$config" ] && [ ! -L "$config" ]; then
+	mv "$config" "$config.before-repo-$(date +%Y%m%d%H%M%S)"
+fi
+ln -sfnT "$dir/root/home/.config/qutebrowser" "$config"
 echo '广告规则首次使用或更新：在 qute 中执行 :adblock-update。'
 echo '完成：直接启动 qutebrowser。内核由本地 XBPS 包管理。'

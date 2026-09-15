@@ -14,5 +14,8 @@ ln -sfn "$h/.bashrc" "$HOME/.bashrc"
 ln -sfn "$h/.inputrc" "$HOME/.inputrc"
 ln -sfnT "$h/.config/niri" "$HOME/.config/niri"
 ln -sfn "$h/.config/fcitx5/profile" "$HOME/.config/fcitx5/profile"
+ln -sfn "$h/.config/fcitx5/config" "$HOME/.config/fcitx5/config"
+mkdir -p "$HOME/.config/fcitx5/conf"
+ln -sfn "$h/.config/fcitx5/conf/classicui.conf" "$HOME/.config/fcitx5/conf/classicui.conf"
 printf '%s\n' \
 	'基础用户配置已链接。Niri 配置会自动重载；Shell 配置在新终端生效。'

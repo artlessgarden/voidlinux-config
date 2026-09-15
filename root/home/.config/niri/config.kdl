@@ -130,10 +130,10 @@ Mod+alt+d cooldown-ms=70 { move-column-to-workspace-down; }
 Mod+alt+s cooldown-ms=70 { consume-or-expel-window-left; }
 Mod+alt+f cooldown-ms=70 { consume-or-expel-window-right; }
 
-XF86MonBrightnessDown allow-when-locked=true { spawn "brightnessctl" "set" "2%-"; }
-XF86MonBrightnessUp allow-when-locked=true { spawn "brightnessctl" "set" "2%+"; }
-XF86AudioLowerVolume allow-when-locked=true { spawn "wpctl" "set-volume" "@DEFAULT_AUDIO_SINK@" "2%-"; }
-XF86AudioRaiseVolume allow-when-locked=true { spawn "wpctl" "set-volume" "@DEFAULT_AUDIO_SINK@" "2%+"; }
+XF86MonBrightnessDown allow-when-locked=true { spawn "brightnessctl" "set" "1%-"; }
+XF86MonBrightnessUp allow-when-locked=true { spawn "brightnessctl" "set" "1%+"; }
+XF86AudioLowerVolume allow-when-locked=true { spawn "wpctl" "set-volume" "@DEFAULT_AUDIO_SINK@" "1%-"; }
+XF86AudioRaiseVolume allow-when-locked=true { spawn "wpctl" "set-volume" "@DEFAULT_AUDIO_SINK@" "1%+"; }
 XF86AudioMute allow-when-locked=true { spawn "wpctl" "set-mute" "@DEFAULT_AUDIO_SINK@" "toggle"; }
 
 Mod+WheelScrollDown cooldown-ms=70 { focus-workspace-down; }
