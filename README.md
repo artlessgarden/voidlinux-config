@@ -11,6 +11,10 @@ Follow the common commands in `flow.txt`, then run only the block for the machin
 
 Personal documents, accounts, histories, caches and credentials stay outside this repository.
 
+CSV and TSV files open in csvlens inside LF; press `q` to return to LF.
+`sh 80-csvlens.sh` installs or updates the official Linux binary, with checksum
+verification and no Rust build. Other text files continue to open in Vis.
+
 Terminal editing uses Vis with the upstream source build in `65-vis.sh`. LF handles file
 navigation (`Ctrl-f` file search, `Ctrl-g` content search); opening text runs
 Vis in the same terminal, and quitting Vis returns to LF. Vis keeps only

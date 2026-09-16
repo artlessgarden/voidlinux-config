@@ -14,6 +14,7 @@ sh 60-pkg-apps.sh
 sh 65-vis.sh
 sh 70-link-apps.sh
 sh 75-mouseless.sh
+sh 80-csvlens.sh
 sh 90-helium.sh
 sh 95-qutebrowser.sh
 
