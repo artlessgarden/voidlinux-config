@@ -9,6 +9,7 @@ sudo xbps-install -S \
 	swayidle swaylock wlsunset wl-clipboard brightnessctl \
 	pipewire wireplumber alsa-pipewire bluez \
 	fcitx5 fcitx5-rime keyd \
+	socklog-void \
 	bash-completion git fastfetch \
 	font-inconsolata-otf wqy-microhei
 printf '%s\n' '公共软件包已安装；程序可立即运行。'

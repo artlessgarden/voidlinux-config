@@ -6,6 +6,8 @@ sudo ln -sfn /etc/sv/chronyd /var/service/chronyd
 sudo ln -sfn /etc/sv/dbus /var/service/dbus
 sudo ln -sfn /etc/sv/seatd /var/service/seatd
 sudo ln -sfn /etc/sv/bluetoothd /var/service/bluetoothd
+sudo ln -sfn /etc/sv/socklog-unix /var/service/socklog-unix
+sudo ln -sfn /etc/sv/nanoklogd /var/service/nanoklogd
 sudo usermod -aG _seatd "$USER"
 
 sudo rm -f \
@@ -15,6 +17,7 @@ sudo rm -f \
 	/var/service/agetty-tty6
 
 for service in /var/service/*; do
+	[ "${service##*/}" = socklog-unix ] && continue
 	[ -d "$service/log" ] || continue
 	target=$(readlink -f "$service")
 	sudo touch "$target/log/down"

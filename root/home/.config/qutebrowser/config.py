@@ -38,9 +38,28 @@ c.editor.command = ["alacritty", "-e", "vis", "{file}"]
 # 一个输入框直接进入，多个输入框显示提示标签。
 c.hints.auto_follow = "always"
 config.bind('i', 'hint inputs')
-config.source("site-zoom.py")
-config.source("bilibili.py")
-config.source("fcitx.py")
+# config.source 会清理新导入的模块；启动时等配置读取结束再安装运行时钩子。
+import runpy
+from qutebrowser.config import configinit
+from qutebrowser.qt.widgets import QApplication
+
+
+def load_extensions():
+    for filename in ('site-zoom.py', 'bilibili.py', 'fcitx.py'):
+        runpy.run_path(str(config.configdir / filename), init_globals={'config': config})
+
+
+if QApplication.instance() is None:
+    if not hasattr(configinit, '_personal_late_init'):
+        configinit._personal_late_init = configinit.late_init
+
+    def late_init(*args, **kwargs):
+        configinit._personal_late_init(*args, **kwargs)
+        load_extensions()
+
+    configinit.late_init = late_init
+else:
+    load_extensions()
 
 # 临时穿透一秒；提前离开穿透模式会取消计时，不影响之后的模式。
 from qutebrowser.api import cmdutils
