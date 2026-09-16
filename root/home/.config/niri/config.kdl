@@ -49,6 +49,15 @@ layout {
 }
 prefer-no-csd
 hotkey-overlay { skip-at-startup; }
+// 释放 Win/Alt+Tab（含 Shift 反向切换）给远程桌面，保留同应用窗口切换。
+recent-windows {
+    binds {
+        Alt+grave { next-window filter="app-id"; }
+        Alt+Shift+grave { previous-window filter="app-id"; }
+        Mod+grave { next-window filter="app-id"; }
+        Mod+Shift+grave { previous-window filter="app-id"; }
+    }
+}
 window-rule { open-floating false; }
 
 // Waydroid：全高平铺，默认使用 Niri 最窄的预设列宽。
