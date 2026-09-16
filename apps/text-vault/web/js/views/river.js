@@ -2,6 +2,7 @@ import van from "../../vendor/van-1.6.1.js";
 import {buildAgenda} from "../core/agenda.js";
 import {runQuery} from "../core/query.js";
 import {createEntry} from "../model.js";
+import {parseTotpEntry, generateTotp} from "../core/totp.js";
 
 const {button, div, span, textarea} = van.tags;
 
@@ -16,7 +17,6 @@ export function createRiverView({root, repository, saver, sync, queryLocation, n
   let gestureHandled = false;
   let ignoreEntryClick = false;
   let destroyed = false;
-
   const status = div({class: "sync-status", "data-state": "clean", role: "status", "aria-label": "已保存"});
   const river = div({class: "river", role: "list", "aria-label": "条目河流"});
   const search = textarea({class: "search-input", rows: 1, spellcheck: false, autocomplete: "off", "aria-label": "搜索", placeholder: "搜索"});
@@ -116,7 +116,7 @@ export function createRiverView({root, repository, saver, sync, queryLocation, n
       if (!window.getSelection()?.isCollapsed) return;
       if (ignoreEntryClick) return;
       startEdit(entry, event.currentTarget, textOffsetAtPoint(event.currentTarget, event.clientX, event.clientY));
-    }}, ...highlightDateMarkers(cleanText(entry.text) || " ")));
+    }}, ...highlightDateMarkers(cleanText(entry.text) || " ")), "", entry.text);
   }
 
   function renderReminderEntry(entry) {
@@ -125,7 +125,28 @@ export function createRiverView({root, repository, saver, sync, queryLocation, n
       if (!window.getSelection()?.isCollapsed) return;
       if (ignoreEntryClick) return;
       startEdit(entry, event.currentTarget, textOffsetAtPoint(event.currentTarget, event.clientX, event.clientY), "reminder");
-    }}, ...highlightDateMarkers(entry.text || " ")), "reminder-entry");
+    }}, ...highlightDateMarkers(entry.text || " ")), "reminder-entry", entry.text);
+  }
+
+  function totpButton(text) {
+    const parsed = parseTotpEntry(text);
+    if (!parsed) return null;
+    if (parsed.error) return span({role: "status"}, parsed.error);
+    return button({type: "button", "aria-label": "复制验证码", onclick: async event => {
+      const target = event.currentTarget;
+      target.disabled = true;
+      try {
+        const time = () => new Date(now()).getTime();
+        const counter = () => Math.floor(time() / 1000 / parsed.config.period);
+        let result = await generateTotp(parsed.config, time());
+        if (result.counter !== counter()) result = await generateTotp(parsed.config, time());
+        if (result.counter !== counter()) throw new Error("expired");
+        if (!target.isConnected) return;
+        await navigator.clipboard.writeText(result.code);
+        target.textContent = "已复制";
+      } catch { target.textContent = "复制失败，请重试"; }
+      finally { target.disabled = false; }
+    }}, "复制验证码");
   }
 
   function renderEditorRow(id, extraClass = "") {
@@ -152,7 +173,9 @@ export function createRiverView({root, repository, saver, sync, queryLocation, n
     return row(id, editor, extraClass);
   }
 
-  function row(id, body, extraClass = "") {
+  function row(id, body, extraClass = "", text = "") {
+    const copy = totpButton(text);
+    if (copy) body = div(body, copy);
     const attributes = {class: `river-entry ${extraClass}`.trim(), role: "listitem"};
     if (id) attributes["data-entry-id"] = id;
     return div(attributes, span({class: "entry-marker", "aria-hidden": "true"}), body);
