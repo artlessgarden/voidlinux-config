@@ -113,9 +113,6 @@ Mod+shift+q repeat=false { close-window; }
 Mod+escape repeat=false { power-off-monitors; }
 Mod+a repeat=false { spawn "alacritty"; }
 Mod+Space repeat=false { spawn "fuzzel" "--terminal=alacritty -e"; }
-Mod+c repeat=false { spawn "helium" "--new-window"; }
-Mod+shift+c repeat=false { spawn "firefox" "--new-window"; }
-Mod+ctrl+c repeat=false { spawn "google-chrome-stable" "--new-window"; }
 Mod+z repeat=false { spawn "Telegram"; }
 Mod+x repeat=false { spawn "qutebrowser" ; }
 Mod+v repeat=false { toggle-overview; }

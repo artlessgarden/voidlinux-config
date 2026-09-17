@@ -1,0 +1,5 @@
+#!/bin/sh
+iw dev wlp99s0 set power_save off 2>/dev/null || true
+if ! pgrep -f 'wpa_cli .*action-reconnect' >/dev/null 2>&1; then
+    wpa_cli -i wlp99s0 -a /etc/wpa_supplicant/action-reconnect.sh -B >/dev/null 2>&1 || true
+fi

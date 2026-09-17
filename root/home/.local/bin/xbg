@@ -4,7 +4,7 @@ set -euo pipefail
 script=$(readlink -f "$0")
 repo=$(cd "$(dirname "$script")/../../../.." && pwd)
 sudo xbps-install -S
-sh "$repo/95-qutebrowser.sh" --prepare-update
+sh "$repo/modules/qutebrowser.sh" --prepare-update
 xbps_args=()
 if [ -f /var/cache/xbps/qutebrowser/x86_64-repodata ]; then
 	xbps_args=(-R /var/cache/xbps/qutebrowser)
@@ -14,4 +14,3 @@ sudo xbps-install "${xbps_args[@]}" -yu
 if [ -x /usr/bin/qutebrowser ]; then
 	python3 -c 'from PyQt6 import QtWebEngineCore, QtWebEngineWidgets; print("QtWebEngine", QtWebEngineCore.qWebEngineVersion(), "加载正常")'
 fi
-sh "$repo/90-helium.sh"

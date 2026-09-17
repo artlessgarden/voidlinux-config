@@ -35,10 +35,6 @@ cmd open ${{
 		lf -remote "send $id cd \"$escaped\""
 		exit 0
 	fi
-	case $f in
-	*.[cC][sS][vV]) exec csvlens -c -- "$f" ;;
-	*.[tT][sS][vV]) exec csvlens -t -- "$f" ;;
-	esac
 	case $(file --mime-type -Lb -- "$f") in
 	text/*|application/json|application/xml|application/javascript|\
 	application/x-sh|application/x-shellscript|application/x-zerosize|inode/x-empty)
@@ -46,17 +42,17 @@ cmd open ${{
 		exec vis -- "$f"
 		;;
 	image/*)
-		lf-detach imv -- $fx
+		"$HOME/.config/lf/scripts/detach" imv -- $fx
 		;;
 	video/*|audio/*)
-		lf-detach mpv -- $fx
+		"$HOME/.config/lf/scripts/detach" mpv -- $fx
 		;;
 	application/pdf)
-		lf-detach zathura -- $fx
+		"$HOME/.config/lf/scripts/detach" zathura -- $fx
 		;;
 	*)
 		for path in $fx; do
-			lf-detach xdg-open "$path"
+			"$HOME/.config/lf/scripts/detach" xdg-open "$path"
 		done
 		;;
 	esac
@@ -70,7 +66,7 @@ map A :push %mkdir<space>
 
 cmd open-with ${{
 	set -f
-	lf-open-with "$@" $fx
+	"$HOME/.config/lf/scripts/open-with" "$@" $fx
 }}
 
 cmd trash ${{
@@ -139,11 +135,11 @@ cmd extract ${{
 cmd tar ${{
 	set -f
 	[ -n "${1:-}" ] || { printf 'archive name required\n' >&2; exit 2; }
-	lf-archive tar "$1.tar.gz" $fx
+	"$HOME/.config/lf/scripts/archive" tar "$1.tar.gz" $fx
 }}
 
 cmd zip ${{
 	set -f
 	[ -n "${1:-}" ] || { printf 'archive name required\n' >&2; exit 2; }
-	lf-archive zip "$1.zip" $fx
+	"$HOME/.config/lf/scripts/archive" zip "$1.zip" $fx
 }}

@@ -25,7 +25,7 @@ dns:
     - https://1.1.1.1/dns-query
 
 # REPLACE_STATIC_NODE_VALUES: paste the two complete Mihomo proxy mappings here,
-# then remove this marker before running 45-mihomo.sh again.
+# then remove this marker before running modules/mihomo.sh again.
 proxies:
   - name: 香港节点
     type: vless
