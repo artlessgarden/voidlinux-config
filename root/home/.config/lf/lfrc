@@ -28,6 +28,12 @@ setlocal ~/Downloads reverse
 setlocal "~/Downloads/Telegram Desktop" sortby time
 setlocal "~/Downloads/Telegram Desktop" reverse
 
+# Rename updates ctime without changing the file's original modification time.
+setlocal ~/.trash sortby ctime
+setlocal ~/.trash reverse
+setlocal ~/.trash dirfirst false
+setlocal ~/.trash info size:ctime
+
 cmd open ${{
 	set -f
 	if [ -d "$f" ]; then
@@ -71,7 +77,26 @@ cmd open-with ${{
 
 cmd trash ${{
 	set -f
-	gio trash -- $fx
+	trash=$HOME/.trash
+	mkdir -p -m 700 -- "$trash"
+	for path in $fx; do
+		name=$(basename -- "$path")
+		stamp=$(date +%Y%m%d-%H%M%S-%N)
+		stem=$name
+		ext=
+		if [ ! -d "$path" ]; then
+			case $name in
+			*.tar.gz|*.tar.bz2|*.tar.xz) ext=.tar.${name##*.}; stem=${name%"$ext"} ;;
+			*.*) stem=${name%.*}; ext=.${name##*.} ;;
+			esac
+			[ -n "$stem" ] || { stem=$name; ext=; }
+		fi
+		mv -nT -- "$path" "$trash/${stem}_$stamp$ext"
+		if [ -e "$path" ] || [ -L "$path" ]; then
+			printf '未移动，原文件保留：%s\n' "$path" >&2
+			exit 1
+		fi
+	done
 }}
 map D trash
 

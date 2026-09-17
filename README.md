@@ -26,9 +26,9 @@ sh modules/asus/hardware.sh
 | 脚本 | 内容／前提 |
 | --- | --- |
 | hostname | 首次装机补齐 hosts；先设置 /etc/hostname |
-| repositories | Fastly 主源及 nonfree |
+| repositories | Fastly 主源、nonfree、忽略不用的 NVIDIA 固件 |
 | sudo | 当前用户免密码 sudo；个人设备权限取舍 |
-| shell | Bash、历史、补全、fd/fzf/rg、htop、fastfetch、查包及 xbg 更新命令 |
+| shell | Bash、历史、补全、fd/fzf/rg、查包及 xbg 更新命令 |
 | fonts | Inconsolata、文泉驿和 fontconfig |
 | terminal | Alacritty |
 | time | chrony 时间同步及服务 |
@@ -56,18 +56,20 @@ sh modules/asus/hardware.sh
 ## 设备差异
 
 ASUS：
-- hardware：AMD Mesa、VA-API、Vulkan。
+- hardware：AMD Mesa 和 VA-API；不默认安装 Vulkan。
 - gpu：ASUS 固件独显开关，默认关闭；接口不存在会退出，不回退到黑名单。
 - power：80% 电池上限、quiet；安装本机 rc.local 开机入口。
 - wifi：本机 wlp99s0 / iwlwifi 参数和唤醒重连；开机入口依赖 power。
 - boot：本机 GRUB/EFI 启动顺序；运行前检查 efibootmgr 编号，不能照抄到陌生机器。
 
 MSI：
-- hardware：Intel 图形、微码及 SOF 音频固件；intel-ucode 需要 nonfree。
+- hardware：Intel 图形、微码及 SOF 音频固件；直接安装 mesa-dri，不使用会带入 Vulkan 的 mesa-intel-dri 元包；intel-ucode 需要 nonfree。
 - power：TLP 安静电源设置。
 - boot：本机 GRUB/EFI 启动顺序；先核对引导项。
 
 内屏设置仍在 Niri 中按精确 EDID 分别匹配：两条规则不会互相覆盖，其他输出使用 Niri 默认设置，无需机器预设或额外屏幕模块。亮度和音量键每次 1%。
+
+当前两台不使用 NVIDIA，软件源模块安装 `ignorepkg=linux-firmware-nvidia`，避免依赖再次拉入固件。已安装的包需正常卸载，忽略依赖不等于冻结已安装版本。将来启用独显时先删除本机忽略文件及仓库对应规则，再安装固件。qute 明确安装 Qt Wayland 客户端、TLS 插件及硬解接口 libva，不依赖其他应用偶然带入；TLS 虽在定制包依赖中，当前 XBPS 仍将它列为孤立项，因此保留手动标记。不默认安装 qt6-imageformats，基础 JPEG/PNG 支持不依赖它。
 
 集中日志属于本机临时排障，不纳入装机配置。模块不清旧配置、不改 TTY 数量、不批量开关独立日志；当前本机已有服务状态不会因为重组自动改变。
 
@@ -79,7 +81,9 @@ MSI：
 - `xdg-file.lfrc`、`xdg-directory.lfrc`：文件选择器确认操作。
 - `scripts/detach`、`open-with`、`archive`、`chooser`：LF 专用辅助脚本，不链接到全局 PATH。
 
-只保留 portal 文件选择器，不提供 FileManager1 精确定位服务。`lf.desktop` 和两处 portal 配置是系统入口，必须放在各自规定位置。LF 普通文本（含 CSV/TSV）用 Vis；图片用 imv，音视频用 mpv，PDF 用 zathura。退出 Vis 返回 LF；Ctrl-f 找路径，Ctrl-g 搜内容。
+只保留 LF portal 文件选择器，不安装 GTK portal 后端，也不提供 FileManager1 精确定位服务。GTK 后端原本提供的 Settings/OpenURI 等接口不再保留；Niri 的 gsettings 主题切换仍保留所需 schemas。`lf.desktop` 和两处 portal 配置是系统入口，必须放在各自规定位置。LF 普通文本（含 CSV/TSV）用 Vis；图片用 imv，音视频用 mpv，PDF 用 zathura。退出 Vis 返回 LF；Ctrl-f 找路径，Ctrl-g 搜内容。
+
+LF 的 `D` 把选中文件或目录移到 `~/.trash`，名称末尾加删除时间，文件保留扩展名（如 `照片_20260917-130000-123456789.jpg`）。不依赖 GVfs，不永久删除或覆盖同名文件。目录按 ctime 倒序，最近移动的在前，原文件 mtime 保留；再次改名或修改属性会更新 ctime。恢复时自行移动并去掉时间后缀，不记录原路径。GVfs 的手机／网络文件访问和桌面磁盘挂载也不再提供。
 
 `mimeapps.list` 首次从示例复制，之后保持本机独立；不会每次设置默认浏览器。Helium、Firefox、Chrome 不纳入安装、快捷键或更新，不卸载本机现有浏览器、不动迁移中的用户数据。qute 仍用 Mod+x，其他已安装应用从 Fuzzel 打开。
 
@@ -87,6 +91,15 @@ MSI：
 
 | 用途 | 手动安装 |
 | --- | --- |
+| LF 文本彩色预览 | `sudo xbps-install -S bat`；未装时用 sed |
+| LF 图片终端预览 | `sudo xbps-install -S chafa`；未装时显示文件类型 |
+| LF 音视频信息预览 | `sudo xbps-install -S mediainfo-cli`；未装时显示文件类型 |
+| LF PDF 文本预览 | `sudo xbps-install -S poppler-utils`；未装时显示文件类型 |
+| LF ZIP 打包／解压 | `sudo xbps-install -S zip unzip` |
+| LF 7z 解压 | `sudo xbps-install -S 7zip` |
+| LF tar.xz 解压／预览 | `sudo xbps-install -S xz`；其他包可能已带入 |
+| 进程查看／系统信息 | `sudo xbps-install -S htop fastfetch` |
+| AMD Vulkan 应用 | `sudo xbps-install -S mesa-vulkan-radeon`；桌面和 VA-API 不需要 |
 | LF 图片打开 | `sudo xbps-install -S imv` |
 | LF 音视频打开 | `sudo xbps-install -S mpv`；不保留 mpv 自身配置 |
 | LF PDF 打开 | `sudo xbps-install -S zathura zathura-pdf-poppler` |
@@ -104,7 +117,7 @@ MSI：
 | Waydroid | [手动安装记录](waydroid.md)：MSI 按需安装，镜像及转译依赖见文档 |
 | apps 个人项目 | 各项目自身 README、package.json/go.mod 等列明开发依赖，不作为桌面依赖自动安装 |
 
-Vis 按 `=` 手动格式化，不自动保存；缺少 formatter 时保留原文并提示失败。完整主题、状态、输入法、剪贴板、补全、光标记忆及并发编辑提示保持。构建在 `/tmp/vis.*`，安装时写 `~/.local/bin/vis.new`，最后在同目录原子改名，不覆盖正在运行的程序到一半。
+Vis 构建只安装 GCC、make、pkg-config 和自身功能所需开发包，不安装整套 base-devel；这些只用于编译，不是后台进程。Vis 按 `=` 手动格式化，不自动保存；缺少 formatter 时保留原文并提示失败。完整主题、状态、输入法、剪贴板、补全、光标记忆及并发编辑提示保持。构建在 `/tmp/vis.*`，安装时写 `~/.local/bin/vis.new`，最后在同目录原子改名，不覆盖正在运行的程序到一半。
 
 下载与构建使用专属 `/tmp/{vis,mouseless,mihomo,qutebrowser}.*`，不主动清理，可能占用磁盘直到系统清理。Vis 源码保留在 `~/.local/src/vis`，qute 下载缓存和本地 XBPS 包也保留以便复用；这些不是临时清理模块。失败留下的 `vis.new` 下次安装覆盖。
 

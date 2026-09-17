@@ -6,7 +6,7 @@ set -eu
 repo=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)
 h=$repo/root/home
 mkdir -p "$HOME/.config" "$HOME/.local/bin"
-sudo xbps-install -S lf fd fzf ripgrep bat chafa file mediainfo-cli poppler-utils unzip zip 7zip xz gvfs wl-clipboard xdg-utils xdg-desktop-portal-termfilechooser xdg-desktop-portal-gtk
+sudo xbps-install -S lf fd fzf ripgrep file wl-clipboard xdg-utils xdg-desktop-portal-termfilechooser
 ln -sfnT "$h/.config/lf" "$HOME/.config/lf"
 ln -sfnT "$h/.config/xdg-desktop-portal" "$HOME/.config/xdg-desktop-portal"
 ln -sfnT "$h/.config/xdg-desktop-portal-termfilechooser" "$HOME/.config/xdg-desktop-portal-termfilechooser"

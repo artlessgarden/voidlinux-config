@@ -5,7 +5,7 @@ set -eu
 repo=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)
 h=$repo/root/home
 mkdir -p "$HOME/.config" "$HOME/.local/bin"
-sudo xbps-install -S bash-completion git openssh fd fzf ripgrep htop fastfetch
+sudo xbps-install -S bash-completion git openssh fd fzf ripgrep
 for name in .bash_profile .bashrc .inputrc .npmrc; do
     ln -sfn "$h/$name" "$HOME/$name"
 done

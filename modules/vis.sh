@@ -8,7 +8,7 @@ src=$HOME/.local/src/vis
 prefix=$HOME/.local
 
 sudo xbps-install -Sy \
-	git base-devel pkg-config \
+	git gcc make pkg-config \
 	ncurses-devel \
 	lua54-devel lua54-lpeg \
 	tre-devel acl-devel

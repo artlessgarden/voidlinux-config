@@ -18,7 +18,7 @@ test "$(xbps-uhelper arch)" = x86_64 || {
 	exit 1
 }
 if [ -z "$mode" ]; then
-	sudo xbps-install -y python3 python3-adblock patchelf xbps
+	sudo xbps-install -y python3 python3-adblock patchelf xbps qt6-wayland-client qt6-plugin-tls-openssl libva
 fi
 
 repo=${XDG_CACHE_HOME:-$HOME/.cache}/qutebrowser-xbps

@@ -18,8 +18,11 @@ case $ext in
 	exit 0
 	;;
 pdf)
-	pdftotext -l 2 -nopgbrk -q -- "$path" - 2>/dev/null | sed -n "1,${h}p" && exit 0
-	file -Lb -- "$path"
+	if command -v pdftotext >/dev/null 2>&1; then
+		pdftotext -l 2 -nopgbrk -q -- "$path" - 2>/dev/null | sed -n "1,${h}p"
+	else
+		file -Lb -- "$path"
+	fi
 	exit 0
 	;;
 esac
@@ -38,8 +41,11 @@ video/*|audio/*)
 	mediainfo -- "$path" 2>/dev/null || file -Lb -- "$path"
 	;;
 application/pdf)
-	pdftotext -l 2 -nopgbrk -q -- "$path" - 2>/dev/null | sed -n "1,${h}p" \
-		|| file -Lb -- "$path"
+	if command -v pdftotext >/dev/null 2>&1; then
+		pdftotext -l 2 -nopgbrk -q -- "$path" - 2>/dev/null | sed -n "1,${h}p"
+	else
+		file -Lb -- "$path"
+	fi
 	;;
 *) file -Lb -- "$path" ;;
 esac
