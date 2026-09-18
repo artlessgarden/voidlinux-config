@@ -1,7 +1,7 @@
 patch:
   schema_list:
+    - schema: moran_fixed_simp
     - schema: new
   ascii_composer/switch_key:
     Shift_L: noop
     Shift_R: noop
-
