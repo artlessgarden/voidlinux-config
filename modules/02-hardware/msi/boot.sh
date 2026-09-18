@@ -18,7 +18,7 @@ set -eu
 # 不重装 grubx64.efi（你系统里已经有了）。
 #
 
-repo=$(CDPATH= cd -- "$(dirname -- "$0")/../.." && pwd)
+repo=$(CDPATH= cd -- "$(dirname -- "$0")/../../.." && pwd)
 
 # --- GRUB 配置：隐藏菜单、默认第一项 ---
 # 文件说明见同目录 grub/default

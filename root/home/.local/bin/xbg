@@ -4,7 +4,7 @@ set -euo pipefail
 script=$(readlink -f "$0")
 repo=$(cd "$(dirname "$script")/../../../.." && pwd)
 sudo xbps-install -S
-sh "$repo/modules/qutebrowser.sh" --prepare-update
+sh "$repo/modules/04-apps/qutebrowser.sh" --prepare-update
 xbps_args=()
 if [ -f /var/cache/xbps/qutebrowser/x86_64-repodata ]; then
 	xbps_args=(-R /var/cache/xbps/qutebrowser)

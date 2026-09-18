@@ -9,7 +9,7 @@ set -eu
 #   不把 Windows 写进 GRUB 菜单。
 #
 
-repo=$(CDPATH= cd -- "$(dirname -- "$0")/../.." && pwd)
+repo=$(CDPATH= cd -- "$(dirname -- "$0")/../../.." && pwd)
 
 if [ ! -e /etc/default/grub.bak ]; then
     sudo cp /etc/default/grub /etc/default/grub.bak

@@ -128,7 +128,7 @@ sudo waydroid shell -- logcat -d | grep -E 'INSTALL_FAILED|PackageInstallerSessi
 
 当前规则已保存在公共 niri 配置
 [`root/home/.config/niri/config.kdl`](root/home/.config/niri/config.kdl)，
-通过 `modules/niri.sh` 链接生效。规则只匹配 Waydroid 窗口；
+通过 `modules/03-desktop.sh` 链接生效。规则只匹配 Waydroid 窗口；
 公共安装流程不会因此安装 Waydroid。
 
 ```kdl

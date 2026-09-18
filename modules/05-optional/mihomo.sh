@@ -4,7 +4,7 @@
 # 前提：网络可访问 GitHub；仅在需要代理的设备运行
 set -eu
 
-dir=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)
+dir=$(CDPATH= cd -- "$(dirname -- "$0")/../.." && pwd)
 template=$dir/root/etc/mihomo/config.yaml.example
 mkdir -p "$HOME/.local/bin"
 ln -sfn "$dir/root/home/.local/bin/mihomoctl" "$HOME/.local/bin/mihomoctl"
@@ -57,7 +57,7 @@ if ! sudo test -f /etc/mihomo/config.yaml; then
 	printf '%s\n' \
 		'已创建 /etc/mihomo/config.yaml。' \
 		'请执行 sudoedit /etc/mihomo/config.yaml，填入两个完整节点并删除 REPLACE_STATIC_NODE_VALUES 标记，' \
-		'然后重新运行 sh modules/mihomo.sh。'
+		'然后重新运行 sh modules/05-optional/mihomo.sh。'
 	exit 0
 fi
 

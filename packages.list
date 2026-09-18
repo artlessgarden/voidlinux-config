@@ -6,7 +6,8 @@ Niri|niri dbus seatd swaybg wlsunset brightnessctl xdg-utils gnome-themes-extra 
 LF|lf fd fzf ripgrep file wl-clipboard xdg-utils xdg-desktop-portal-termfilechooser
 LF按需|bat chafa mediainfo-cli poppler-utils zip unzip 7zip xz imv mpv zathura zathura-pdf-poppler
 qute|qutebrowser qt6-webengine python3 python3-adblock patchelf xbps qt6-wayland-client qt6-plugin-tls-openssl libva
-Vis构建|git gcc make pkg-config ncurses-devel lua54-devel lua54-lpeg tre-devel acl-devel
+Vis|vis
+Vis构建|git gcc make pkg-config binutils ncurses-devel lua54-devel lua54-lpeg tre-devel acl-devel
 下载工具|curl tar gzip
 ASUS|mesa-dri mesa-vaapi
 MSI|intel-ucode mesa-dri intel-video-accel sof-firmware tlp

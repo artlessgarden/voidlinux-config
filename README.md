@@ -1,57 +1,47 @@
 # Void Linux configuration
 
-两台笔记本共用的 Niri 配置。按功能选脚本手动运行，不使用 flow、总入口、设备检测、配置生成器或自动依赖调度。
+两台笔记本共用的 Niri 配置。按重装步骤手动运行，不使用总入口或自动依赖调度。
 
 ## 目录与运行方式
 
-- `modules/`：通用功能，选择需要的运行；Mihomo 也通用，不用代理的设备不运行。
-- `modules/asus/`、`modules/msi/`：确实不同的硬件、GPU、电源和引导设置。
-- `root/etc/`：安装到 /etc 的配置文件，模块按需复制，不整体覆盖 /etc。
-- `root/home/`：链接到当前用户的配置文件，修改仓库文件就是修改实际配置。
-- 根目录 `xray.md`、`waydroid.md`：手动安装说明。
-- `apps/`：个人项目，原样保留，不参与桌面安装。
-
-在普通用户终端执行，例如：
-```sh
-sh modules/lf.sh
-sh modules/mihomo.sh
-sh modules/asus/hardware.sh
-```
-每个脚本注明功能、前提和生效方式，并自行安装该功能的软件包、链接对应配置、设置必要服务。不会运行其他模块，不默认更新整个系统，也不改其他设备配置。重复运行可更新安装和链接。已有真实配置目录不会强行覆盖：链接遇到实体目录会报错，先自行备份再处理。
-
-密码、SSH 密钥、网络凭据、个人文档、历史、缓存、浏览器登录和 Mihomo 节点都留在仓库外。不自动提交或推送。
-
-## 功能索引
-
-| 脚本 | 内容／前提 |
+| 阶段／脚本 | 内容 |
 | --- | --- |
-| hostname | 首次装机补齐 hosts；先设置 /etc/hostname |
-| repositories | Fastly 主源、nonfree、忽略不用的 NVIDIA 固件 |
-| sudo | 当前用户免密码 sudo；个人设备权限取舍 |
-| shell | Bash、历史、补全、fd/fzf/rg、查包及 xbg 更新命令 |
-| fonts | Inconsolata、文泉驿和 fontconfig |
-| terminal | Alacritty |
-| time | chrony 时间同步及服务 |
-| keyd | 原有键盘映射及服务 |
-| mouseless | 官方 x86_64 二进制、用户 input/uinput 权限；Niri 用户自启 |
-| input-method | Fcitx5/Rime、英文默认和 Nord 主题 |
-| niri | Niri/dbus/seatd、壁纸、色温、布局、亮度键；下面各桌面功能按需先安装 |
-| idle-lock | 180 秒锁屏、240 秒关闭屏幕；不自动休眠；依赖 Niri 自启 |
-| screenshot | grim/slurp/Swappy/wl-clipboard；依赖 Niri 快捷键 |
-| launcher | Fuzzel；依赖终端及 Niri Mod+Space |
-| audio | PipeWire/WirePlumber/PulseAudio 接口；由 Niri 启动用户进程 |
-| bluetooth | BlueZ 和蓝牙音频插件；耳机需要 audio |
-| wifi | wpa_supplicant、dhcpcd、iw；凭据本机填写 |
-| lf | LF、预览、搜索、回收站、压缩、portal 文件选择器；依赖终端及 Vis |
-| vis | 官方 Git master 完整构建与配置；不安装 XBPS Vis |
-| qutebrowser | qute、硬解 QtWebEngine 二进制适配及完整配置；x86_64 glibc Void |
-| mimeapps | 仅首次初始化打开方式；默认 qute，已有本机选择不覆盖 |
-| optional-editors | 只链接 Emacs/Nvim，不安装应用 |
-| mihomo | 官方通用二进制、私有配置、runit、mihomoctl；需要时才运行 |
+| `modules/01-system.sh` | 软件源、hostname、sudo、Shell、时间同步、Wi-Fi |
+| `modules/02-hardware/asus.sh` | ASUS 图形、独显开关、电源、Wi-Fi 特殊设置 |
+| `modules/02-hardware/msi.sh` | MSI 图形、微码、固件、电源 |
+| `modules/03-desktop.sh` | Niri、终端、字体、输入法、keyd、音频蓝牙、idle/锁屏、截图、Fuzzel、Mouseless |
+| `modules/04-apps/lf.sh` | LF、portal 文件选择器、默认打开方式 |
+| `modules/04-apps/vis.sh` | 官方 Git Vis，本地 XBPS 构建安装 |
+| `modules/04-apps/qutebrowser.sh` | qute 及硬解 QtWebEngine |
+| `modules/04-apps/editors.sh` | 只链接 Emacs/Nvim，不安装应用 |
+| `modules/05-optional/mihomo.sh` | 需要代理才运行，也可提前运行 |
 
-初次完整桌面需要自行先选好包源、终端、字体、输入、音频、锁屏、启动器和 Mouseless 等，再运行 niri；硬件模块按设备选择。`ni` 在 TTY 中用 `dbus-run-session niri --session` 启动会话。用户组和自启变化需退出整个会话重新登录，不是只关闭终端。配置通常自动重载，驱动、模块参数、微码及 GRUB 在下次重启生效。
+先完成 Void 基础安装，以普通用户登录，确保 sudo 和临时网络可用，设置好 `/etc/hostname` 和本机 Wi-Fi 凭据。进入仓库后执行：
 
-模块之间的公共依赖允许重复声明，XBPS 会跳过已安装的；没有统一装包阶段。Niri 的通用配置保存现有快捷键及各功能的启动引用，删掉某个功能时也需移除对应引用，不做额外配置层。
+```sh
+sh modules/01-system.sh
+sh modules/02-hardware/asus.sh  # MSI 改为 msi.sh，只选一个
+sh modules/03-desktop.sh
+```
+
+退出登录再重新登录，使用户组生效；涉及驱动、固件或内核参数时重启。TTY 运行 `ni` 进入 Niri，再按需安装应用：
+
+```sh
+sh modules/04-apps/vis.sh
+sh modules/04-apps/lf.sh
+sh modules/04-apps/qutebrowser.sh
+```
+
+编号只说明通常顺序，不是强制流程。应用快捷键在安装对应应用后可用。GRUB 独立放在 `modules/02-hardware/asus/boot.sh` 和 `modules/02-hardware/msi/boot.sh`，不随硬件阶段执行，运行前必须核对本机引导项。
+
+每个脚本直接包含该阶段操作，不调用其他模块。重复运行会重新应用配置：系统阶段会重写 hosts；桌面阶段会重载 keyd、更新 Mouseless。平时更新 Vis 或 qute，只运行对应脚本，不必重跑桌面阶段。
+
+- `root/etc/`：按模块复制到 /etc，不整体覆盖。
+- `root/home/`：链接到当前用户；路径未因模块重组改变，现有链接继续有效。
+- `xray.md`、`waydroid.md`：手动安装说明。
+- `apps/`：个人项目，不参与桌面安装。
+
+已有实体配置目录一般不会强行覆盖；Emacs、qute 和 htop 的链接迁移会保留备份。密码、SSH 密钥、网络凭据、历史、缓存、浏览器登录和 Mihomo 节点留在仓库外。不自动提交或推送。
 
 ## 设备差异
 
@@ -59,7 +49,7 @@ ASUS：
 - hardware：AMD Mesa 和 VA-API；不默认安装 Vulkan。
 - gpu：ASUS 固件独显开关，默认关闭；接口不存在会退出，不回退到黑名单。
 - power：80% 电池上限、quiet；安装本机 rc.local 开机入口。
-- wifi：本机 wlp99s0 / iwlwifi 参数和唤醒重连；开机入口依赖 power。
+- wifi：本机 wlp99s0 / iwlwifi 参数和唤醒重连；开机入口由同一硬件脚本安装。
 - boot：本机 GRUB/EFI 启动顺序；运行前检查 efibootmgr 编号，不能照抄到陌生机器。
 
 MSI：
@@ -119,13 +109,13 @@ LF 的 `D` 把选中文件或目录移到 `~/.trash`，名称末尾加删除时�
 | Waydroid | [手动安装记录](waydroid.md)：MSI 按需安装，镜像及转译依赖见文档 |
 | apps 个人项目 | 各项目自身 README、package.json/go.mod 等列明开发依赖，不作为桌面依赖自动安装 |
 
-Vis 构建只安装 GCC、make、pkg-config 和自身功能所需开发包，不安装整套 base-devel；这些只用于编译，不是后台进程。Vis 按 `=` 手动格式化，不自动保存；缺少 formatter 时保留原文并提示失败。完整主题、状态、输入法、剪贴板、补全、光标记忆及并发编辑提示保持。构建在 `/tmp/vis.*`，安装时写 `~/.local/bin/vis.new`，最后在同目录原子改名，不覆盖正在运行的程序到一半。
+Vis 构建只安装 GCC、make、pkg-config、binutils 和自身功能所需开发包，不安装整套 base-devel。`sh modules/04-apps/vis.sh` 获取官方 master，在 `/tmp/vis.*` 构建本地 XBPS 包，存入 `/var/cache/xbps/vis` 后安装；包记录运行依赖及源码提交号（`/usr/share/doc/vis/source-commit`），并锁定本地仓库，避免系统更新换回发行版。其他同架构 Void glibc 设备可通过 XBPS 安装生成的包，依赖由包管理器处理。旧散装文件迁移到 `~/.local/state/vis-install-backup.*`，个人配置仍独立链接，不进入包。重新打开 Vis 使用新版，不关闭已有编辑器。Vis 按 `=` 手动格式化，不自动保存；缺少 formatter 时保留原文并提示失败。完整主题、状态、输入法、剪贴板、补全、光标记忆及并发编辑提示保持。
 
-下载与构建使用专属 `/tmp/{vis,mouseless,mihomo,qutebrowser}.*`，不主动清理，可能占用磁盘直到系统清理。Vis 源码保留在 `~/.local/src/vis`，qute 下载缓存和本地 XBPS 包也保留以便复用；这些不是临时清理模块。失败留下的 `vis.new` 下次安装覆盖。
+下载与构建使用专属 `/tmp/{vis,mouseless,mihomo,qutebrowser}.*`，不主动清理，可能占用磁盘直到系统清理。Vis 源码保留在 `~/.local/src/vis`，qute 下载缓存和本地 XBPS 包也保留以便复用；这些不是临时清理模块。
 
 ## Wi-Fi 凭据
 
-本机单独维护 `/etc/wpa_supplicant/wpa_supplicant.conf`，不入库。可用 `wpa_passphrase SSID` 交互输入密码生成条目，删除输出中的明文密码注释后以 root、600 权限保存，再运行 wifi 模块。不要把含密码的命令提交到配置或历史。
+本机单独维护 `/etc/wpa_supplicant/wpa_supplicant.conf`，不入库。可用 `wpa_passphrase SSID` 交互输入密码生成条目，删除输出中的明文密码注释后以 root、600 权限保存，再运行 01-system.sh。不要把含密码的命令提交到配置或历史。
 
 ## 跳板
 
@@ -137,7 +127,7 @@ scp -o ProxyJump=跳板用户@跳板地址 本地文件 目标用户@目标地�
 SSH 密钥及已有私有 ~/.ssh/config 不动。
 
 ## Mihomo
-首次 `sh modules/mihomo.sh` 只创建 /etc/mihomo/config.yaml 示例，不启用未填写的代理。填入完整节点并删除 REPLACE_STATIC_NODE_VALUES 后再次运行，验证后启用服务；重跑保留私有节点。可用 `MIHOMO_BIN=/路径/mihomo sh modules/mihomo.sh` 安装本地二进制。
+首次 `sh modules/05-optional/mihomo.sh` 只创建 /etc/mihomo/config.yaml 示例，不启用未填写的代理。填入完整节点并删除 REPLACE_STATIC_NODE_VALUES 后再次运行，验证后启用服务；重跑保留私有节点。可用 `MIHOMO_BIN=/路径/mihomo sh modules/05-optional/mihomo.sh` 安装本地二进制。
 
 The controller is deliberately a thin wrapper over Mihomo's native API:
 
@@ -169,7 +159,7 @@ Mihomo restarts; `mihomoctl adblock on` enables it again.
 进程管理用 runit：`sudo sv up/down/restart mihomo`。这些是用户按需执行的命令，不是自动安装流程。
 
 ## qutebrowser 内核及配置
-`sh modules/qutebrowser.sh` 将验证过的 Homebrew Linux QtWebEngine 重新打包成原生 qt6-webengine XBPS，再安装 Void qutebrowser；不安装 Homebrew，不编译 Qt。SHA256 校验保持，其他 Qt 库仍使用 Void 包。
+`sh modules/04-apps/qutebrowser.sh` 将验证过的 Homebrew Linux QtWebEngine 重新打包成原生 qt6-webengine XBPS，再安装 Void qutebrowser；不安装 Homebrew，不编译 Qt。SHA256 校验保持，其他 Qt 库仍使用 Void 包。
 
 
 完整 qute 配置、书签、quickmarks、自定义首页、Bilibili 推荐/IP 脚本和输入状态处理保持原样。历史、cookies、会话和 App 授权凭据在仓库外。配置改动可在 qute 执行 `:config-source --clear`；Qt 参数或内核更换需重新打开浏览器。首次及规则更新执行 `:adblock-update`。内部 API、跨发行版 ABI 和私有网站接口仍可能随上游改变，硬解是否生效须以实际播放解码器为准。

@@ -1,15 +1,15 @@
 #!/bin/sh
 # 功能：qutebrowser、硬解 QtWebEngine 二进制和完整配置
 # 生效：下次打开 qute；更新内核后不强制重启浏览器
-# 原有实体配置目录不会覆盖，请先自行备份；用户数据及会话不动
+# 被替换的实体配置会先备份；其他本机文件、用户数据及会话不动
 # 前提：x86_64 glibc Void，当前验证过的 Qt 系列；网络可访问 GitHub/GHCR
 set -eu
 mode=${1:-}
-dir=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)
+dir=$(CDPATH= cd -- "$(dirname -- "$0")/../.." && pwd)
 case $mode in
 '' | --build-only | --prepare-update) ;;
 *)
-	echo "用法：sh modules/qutebrowser.sh [--build-only|--prepare-update]" >&2
+	echo "用法：sh modules/04-apps/qutebrowser.sh [--build-only|--prepare-update]" >&2
 	exit 1
 	;;
 esac
@@ -138,6 +138,20 @@ fi
 
 config=${XDG_CONFIG_HOME:-$HOME/.config}/qutebrowser
 mkdir -p "$(dirname -- "$config")"
-ln -sfnT "$dir/root/home/.config/qutebrowser" "$config"
+if [ -L "$config" ]; then
+    saved=$(mktemp -d "$(dirname -- "$config")/.qutebrowser.XXXXXX")
+    cp -a "$config/." "$saved/"
+    unlink "$config"
+    mv "$saved" "$config"
+fi
+mkdir -p "$config/bookmarks"
+backup=
+for name in config.py autoconfig.yml bilibili.py bilibili-api.py fcitx.py site-zoom.py start.html quickmarks bookmarks/urls greasemonkey lib; do
+    if [ -e "$config/$name" ] && [ ! -L "$config/$name" ]; then
+        [ -n "$backup" ] || backup=$(mktemp -d "$(dirname -- "$config")/.qutebrowser-backup.XXXXXX")
+        mv "$config/$name" "$backup/"
+    fi
+    ln -sfnT "$dir/root/home/.config/qutebrowser/$name" "$config/$name"
+done
 echo '广告规则首次使用或更新：在 qute 中执行 :adblock-update。'
 echo '完成：直接启动 qutebrowser。内核由本地 XBPS 包管理。'
