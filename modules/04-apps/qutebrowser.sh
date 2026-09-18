@@ -30,7 +30,7 @@ pkg_version=6.11.2_1
 qt_sha=1b1f9666f90094609bff11ca4f16655ec09f352f18c2d2566ba01b1c00f4c64a
 xml_sha=57b219c3bbf96111a57e2afaa052757b8697f268bc61944689eb9ae35829f1d0
 if [ "$mode" = --prepare-update ]; then
-	python3 "$dir/apps/qutebrowser/update.py" plan "$tmp/update.json"
+	python3 "$dir/modules/04-apps/qutebrowser/update.py" plan "$tmp/update.json"
 	[ -f "$tmp/update.json" ] || exit 0
 	values=$(python3 -c 'import json,sys; p=json.load(open(sys.argv[1])); print(p["qt"],p["xml"],p["pkgver"],p["qt_sha"],p["xml_sha"])' "$tmp/update.json")
 	# All five fields were validated as versions or SHA256 values by the helper.
@@ -103,10 +103,10 @@ libxkbcommon>=0 libxkbfile>=0 libxslt>=0 zlib>=0'
 requires=$(find "$pkg/usr/lib" -type f \( -name '*.so*' -o -path '*/libexec/*' \) \
 	-exec patchelf --print-needed {} + | sort -u |
 	sed '/^libQt6WebEngine/d; /^libxml2.so./d' | tr '\n' ' ')
-python3 "$dir/apps/qutebrowser/update.py" verify "$tmp" "$qt_version"
+python3 "$dir/modules/04-apps/qutebrowser/update.py" verify "$tmp" "$qt_version"
 if [ "$mode" = --prepare-update ]; then
 	printf '%s\n' "$requires" >"$tmp/requires"
-	deps=$(python3 "$dir/apps/qutebrowser/update.py" dependencies "$tmp/update.json" "$tmp/requires")
+	deps=$(python3 "$dir/modules/04-apps/qutebrowser/update.py" dependencies "$tmp/update.json" "$tmp/requires")
 fi
 (
 	cd "$repo"
