@@ -52,7 +52,7 @@ export async function deriveVaultAccess(password, header) {
 }
 
 // Authentication uses a separately salted derivative. Sending this value to
-// the server proves knowledge of the password without exposing the data key.
+// Go proves knowledge of the password without exposing the data-wrapping key.
 export async function deriveServerCredential(password, header) {
   validatePassword(password);
   validateHeader(header);

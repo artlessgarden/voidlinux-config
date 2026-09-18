@@ -11,14 +11,12 @@ export function createSyncCoordinator({
   onGeneration = () => {},
   setTimer = setTimeout,
   clearTimer = clearTimeout,
-  eventSourceFactory = typeof EventSource === "function" ? url => new EventSource(url) : null,
 }) {
   let currentGeneration = generation;
   let currentStatus = "idle";
   let activePull = null;
   let timer = null;
   let running = false;
-  let eventSource = null;
   const subscribers = new Set();
 
   // A pull is shared by every caller so focus, open, polling, and autosave can
@@ -64,10 +62,6 @@ export function createSyncCoordinator({
   function start() {
     if (running) return;
     running = true;
-    if (eventSourceFactory) {
-      eventSource = eventSourceFactory("/api/events");
-      eventSource.addEventListener("generation", () => { pull().catch(() => {}); });
-    }
     scheduleNext();
   }
 
@@ -82,8 +76,6 @@ export function createSyncCoordinator({
 
   function stop() {
     running = false;
-    eventSource?.close();
-    eventSource = null;
     if (timer !== null) clearTimer(timer);
     timer = null;
   }

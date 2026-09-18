@@ -1,5 +1,5 @@
 const MEMO_ID_PATTERN = /^[0-9a-z]{9}$/;
-const OBJECT_ID_PATTERN = /^[A-Za-z0-9_-]{16,80}$/;
+const LEGACY_OBJECT_ID_PATTERN = /^[A-Za-z0-9_-]{16,80}$/;
 const KINDS = new Set(["entry", "workspace", "query", "view"]);
 
 export function createEntry({id, existingIDs = [], now = new Date().toISOString()} = {}) {
@@ -73,7 +73,7 @@ function timePrefix(date) {
 
 function validID(id, kind) {
   if (typeof id !== "string") return false;
-  return kind === "entry" ? MEMO_ID_PATTERN.test(id) : OBJECT_ID_PATTERN.test(id);
+  return kind === "entry" ? MEMO_ID_PATTERN.test(id) : LEGACY_OBJECT_ID_PATTERN.test(id);
 }
 
 function pad2(value) {

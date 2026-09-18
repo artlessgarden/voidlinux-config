@@ -3,10 +3,11 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "test:unit": "node --test tests/unit/*.test.js tests/unit/*/*.test.js",
-    "test:e2e": "playwright test"
+    "dev": "node --watch src/server.js",
+    "start": "node src/server.js"
   },
-  "devDependencies": {
-    "@playwright/test": "1.58.2"
+  "dependencies": {
+    "@hono/node-server": "^1.19.0",
+    "hono": "^4.9.0"
   }
 }
