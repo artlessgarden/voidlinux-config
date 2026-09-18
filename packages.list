@@ -1,0 +1,13 @@
+系统/Shell|base-system grub-x86_64-efi bash-completion git openssh fd fzf ripgrep
+Niri|niri dbus seatd swaybg wlsunset brightnessctl xdg-utils gnome-themes-extra glib gsettings-desktop-schemas
+终端/输入/字体|alacritty fuzzel keyd fcitx5 fcitx5-rime font-inconsolata-otf wqy-microhei
+声音/蓝牙/网络|pipewire wireplumber alsa-pipewire bluez libspa-bluetooth wpa_supplicant dhcpcd iw chrony
+锁屏/截图|swayidle swaylock grim slurp swappy wl-clipboard
+LF|lf fd fzf ripgrep file wl-clipboard xdg-utils xdg-desktop-portal-termfilechooser
+LF按需|bat chafa mediainfo-cli poppler-utils zip unzip 7zip xz imv mpv zathura zathura-pdf-poppler
+qute|qutebrowser qt6-webengine python3 python3-adblock patchelf xbps qt6-wayland-client qt6-plugin-tls-openssl libva
+Vis构建|git gcc make pkg-config ncurses-devel lua54-devel lua54-lpeg tre-devel acl-devel
+下载工具|curl tar gzip
+ASUS|mesa-dri mesa-vaapi
+MSI|intel-ucode mesa-dri intel-video-accel sof-firmware tlp
+其他按需|htop fastfetch mesa-vulkan-radeon emacs-pgtk neovim StyLua shfmt ruff go nodejs telegram-desktop
