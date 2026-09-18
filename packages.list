@@ -1,14 +1,12 @@
-系统/Shell|base-system grub-x86_64-efi bash-completion git openssh fd fzf ripgrep
-Niri|niri dbus seatd swaybg wlsunset brightnessctl xdg-utils gnome-themes-extra glib gsettings-desktop-schemas
-终端/输入/字体|alacritty fuzzel keyd fcitx5 fcitx5-rime font-inconsolata-otf wqy-microhei
-声音/蓝牙/网络|pipewire wireplumber alsa-pipewire bluez libspa-bluetooth wpa_supplicant dhcpcd iw chrony
-锁屏/截图|swayidle swaylock grim slurp swappy wl-clipboard
-LF|lf fd fzf ripgrep file wl-clipboard xdg-utils xdg-desktop-portal-termfilechooser
-LF按需|bat chafa mediainfo-cli poppler-utils zip unzip 7zip xz imv mpv zathura zathura-pdf-poppler
-qute|qutebrowser qt6-webengine python3 python3-adblock patchelf xbps qt6-wayland-client qt6-plugin-tls-openssl libva
-Vis|vis
-Vis构建|git gcc make pkg-config binutils ncurses-devel lua54-devel lua54-lpeg tre-devel acl-devel
-下载工具|curl tar gzip
-ASUS|mesa-dri mesa-vaapi
-MSI|intel-ucode mesa-dri intel-video-accel sof-firmware tlp
-其他按需|htop fastfetch mesa-vulkan-radeon emacs-pgtk neovim StyLua shfmt ruff go nodejs telegram-desktop
+01系统|base-system grub-x86_64-efi bash-completion git openssh fd fzf ripgrep chrony wpa_supplicant dhcpcd iw
+02硬件|mesa-dri
+02硬件/ASUS|mesa-vaapi
+02硬件/MSI|intel-ucode intel-video-accel sof-firmware tlp
+03桌面|niri dbus seatd swaybg wlsunset brightnessctl xdg-utils gnome-themes-extra glib gsettings-desktop-schemas alacritty font-inconsolata-otf wqy-microhei fuzzel fcitx5 fcitx5-rime keyd pipewire wireplumber alsa-pipewire bluez libspa-bluetooth swayidle swaylock grim slurp swappy wl-clipboard curl tar gzip
+04应用/LF|lf fd fzf ripgrep file wl-clipboard xdg-utils xdg-desktop-portal-termfilechooser
+04应用/Vis|vis git gcc make pkg-config binutils ncurses-devel lua54-devel lua54-lpeg tre-devel acl-devel
+04应用/qute|qutebrowser qt6-webengine python3 python3-adblock patchelf xbps qt6-wayland-client qt6-plugin-tls-openssl libva
+04应用/编辑器|emacs-pgtk neovim
+05按需/LF|bat chafa mediainfo-cli poppler-utils zip unzip 7zip xz imv mpv zathura zathura-pdf-poppler
+05按需/格式化|StyLua shfmt ruff go nodejs
+05按需|htop fastfetch mesa-vulkan-radeon telegram-desktop
