@@ -1,2 +1,0 @@
-# Unified diffs contain intentional context spaces before tabs and blank lines.
-apps/vis-cjk/*.patch -whitespace
