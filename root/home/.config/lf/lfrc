@@ -53,9 +53,6 @@ cmd open ${{
 	video/*|audio/*)
 		"$HOME/.config/lf/scripts/detach" mpv -- $fx
 		;;
-	application/pdf)
-		"$HOME/.config/lf/scripts/detach" zathura -- $fx
-		;;
 	*)
 		for path in $fx; do
 			"$HOME/.config/lf/scripts/detach" xdg-open "$path"
@@ -124,7 +121,7 @@ map zd dir_size
 
 cmd fzf_jump ${{
 	set -f
-	target=$(fd --type f --type d --hidden --follow --exclude .git 2>/dev/null | fzf) || exit 0
+	target=$(find . -path '*/.git' -prune -o \( -type f -o -type d \) -print 2>/dev/null | fzf) || exit 0
 	[ -n "$target" ] || exit 0
 	target=$(realpath -- "$target")
 	escaped=$(printf '%s' "$target" | sed 's/\\/\\\\/g;s/"/\\"/g')
@@ -132,18 +129,18 @@ cmd fzf_jump ${{
 }}
 map <c-f> fzf_jump
 
-cmd fzf_rg ${{
+cmd fzf_grep ${{
 	set -f
 	pattern=$1
 	[ -n "$pattern" ] || exit 0
-	target=$(rg -l --hidden --glob '!.git' -- "$pattern" 2>/dev/null | fzf \
-		--preview "rg -n --color=always -- \"$pattern\" {} 2>/dev/null | head -100") || exit 0
+	target=$(grep -RIl --exclude-dir=.git -- "$pattern" . 2>/dev/null | fzf \
+		--preview "grep -n --color=always -- \"$pattern\" {} 2>/dev/null | head -100") || exit 0
 	[ -n "$target" ] || exit 0
 	target=$(realpath -- "$target")
 	escaped=$(printf '%s' "$target" | sed 's/\\/\\\\/g;s/"/\\"/g')
 	lf -remote "send $id select \"$escaped\""
 }}
-map <c-g> :push :fzf_rg<space>
+map <c-g> :push :fzf_grep<space>
 
 cmd extract ${{
 	set -f

@@ -32,31 +32,16 @@ __pycache__/
 /root/home/.config/**
 !/root/home/.config/**/
 !/root/home/.config/alacritty/**
-!/root/home/.config/emacs/init.el
-!/root/home/.config/emacs/early-init.el
-!/root/home/.config/emacs/lisp/**
 !/root/home/.config/fcitx5/config
 !/root/home/.config/fcitx5/profile
 !/root/home/.config/fcitx5/conf/classicui.conf
-!/root/home/.config/fd/**
+!/root/home/.config/fcitx5/conf/pinyin.conf
 !/root/home/.config/fontconfig/**
 !/root/home/.config/htop/htoprc
 !/root/home/.config/lf/**
+!/root/home/.config/mimeapps.list
 !/root/home/.config/mimeapps.list.example
-!/root/home/.config/mouseless/**
 !/root/home/.config/niri/**
-!/root/home/.config/nvim/**
-!/root/home/.config/qutebrowser/config.py
-!/root/home/.config/qutebrowser/autoconfig.yml
-!/root/home/.config/qutebrowser/bilibili.py
-!/root/home/.config/qutebrowser/bilibili-api.py
-!/root/home/.config/qutebrowser/fcitx.py
-!/root/home/.config/qutebrowser/site-zoom.py
-!/root/home/.config/qutebrowser/start.html
-!/root/home/.config/qutebrowser/quickmarks
-!/root/home/.config/qutebrowser/bookmarks/urls
-!/root/home/.config/qutebrowser/greasemonkey/**
-!/root/home/.config/qutebrowser/lib/**
 !/root/home/.config/vis/**
 !/root/home/.config/xdg-desktop-portal/**
 !/root/home/.config/xdg-desktop-portal-termfilechooser/**
@@ -65,11 +50,7 @@ __pycache__/
 !/root/home/.local/share/**/
 !/root/home/.local/share/applications/lf.desktop
 !/root/home/.local/share/applications/vis.desktop
-!/root/home/.local/share/fcitx5/rime/*.dict.yaml
-!/root/home/.local/share/fcitx5/rime/*.schema.yaml
-!/root/home/.local/share/fcitx5/rime/*.custom.yaml
-!/root/home/.local/share/fcitx5/rime/rime.lua
-!/root/home/.local/share/fcitx5/themes/Nord-Dark/**
+!/root/home/.local/share/applications/helium.desktop
 
 # 放行的源码目录也不收编译产物和编辑器临时文件。
 .DS_Store

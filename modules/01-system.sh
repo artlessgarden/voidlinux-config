@@ -4,14 +4,13 @@
 # 生效：服务设置即时生效；用户组和桌面自启需重新登录，驱动需重启
 set -eu
 repo=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)
-dir=$repo
 h=$repo/root/home
 
 # --- 软件源 ---
 sudo install -d /etc/xbps.d
-sudo install -m 644 "$dir/root/etc/xbps.d/00-repository-main.conf" /etc/xbps.d/00-repository-main.conf
-sudo install -m 644 "$dir/root/etc/xbps.d/20-nonfree.conf" /etc/xbps.d/20-nonfree.conf
-sudo install -m 644 "$dir/root/etc/xbps.d/30-ignore-nvidia.conf" /etc/xbps.d/30-ignore-nvidia.conf
+sudo install -m 644 "$repo/root/etc/xbps.d/00-repository-main.conf" /etc/xbps.d/00-repository-main.conf
+sudo install -m 644 "$repo/root/etc/xbps.d/20-nonfree.conf" /etc/xbps.d/20-nonfree.conf
+sudo install -m 644 "$repo/root/etc/xbps.d/30-ignore-nvidia.conf" /etc/xbps.d/30-ignore-nvidia.conf
 printf '%s\n' 'XBPS 软件源已安装，下次运行 xbps-install 时使用。'
 
 # --- 主机名 ---
@@ -40,27 +39,14 @@ printf '%s\n' "Passwordless sudo enabled for $user."
 
 # --- Shell 与常用命令 ---
 mkdir -p "$HOME/.config" "$HOME/.local/bin"
-sudo xbps-install -S bash-completion git openssh fd fzf ripgrep
-for name in .bash_profile .bashrc .inputrc .npmrc; do
-    ln -sfn "$h/$name" "$HOME/$name"
-done
-ln -sfnT "$h/.config/fd" "$HOME/.config/fd"
-config=$HOME/.config/htop
-if [ -L "$config" ]; then
-    saved=$(mktemp -d "$HOME/.config/.htop.XXXXXX")
-    cp -a "$config/." "$saved/"
-    unlink "$config"
-    mv "$saved" "$config"
-fi
-mkdir -p "$config"
-if [ -f "$config/htoprc" ] && [ ! -L "$config/htoprc" ]; then
-    backup=$(mktemp -d "$HOME/.config/.htop-backup.XXXXXX")
-    mv "$config/htoprc" "$backup/"
-fi
-ln -sfnT "$h/.config/htop/htoprc" "$config/htoprc"
-for name in xba xbg xbk xbo xbr xbs; do
-    ln -sfn "$h/.local/bin/$name" "$HOME/.local/bin/$name"
-done
+sudo xbps-install -S bash-completion git openssh fzf
+ln -sfn "$h/.bash_profile" "$HOME/.bash_profile"
+ln -sfn "$h/.bashrc" "$HOME/.bashrc"
+ln -sfn "$h/.inputrc" "$HOME/.inputrc"
+ln -sfn "$h/.npmrc" "$HOME/.npmrc"
+mkdir -p "$HOME/.config/htop"
+ln -sfn "$h/.config/htop/htoprc" "$HOME/.config/htop/htoprc"
+ln -sfn "$h/.local/bin/xb" "$HOME/.local/bin/xb"
 
 # --- 时间同步 ---
 sudo xbps-install -S chrony

@@ -20,8 +20,7 @@ if command -v fzf >/dev/null 2>&1; then
 	# 选中文件/目录时只预览，不打开。
 	export FZF_CTRL_T_OPTS="--preview 'sed -n \"1,120p\" {}' --preview-window right,50%,noborder"
 	export FZF_ALT_C_OPTS="--preview 'ls -la --color=always {}' --preview-window right,50%,noborder"
-	# 用 fd 列文件：包含隐藏文件；忽略规则集中放在 ~/.config/fd/ignore。
-	export FZF_DEFAULT_COMMAND='fd --type f --hidden --follow'
+	export FZF_DEFAULT_COMMAND='find . -type f -not -path "*/.git/*"'
 	export FZF_CTRL_T_COMMAND="$FZF_DEFAULT_COMMAND"
 fi
 

@@ -1,12 +1,12 @@
-01系统|base-system grub-x86_64-efi bash-completion git openssh fd fzf ripgrep chrony wpa_supplicant dhcpcd iw
+01系统|base-system grub-x86_64-efi bash-completion git openssh fzf chrony wpa_supplicant dhcpcd iw
 02硬件|mesa-dri
 02硬件/ASUS|mesa-vaapi
 02硬件/MSI|intel-ucode intel-video-accel sof-firmware tlp
-03桌面|niri dbus seatd swaybg wlsunset brightnessctl xdg-utils gnome-themes-extra glib gsettings-desktop-schemas alacritty font-inconsolata-otf wqy-microhei fuzzel fcitx5 fcitx5-rime keyd pipewire wireplumber alsa-pipewire bluez libspa-bluetooth swayidle swaylock grim slurp swappy wl-clipboard curl tar gzip
-04应用/LF|lf fd fzf ripgrep file wl-clipboard xdg-utils xdg-desktop-portal-termfilechooser
-04应用/Vis|vis git gcc make pkg-config binutils ncurses-devel lua54-devel lua54-lpeg tre-devel acl-devel
-04应用/qute|qutebrowser qt6-webengine python3 python3-adblock patchelf xbps qt6-wayland-client qt6-plugin-tls-openssl libva
-04应用/编辑器|emacs-pgtk neovim
-05按需/LF|bat chafa mediainfo-cli poppler-utils zip unzip 7zip xz imv mpv zathura zathura-pdf-poppler
+03桌面|niri dbus seatd swaybg wlsunset brightnessctl xdg-utils gnome-themes-extra glib gsettings-desktop-schemas alacritty font-inconsolata-otf wqy-microhei fcitx5 fcitx5-chinese-addons keyd pipewire wireplumber alsa-pipewire bluez libspa-bluetooth swayidle swaylock grim slurp swappy wl-clipboard
+04应用/LF|lf fzf file wl-clipboard xdg-utils xdg-desktop-portal-termfilechooser
+04应用/Vis|vis
+04应用/Vis编译依赖|git gcc make pkg-config binutils ncurses-devel lua54-devel lua54-lpeg tre-devel acl-devel
+04应用/Helium依赖|nspr nss curl
+05按需/LF|bat chafa mediainfo-cli poppler-utils zip unzip 7zip xz imv mpv
 05按需/格式化|StyLua shfmt ruff go nodejs
-05按需|htop fastfetch mesa-vulkan-radeon telegram-desktop
+05按需|htop fastfetch dufs socklog-void mesa-vulkan-radeon telegram-desktop
