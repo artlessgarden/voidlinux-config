@@ -5,7 +5,7 @@
 set -eu
 repo=$(CDPATH= cd -- "$(dirname -- "$0")/../.." && pwd)
 h=$repo/root/home
-sudo xbps-install -S niri dbus seatd swaybg wlsunset brightnessctl xdg-utils gnome-themes-extra glib gsettings-desktop-schemas swayidle swaylock grim slurp swappy wl-clipboard
+sudo xbps-install -Sy -y niri dbus seatd swaybg wlsunset brightnessctl xdg-utils gnome-themes-extra glib gsettings-desktop-schemas swayidle swaylock grim slurp swappy wl-clipboard
 sudo ln -sfn /etc/sv/dbus /var/service/dbus
 sudo ln -sfn /etc/sv/seatd /var/service/seatd
 sudo usermod -aG _seatd "$USER"

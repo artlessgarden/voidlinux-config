@@ -6,7 +6,7 @@ set -eu
 repo=$(CDPATH= cd -- "$(dirname -- "$0")/../.." && pwd)
 
 # --- 图形 ---
-sudo xbps-install -S mesa-dri mesa-vaapi
+sudo xbps-install -Sy -y mesa-dri mesa-vaapi
 printf '%s\n' 'ASUS 图形包已安装；重新打开图形程序后使用新组件。'
 
 # --- 独显 ---

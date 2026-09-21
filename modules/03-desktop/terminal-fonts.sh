@@ -5,7 +5,7 @@
 set -eu
 repo=$(CDPATH= cd -- "$(dirname -- "$0")/../.." && pwd)
 h=$repo/root/home
-sudo xbps-install -S alacritty font-inconsolata-otf wqy-microhei
+sudo xbps-install -Sy -y alacritty font-inconsolata-otf wqy-microhei
 mkdir -p "$HOME/.config"
 ln -sfnT "$h/.config/alacritty" "$HOME/.config/alacritty"
 ln -sfnT "$h/.config/fontconfig" "$HOME/.config/fontconfig"

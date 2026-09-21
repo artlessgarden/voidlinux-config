@@ -7,7 +7,7 @@ opt=$HOME/.local/opt/helium
 tmp=$(mktemp -d /tmp/helium.XXXXXX)
 trap 'rm -rf "$tmp"' EXIT
 
-sudo xbps-install -S nspr nss curl
+sudo xbps-install -Sy -y nspr nss curl xz
 
 case $(uname -m) in
 x86_64) asset=x86_64_linux.tar.xz ;;

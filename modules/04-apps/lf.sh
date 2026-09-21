@@ -8,7 +8,7 @@ h=$repo/root/home
 
 # --- LF 与文件选择器 ---
 mkdir -p "$HOME/.config"
-sudo xbps-install -S lf fzf file wl-clipboard xdg-utils xdg-desktop-portal-termfilechooser
+sudo xbps-install -Sy -y lf fzf file wl-clipboard xdg-utils xdg-desktop-portal-termfilechooser
 ln -sfnT "$h/.config/lf" "$HOME/.config/lf"
 ln -sfnT "$h/.config/xdg-desktop-portal" "$HOME/.config/xdg-desktop-portal"
 ln -sfnT "$h/.config/xdg-desktop-portal-termfilechooser" "$HOME/.config/xdg-desktop-portal-termfilechooser"

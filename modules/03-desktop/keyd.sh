@@ -3,7 +3,7 @@
 # 生效：立即；如果服务未运行，启动服务后生效
 set -eu
 repo=$(CDPATH= cd -- "$(dirname -- "$0")/../.." && pwd)
-sudo xbps-install -S keyd
+sudo xbps-install -Sy -y keyd
 sudo keyd check "$repo/root/etc/keyd/"*.conf
 sudo install -d /etc/keyd
 sudo install -m 644 "$repo/root/etc/keyd/"*.conf /etc/keyd/

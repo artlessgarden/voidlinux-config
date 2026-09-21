@@ -4,7 +4,7 @@ set -eu
 
 repo=$(CDPATH= cd -- "$(dirname -- "$0")/../.." && pwd)
 src=$HOME/.local/src/vis
-sudo xbps-install -Sy git
+sudo xbps-install -Sy -y git
 sudo xbps-install -y gcc make pkg-config binutils ncurses-devel lua54-devel lua54-lpeg tre-devel acl-devel
 sudo xbps-pkgdb -m manual gcc make pkg-config binutils ncurses-devel lua54-devel lua54-lpeg tre-devel acl-devel
 

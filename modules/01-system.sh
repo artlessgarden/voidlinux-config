@@ -39,7 +39,7 @@ printf '%s\n' "Passwordless sudo enabled for $user."
 
 # --- Shell 与常用命令 ---
 mkdir -p "$HOME/.config" "$HOME/.local/bin"
-sudo xbps-install -S bash-completion git openssh fzf
+sudo xbps-install -Sy -y bash-completion git openssh fzf
 ln -sfn "$h/.bash_profile" "$HOME/.bash_profile"
 ln -sfn "$h/.bashrc" "$HOME/.bashrc"
 ln -sfn "$h/.inputrc" "$HOME/.inputrc"
@@ -49,11 +49,11 @@ ln -sfn "$h/.config/htop/htoprc" "$HOME/.config/htop/htoprc"
 ln -sfn "$h/.local/bin/xb" "$HOME/.local/bin/xb"
 
 # --- 时间同步 ---
-sudo xbps-install -S chrony
+sudo xbps-install -Sy -y chrony
 sudo ln -sfn /etc/sv/chronyd /var/service/chronyd
 
 # --- Wi-Fi ---
-sudo xbps-install -S wpa_supplicant dhcpcd iw
+sudo xbps-install -Sy -y wpa_supplicant dhcpcd iw
 if ! sudo test -s /etc/wpa_supplicant/wpa_supplicant.conf; then
     printf '%s\n' '请先按 README 填写本机 /etc/wpa_supplicant/wpa_supplicant.conf，然后重跑本模块。' >&2
     exit 1
