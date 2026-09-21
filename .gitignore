@@ -35,6 +35,7 @@ __pycache__/
 !/root/home/.config/fcitx5/config
 !/root/home/.config/fcitx5/profile
 !/root/home/.config/fcitx5/conf/classicui.conf
+!/root/home/.config/fcitx5/conf/clipboard.conf
 !/root/home/.config/fcitx5/conf/pinyin.conf
 !/root/home/.config/fontconfig/**
 !/root/home/.config/htop/htoprc
